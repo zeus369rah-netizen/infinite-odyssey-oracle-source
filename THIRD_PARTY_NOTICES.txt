@@ -1,0 +1,7 @@
+THIRD-PARTY DEPENDENCIES
+
+Selected source bytes and comments are preserved unchanged. No project LICENSE was supplied in this snapshot; no open-source license is invented here. This is not a comprehensive provenance or legal audit.
+
+Unity and dependencies named in Packages/manifest.json and Packages/packages-lock.json are external technology, not project-owned implementation. Those two files contain57 version references and79 builtin/registry lock entries. No package source, SDK, DLL, engine binary or cache is redistributed. Obtain packages separately under their applicable terms and retain the notices and license files they supply, including transitive dependencies. RIGHTS_RESERVED.txt does not replace a dependency's license.
+
+Unity TutorialInfo template code, Assets/Plugins, all media/provider output, preserved uncertain assets, all Documentation files and private asset-origin/evidence records are excluded. Exclusion does not mean those materials are public domain or project-owned.

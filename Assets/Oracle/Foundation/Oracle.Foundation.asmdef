@@ -1,0 +1,13 @@
+{
+  "name": "Oracle.Foundation",
+  "rootNamespace": "OdysseyOracle.Foundation",
+  "references": [
+    "Unity.Entities",
+    "Unity.Collections"
+  ],
+  "includePlatforms": [],
+  "allowUnsafeCode": true,
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}
