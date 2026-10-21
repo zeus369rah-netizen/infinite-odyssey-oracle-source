@@ -39,13 +39,13 @@ namespace OdysseyOracle
             "Keep the shrine standing until the co-op timer ends. Raised arms and a floor warning mean an attack is winding up. Move out of shots aimed at you. Interrupt or defeat monsters threatening your towers.",
             "Cast a confirmed spell with a left click. Defeated monsters drop XP. Collect real XP to gain run levels and earn skill points. Saved Heartstones and permanent training are separate.",
             "Your passive tree has four elements: fire, water, earth, and air. Each branch has its own upgrades. Take a look at your tree.",
-            "All four elements start at level one. Tap one element for a single spell. Add different elements for a pair, or select all four for Cosmic Nova. Three selected elements stay highlighted but cannot fire. Add the fourth to complete your Nova. Selecting spends no cooldown.",
+            "All four elements start at level one. Prepare one element, a pair, or three. Three selected elements fire together, then clear. Choose all four for Cosmic Nova. Selecting spends no cooldown.",
             "Fire burns, water slows, earth staggers, and air pushes. Confirm two different elements to make one of six pair combos: Combustion, Binding Mud, Steam, Shrapnel, Magma, or Frost Gale. A launched pair shot gives both used elements four seconds of recovery. Unused elements stay ready.",
-            "Aim and left click once to cast. Holding the mouse button does not repeat. The global cast interval is half a second. Normal ingredients recover for four seconds; Cosmic Nova recovers for five. Auto fire is optional and off by default. Every element tap restarts its half second wait, giving you time to finish your selection.",
+            "Aim and left click once to cast a prepared recipe. Or hold left click and press an element key to cast fresh pressed elements as soon as recovery allows. The global interval is half a second. Normal ingredients recover for four seconds; Cosmic Nova recovers for five. Optional auto fire stays off by default and waits half a second after selection.",
             "Four tower roles are available. Fire and Water attack ground and flying enemies. Earth targets the ground; Air targets flyers. Look at an empty raised pad and press interact or right click to build. Tier one is included. Tower upgrades are optional and belong in the refuge between stages.",
             "This game is a prototype, and feedback is appreciated. Good luck."
         };
-        public const string CombatLessonLine="Select one element, a pair, or all four, then aim and left click. Three selected elements cannot cast; add the fourth for Cosmic Nova. Normal ingredients recover for four seconds, and the Nova uses all four for five. Each new selection gives auto fire half a second to settle. The guardian warns before attacking. Step aside during its windup.";
+        public const string CombatLessonLine="Prepare one element, a pair, or three, then aim and left click. Three elements fire together and clear. All four make Cosmic Nova. Or hold left click and press fresh element keys to cast when ready. Normal ingredients recover for four seconds, Nova for five, with a half second global interval. Optional auto fire waits half a second after selection. Step aside during the guardian windup.";
         public const string DownedLessonLine="Next is a safe training echo. It will put you into the downed state for six seconds. This is practice, not an enemy attack. Your Heartcrystals and upgrades are safe.";
         public const string RevivedLessonLine="You're back on your feet. During this exercise, recovery took six seconds. In shared battles, a nearby teammate can hold the interact key for two seconds to revive you. Otherwise, recovery happens automatically. Your saved progress stays safe.";
         public const string ShopLessonLine="Find the blacksmith in the right-hand alcove. Look at him and use the interact key to open his shop. Pink Heartcrystals buy permanent wand upgrades and passive training. You do not need to buy anything to finish this lesson.";
@@ -55,7 +55,7 @@ namespace OdysseyOracle
             "EARTH: damage training; the second and third nodes extend Earth interrupts by 0.10 seconds each. Later hits gain 25% during the interrupt; normal recovery stays four seconds.",
             "AIR: movement training. Run skill points and the blacksmith's permanent Heartcrystal training are separate."
         };
-        public const string CampaignPacingHint="Co-op stages target 150 seconds and 100 enemy spawns. Spawning can extend a stage to 180 seconds.";
+        public const string CampaignPacingHint="Protect the shrine through five waves, then return to the refuge. Eight milestones span forty waves.";
         static readonly string[] ElementNames={"Fire","Water","Earth","Air"};
 
         GameSession session;
@@ -86,7 +86,7 @@ namespace OdysseyOracle
             clips[6]=Resources.Load<AudioClip>("Tutorial/guide_06_rapid150_v1");
             clips[7]=Resources.Load<AudioClip>("Tutorial/guide_07_rapid150_v1");
             lessonClips[0]=Resources.Load<AudioClip>("Tutorial/lesson_combat_rapid150_v1");
-            InitializeNovaLesson();InitializeTowerPracticeLesson();InitializeInstructionFlow();ResetTutorial();
+            InitializeNovaLesson();InitializeTowerPracticeLesson();InitializeInstructionFlow();PrepareGuideUi020();ResetTutorial();
         }
 
         public void ResetTutorial()
@@ -184,7 +184,8 @@ namespace OdysseyOracle
                     if(jumpObserved && position.y>jumpStartY+.2f)NextLesson(Lesson.Shrine);
                     break;
                 case Lesson.Shrine:
-                    if(Vector2.Distance(new Vector2(position.x,position.z),new Vector2(session.World.ShrinePosition.x,session.World.ShrinePosition.z))<5f)
+                    UpdatePracticeStaffHint015();
+                    if(session.World.TrainingStaffCollected015&&Vector2.Distance(new Vector2(position.x,position.z),new Vector2(session.World.ShrinePosition.x,session.World.ShrinePosition.z))<5f)
                     {ShowInstructionCard(2);}
                     break;
                 case Lesson.Guardian:TickGuardian(dt);break;
@@ -235,7 +236,7 @@ namespace OdysseyOracle
                 case Lesson.Move:Instruction="Move with your bound movement keys. Use the mouse to look.";break;
                 case Lesson.Run:Instruction="Hold ["+GameActionBindings.GetLabel("Sprint")+"] while moving to run.";break;
                 case Lesson.Jump:Instruction="Press ["+GameActionBindings.GetLabel("Jump")+"] to jump.";break;
-                case Lesson.Shrine:Heading="The green shrine";Instruction="Approach the glowing green crystal in the center of the room.";break;
+                case Lesson.Shrine:UpdatePracticeStaffHint015();break;
             }
         }
 
@@ -273,16 +274,16 @@ namespace OdysseyOracle
                 if(aiming){sharedAimTime+=dt;if(acceptedCast)practiceShots++;}
                 // Combat alone consumes the actual mouse gesture. The guide observes
                 // accepted recovery; it never requests an automatic practice shot.
-                Instruction="Shared-hub practice: choose one, two or all four elements, aim at the violet arch, then left-click for three accepted casts. Three selected elements cannot fire. No enemy is spawned here. "+keys+" · "+Mathf.Min(3,practiceShots)+"/3 accepted casts";
+                Instruction="Shared-hub practice: prepare one element, a pair, three for a volley, or all four for Nova. Aim at the violet arch, then left-click for three accepted casts. You may hold left-click and press fresh element keys to cast when ready. No enemy is spawned here. "+keys+" · "+Mathf.Min(3,practiceShots)+"/3 accepted casts";
                 if(practiceShots>=3 && sharedAimTime>=2.5f && AllElementsTried() && lessonTime>=narrationDuration)ShowInstructionCard(1);
                 return;
             }
             guardianDefeated|=session.Combat.TutorialGuardianDefeated || (session.Goal==1 && session.Defeated>=1);
             var guardian=session.Combat.TutorialGuardian;
-            string action=guardianDefeated?"Guardian defeated. Select any remaining elements; the three-element selection cannot cast."
+            string action=guardianDefeated?"Guardian defeated. Prepare any remaining recipe; three elements fire together and clear."
                 :!session.Combat.TutorialGuardianAwake?"Approach the seated guardian to wake it, then aim at it."
                 :guardian!=null && guardian.AttackPhase==OracleEnemy.GuardianAttackPhase.Windup?"The guardian is winding up: step aside, then aim again."
-                :"Select one, two or all four elements, aim at the guardian and left-click. Add the fourth if three elements are highlighted.";
+                :"Prepare one element, a pair, three for a volley or all four for Nova; aim at the guardian and left-click.";
             Instruction=action+" "+keys;
             if(guardianDefeated && AllElementsTried() && lessonTime>=narrationDuration)ShowInstructionCard(1);
         }
@@ -341,9 +342,9 @@ namespace OdysseyOracle
         {
             Subtitle=narrationLine=caption;voice.Stop();voicePaused=false;
             bool cardReplacedVoice=CurrentLesson==Lesson.TowerPractice || CurrentLesson==Lesson.NovaTeaching&&instructionState.HasAcknowledged(5);
-            voice.clip=cardReplacedVoice?null:clip;
+            voice.clip=cardReplacedVoice||SuppressAutomaticTutorialPresentation?null:clip;
             if(CurrentLesson==Lesson.TowerPractice&&instructionState.HasAcknowledged(6))narrationDuration=0f;
-            if(voice.clip!=null)voice.Play();
+            PrepareGuideStep015(12+(int)CurrentLesson,voice.clip,caption);
             SyncVoice();
         }
         // Compatibility entry points never restart a clip or reset a real practice clock.
@@ -352,20 +353,27 @@ namespace OdysseyOracle
         void SyncVoice()
         {
             if(voice==null)return;
+            if(SyncGuideVoice015())return;
             // Master is applied exactly once by GameAudioDirector's AudioListener
             // stage. Source gain remains the independent saved Guide volume.
             voice.volume=narrationVolume;
-            bool preview=active && HasPendingInstruction && session!=null && session.Hud!=null && session.Hud.IsTutorialInstructionVisible;
-            bool suspend=!active || !Application.isFocused || applicationPaused || session==null ||
+            bool labPreview=trainingLabNarration>=0&&TrainingLabNarrationScope;
+            if(trainingLabNarration>=0&&!labPreview)StopTrainingLabNarration();
+            // Co-op free interaction has no scripted narrator. Explicit NPC voice has its own owner.
+            if(SuppressAutomaticTutorialPresentation&&!labPreview){voice.Stop();voicePaused=false;return;}
+            bool preview=labPreview || active && HasPendingInstruction && session!=null && session.Hud!=null && session.Hud.IsTutorialInstructionVisible;
+            bool npcGreeting=session!=null&&session.RefugeActivities!=null&&session.RefugeActivities.NpcDialogueSpeaking020;
+            bool mechanicsGuide=session!=null&&session.Hud!=null&&session.Hud.IsMechanicsGuideVisible;
+            bool suspend=mechanicsGuide || npcGreeting || (!active&&!labPreview) || !Application.isFocused || applicationPaused || session==null ||
                 !session.HasStarted || session.IsDead || session.Victory || (session.Paused && !preview);
             if(suspend && !voicePaused){voice.Pause();voicePaused=true;}
             else if(!suspend && voicePaused){voice.UnPause();voicePaused=false;}
         }
-        void StopVoice(){if(voice!=null){voice.Stop();voice.clip=null;}voicePaused=false;}
+        void StopVoice(){ForgetGuideSource015();if(voice!=null){voice.Stop();voice.clip=null;}voicePaused=false;trainingLabNarration=-1;}
         static float SafeVolume(float value)=>float.IsNaN(value) || float.IsInfinity(value)?.85f:Mathf.Clamp01(value);
         void OnApplicationFocus(bool focused){SyncVoice();}
         void OnApplicationPause(bool paused){applicationPaused=paused;SyncVoice();}
-        void OnDisable(){SuspendTowerPracticeLesson();SuspendNovaLesson();if(voice!=null)voice.Pause();voicePaused=true;}
+        void OnDisable(){PauseGuideNarration015();SuspendTowerPracticeLesson();SuspendNovaLesson();if(voice!=null)voice.Pause();voicePaused=true;}
         void OnDestroy(){ResetTowerPracticeLesson();ResetNovaLesson();if(voice!=null)Destroy(voice);}
     }
 }
@@ -381,3 +389,28 @@ namespace OdysseyOracle
 
 // # ARCHITECTURE SNAPSHOT
 // Existing world metres and Canvas coordinates; fixed twelve-card value state, existing Combat/Nova/Tower owners and real point costs retained.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/lab modal and focus policy; no actor, world or saved progression mutation.
+// Array Formats: Existing twelve guide clips plus two cold-loaded lab help references, one selected-caption index.
+// Dependencies/Pointers: Sole TutorialDirector guide AudioSource; exact journal caption/resource pairs; root owns import/playback.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted NPC/guide audio ownership and immutable guide note metadata.
+// Array Formats: Existing fixed guide clip/caption/sample stores; no new frame storage or caption generation.
+// Dependencies/Pointers: All-role NPC lease pauses automatic guide intent; explicit eligible Play alone preempts/resumes. Root v5 resource/voiced captions remain exact; root owns integration and native/browser listening.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing fitted guide/menu Canvas and actual guide view/audio state.
+// Array Formats: Existing bounded UI/state stores; cold immutable65status labels, no frame formatting.
+// Dependencies/Pointers: Original restart/portal/settings/narration/voice/input/achievement owners remain. Root owns source apply and full compile/native/browser/listening acceptance.

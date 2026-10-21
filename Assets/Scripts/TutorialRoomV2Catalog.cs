@@ -12,6 +12,7 @@ namespace OdysseyOracle
     {
         public const string GeneratorId="ZeusRa.Oracle.TutorialRoomV2";
         public GameObject RunicBookstand,ForgeWorkbench,SuppliesRack,BrazierRing,WallLantern,CrystalReliquary;
+        public LanternSwingCatalog ReactiveLantern;
         public string Provenance="Original ZeusRa design direction and Codex procedural implementation; reference images are design inspiration, not reused assets.";
         [Serializable] public sealed class PlacementReport {public int requested,placed,renderers;public string[] missing;}
         public GameObject Get(TutorialRoomV2Layout.PropId id)

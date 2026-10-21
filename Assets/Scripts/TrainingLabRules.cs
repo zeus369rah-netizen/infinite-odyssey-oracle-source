@@ -6,7 +6,7 @@ namespace OdysseyOracle
         public static bool CanOwn(bool started,bool tutorialFinished,bool unlocked,bool refuge,bool coop,bool connected,
             bool defenseRunning,bool dead,bool downed,bool victory)=>started&&tutorialFinished&&unlocked&&refuge&&
             !coop&&!connected&&!defenseRunning&&!dead&&!downed&&!victory;
-        public static bool CanSelect(int prototype,bool hasActors)=>!hasActors&&prototype>=0&&prototype<PrototypeCount;
+        public static bool CanSelect(int prototype,bool hasActors)=>prototype>=0&&prototype<PrototypeCount; // Pending selection never mutates a live actor.
         public static bool AcceptedDamage(float before,float after)=>Finite(before)&&Finite(after)&&before>0f&&after>=0f&&after<before;
         static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
     }
@@ -35,3 +35,7 @@ namespace OdysseyOracle
 // Coordinate Space: Scalar offline lab context and observed current-owner HP values; no transforms.
 // Array Formats: Fixed four prototype indices, two actor cap; value snapshot and three bounded damage meters.
 // Dependencies/Pointers: Pure authorization/observation only; never applies damage, invents HP, awards rewards or owns native memory.
+// # ARCHITECTURE SNAPSHOT
+// Existing Y-up/metre lab anchors and fixed actor pools/real HP owners remain.
+// Pending four-type selectors apply only on explicit Replace/Add; zero/one actors retain the same Combat reward-exclusion owner.
+// Remove/Replace reset both attacks and retire shots before actor mutation; full EndSession alone releases the lab session.

@@ -74,11 +74,11 @@ namespace OdysseyOracle
             {
                 var peer=entry.Value;
                 // Never replace Peer or peer.Forge: its4096 accepted credit IDs,
-                // request highwater, bank and bought tiers span all three stages.
+                // request highwater, bank and bought tiers span all eight levels.
                 peer.Tokens=3;peer.Element=0;peer.AutoFireEnabled=false;
                 peer.Claimed.Clear();peer.Selection.Clear();peer.Nova.Reset();peer.AutoSelectionWait.Clear();
                 peer.TapRequests=default;peer.CastRequests=default;
-                peer.AutoFireSequence=0;peer.NextAutoFireChange=0;peer.NextCast=1;
+                peer.AutoFireSequence=0;peer.NextAutoFireChange=0;peer.NextCast=OracleCombat.PrimaryCadenceSeconds;
                 peer.NextPersonalSync=peer.NextForgeRequest=0;
                 Array.Clear(peer.ReturnReadyAt,0,peer.ReturnReadyAt.Length);
                 peer.ArenaReady=entry.Key==rooms.LocalClientId&&owner.World!=null&&owner.World.IsCoopArena;
@@ -126,6 +126,7 @@ namespace OdysseyOracle
             owner.Progression.ApplyAuthoritativeState(state.level,state.xp,state.points,state.mask);
             ApplyForgePersonal(new PlayerState{forgeVersion=state.forgeVersion,forgeBank=state.forgeBank,forgeTiers=state.forgeTiers,
                 forgeRevision=state.forgeRevision,forgeLastRequest=state.forgeLastRequest,forgeOutcome=state.forgeOutcome});
+            CacheAcceptedSoloRestartProgress(state.level,state.xp,state.points,state.mask);
         }
         bool HandleCampaignProgress(ulong sender,Message message)
         {
@@ -146,3 +147,8 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Existing metre/Y-up/XZ actor space, host Forge ledger and sole combat owners remain.
 // Exact composed Refuge/interstage/balance adapter hunks; no new native/save authority.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.

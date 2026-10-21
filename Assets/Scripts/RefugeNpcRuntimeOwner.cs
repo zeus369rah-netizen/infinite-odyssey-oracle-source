@@ -8,7 +8,7 @@ namespace OdysseyOracle
     // Two saved ORIGINAL visual instances, one interaction/idle owner.010 authority
     // receives actual roots and visit requests; no quest bits/currency/HP/points are
     // written. Neutral assets are borrowed unchanged and never destroyed by runtime.
-    public sealed class RefugeNpcRuntimeOwner : MonoBehaviour
+    public sealed partial class RefugeNpcRuntimeOwner : MonoBehaviour
     {
         const float Reach=3.25f,LookReach=3.65f;
         sealed class Actor
@@ -17,6 +17,7 @@ namespace OdysseyOracle
             public Transform Feet,Interact,Voice,Torso,Head,Left,Right,Lids;
             public Vector3 TorsoRest,LidsRest;public Quaternion HeadRest,LeftRest,RightRest;
             public float Age,Blink=-1,NextBlink=2.5f,Yaw,Pitch;
+            public Transform RootBasis,FluidMouth;public Vector3 FluidMouthRest;public uint FluidTalkSerial;
         }
         readonly Actor[] actors=new Actor[2];
         readonly Vector3[] sites=new Vector3[2];readonly float[] yaws=new float[2];
@@ -59,6 +60,7 @@ namespace OdysseyOracle
             if(owner==null||owner.Hud==null||owner.Player==null)throw new ArgumentException("Initialize after the actual Player and HUD.");
             session=owner;catalog=savedCatalog;initialized=true;wasSmithVisible=owner.Shop!=null&&owner.Shop.Visible;
             Status="Waiting for the actual008 refuge and its original saved NPC catalog.";
+            InitializeFluidNpc009();
         }
         public void SetQuestBridge(IRefugeNpcQuestBridge source,UnityEngine.Object lifetimeOwner)
         {
@@ -91,6 +93,7 @@ namespace OdysseyOracle
                 if(Time.frameCount>openedFrame&&keyboard!=null&&keyboard.escapeKey.wasPressedThisFrame)HideOwnedModal();
                 return;
             }
+            if(conversationRole!=0)StopFluidConversation009();
             conversationRole=0;
             if(!CanInteract)return;
             bool interact=Keyboard.current!=null&&Keyboard.current[GameActionBindings.GetKey("Interact")].wasPressedThisFrame;
@@ -121,6 +124,8 @@ namespace OdysseyOracle
                     Right=root.transform.Find(RefugeNpcAssetCatalog.PartPath(role,6)),Lids=root.transform.Find(RefugeNpcAssetCatalog.PartPath(role,4)),Age=i*.7f};
                 actor.TorsoRest=actor.Torso.localPosition;actor.HeadRest=actor.Head.localRotation;actor.LeftRest=actor.Left.localRotation;
                 actor.RightRest=actor.Right.localRotation;actor.LidsRest=actor.Lids.localScale;
+                actor.RootBasis=root.transform;actor.FluidMouth=root.transform.Find(RefugeNpcAssetCatalog.PartPath(role,3));actor.FluidMouthRest=actor.FluidMouth.localScale;
+                InitializeGuardTapActor009(role,actor);
                 actor.Body=root.AddComponent<CapsuleCollider>();actor.Body.radius=.29f;actor.Body.height=1.82f;actor.Body.center=new Vector3(0,.91f,0);
             }
             if(visualRoot!=null)visualRoot.SetActive(true);RegisterTargets();lookFrame=-1;
@@ -174,7 +179,7 @@ namespace OdysseyOracle
         {
             if(Time.frameCount==openedFrame||!CanInteract||LookTarget()!=role)return;
             if(!session.Hud.TryShowRefugeNpcConversation(this,role==2?"Ilyra · Optional lore":"Bram · Gatekeeper",ConversationBody(role)))return;
-            conversationRole=role;openedFrame=Time.frameCount;
+            conversationRole=role;openedFrame=Time.frameCount;BeginFluidConversation009(role);
             // Ilyra remains optional lore. Only the actual Raykon interaction requests role two.
         }
         string ConversationBody(int role)
@@ -192,39 +197,16 @@ namespace OdysseyOracle
             Actor actor=actors[role-2];if(actor==null||actor.Root==null||!actor.Root.activeInHierarchy)return false;
             root=actor.Root.transform;feet=actor.Feet.position;aim=actor.Interact.position;return true;
         }
-        void LateUpdate()
-        {
-            if(!initialized||visualRoot==null||!visualRoot.activeInHierarchy||!Application.isFocused||session==null||session.Paused)return;
-            float dt=Mathf.Min(Time.unscaledDeltaTime,.05f);if(!Finite(dt)||dt<=0)return;
-            for(int i=0;i<2;i++)
-            {
-                Actor a=actors[i];if(a==null||a.Root==null)continue;a.Age+=dt;float breath=Mathf.Sin(a.Age*1.55f+a.Role*.71f);
-                a.Torso.localPosition=a.TorsoRest+Vector3.up*(breath*.0025f);
-                a.Left.localRotation=a.LeftRest*Quaternion.Euler(Mathf.Sin(a.Age*.7f)*.3f,0,Mathf.Sin(a.Age*.8f)*.35f);
-                a.Right.localRotation=a.RightRest*Quaternion.Euler(Mathf.Sin(a.Age*.63f+.8f)*.3f,0,Mathf.Sin(a.Age*.75f)*.35f);
-                float yaw=0,pitch=0;
-                if(session.Player!=null&&session.Player.ViewCamera!=null)
-                {
-                    Vector3 toward=a.Root.transform.InverseTransformPoint(session.Player.ViewCamera.transform.position)-new Vector3(0,1.68f,0);
-                    if(toward.z>.1f&&toward.sqrMagnitude<64f){yaw=Mathf.Clamp(Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg,-20,20);
-                        pitch=Mathf.Clamp(-Mathf.Atan2(toward.y,new Vector2(toward.x,toward.z).magnitude)*Mathf.Rad2Deg,-8,8);}
-                }
-                float blend=1-Mathf.Exp(-dt*3);a.Yaw=Mathf.Lerp(a.Yaw,yaw,blend);a.Pitch=Mathf.Lerp(a.Pitch,pitch,blend);
-                a.Head.localRotation=a.HeadRest*Quaternion.Euler(a.Pitch,a.Yaw,0);
-                if(a.Blink<0&&a.Age>=a.NextBlink)a.Blink=0;
-                float closed=0;if(a.Blink>=0){a.Blink+=dt;closed=Mathf.Sin(Mathf.Clamp01(a.Blink/.16f)*Mathf.PI);
-                    if(a.Blink>=.16f){a.Blink=-1;a.NextBlink=a.Age+3.2f+Mathf.Sin(a.Age)*.65f;}}
-                a.Lids.localScale=new Vector3(a.LidsRest.x,Mathf.Lerp(a.LidsRest.y,1,closed),a.LidsRest.z);
-                // Original mouth remains static. No voice or lip-sync is fabricated.
-            }
-        }
+        void LateUpdate(){TickFluidNpc009();}
         void SetVisible(bool value){if(visualRoot!=null&&visualRoot.activeSelf!=value){visualRoot.SetActive(value);lookFrame=-1;if(value)RegisterTargets();}}
-        void HideOwnedModal(){if(session!=null&&session.Hud!=null)session.Hud.HideRefugeNpcConversation(this);conversationRole=0;}
+        void HideOwnedModal(){StopFluidConversation009();if(session!=null&&session.Hud!=null)session.Hud.HideRefugeNpcConversation(this);conversationRole=0;}
         void DetachBridge(){if(bridge!=null)bridge.Changed-=QuestChanged;bridge=null;bridgeLifetime=null;quest=default;objectives="";}
         static bool Finite(float value)=>!float.IsNaN(value)&&!float.IsInfinity(value);
-        void OnDisable(){HideOwnedModal();SetVisible(false);DetachBridge();questDirty=true;}
+        void OnDisable(){session?.RefugeActivities?.StopNpcGreeting009(this);HideOwnedModal();SetVisible(false);DetachBridge();questDirty=true;}
         void OnDestroy()
         {
+            session?.RefugeActivities?.StopNpcGreeting009(this);
+            DisposeFluidNpc009();
             DetachBridge();HideOwnedModal();if(visualRoot!=null){visualRoot.SetActive(false);Destroy(visualRoot);}
             visualRoot=null;actors[0]=actors[1]=null;session=null;catalog=null;initialized=false;
         }

@@ -11,11 +11,11 @@ namespace OdysseyOracle
         private static string SelectionCountLabel(int mask)
         {
             int count = SpellIngredientRules.Count(mask);
-            return count == 4 ? "NOVA" : count == 3 ? "ADD FOURTH" : count == 2 ? "PAIR" : count == 1 ? "SINGLE" : "CHOOSE";
+            return count == 4 ? "ULTIMATE ABILITY" : count == 3 ? "TRIPLE" : count == 2 ? "PAIR" : count == 1 ? "SINGLE" : "CHOOSE";
         }
 
         private bool CanOfferTutorialSkip => session != null && session.HasStarted && session.Tutorial != null
-            && !session.Tutorial.Finished && session.World != null && !session.World.IsCoopArena
+            && !session.Tutorial.Finished && session.World != null && session.World.Mode020==WorldMode020.TutorialRefuge
             && !session.Victory && !session.IsDead && !session.IsDowned && !IntroActive && !LoadingActive
             && (session.Opening == null || !session.Opening.IsTransitioning);
 
@@ -25,7 +25,7 @@ namespace OdysseyOracle
             MenuLabel(content, "TutorialPortalSkipHeading", "THE VIOLET PORTAL", 32, Ivory, 62);
             MenuLabel(content, "TutorialPortalSkipExplanation",
                 "Finish your training, or skip the remaining lessons and open the hub portal.\nYour connected party stays in this room.", 19, Muted, 88);
-            tutorialPortalSkipButton = MenuButton(content, "SkipTutorialAtPortal", "SKIP TUTORIAL", SkipTutorialFromMenu, 58);
+            tutorialPortalSkipButton = MenuButton(content, "SkipTutorialAtPortal", "SKIP & ENTER PORTAL", SkipTutorialFromMenu, 58);
             MenuButton(content, "ContinueTutorialAtPortal", "CONTINUE TRAINING", ResumeJourney, 52);
         }
 
@@ -43,13 +43,18 @@ namespace OdysseyOracle
 
         private void BuildTutorialSkipHint()
         {
-            tutorialSkipHint = Label(tutorialPrompt, "TutorialSkipPauseHint", "ESC: PAUSE, THEN SKIP TUTORIAL AT ANY TIME", 12, Muted,
-                TextAnchor.UpperCenter, new Vector2(0, -122), new Vector2(852, 22), new Vector2(.5f, 1));
+            tutorialSkipHint = Label(tutorialPrompt, "TutorialSkipPauseHint", "Esc: pause · Hold Alt: mouse", 12, Muted,
+                TextAnchor.UpperCenter, new Vector2(160, -40), new Vector2(310, 20), new Vector2(.5f, 1));
         }
 
         private void RefreshTutorialSkipAccess()
         {
             bool available = CanOfferTutorialSkip;
+            if(tutorialSkipHint!=null)
+            {
+                string text=session.CursorFree015?"Mouse free · Release Alt to aim · Esc: pause":"Esc: pause · Hold Alt: mouse";
+                if(tutorialSkipHint.text!=text)tutorialSkipHint.text=text;
+            }
             if (tutorialSkipHint != null && tutorialSkipHint.gameObject.activeSelf != available)
                 tutorialSkipHint.gameObject.SetActive(available);
             if (tutorialPortalSkipButton != null) tutorialPortalSkipButton.interactable = available;
@@ -63,7 +68,7 @@ namespace OdysseyOracle
             if (session == null || session.World == null || minimapTitle == null || mapLegend == null) return;
             bool arena = session.World.IsCoopArena;
             bool connected = session.Rooms != null && session.Rooms.Connected;
-            bool coop = session.CoopMode || connected;
+            bool coop = connected ? !(session.Rooms.IsHost && session.Rooms.PlayerCount==1) : session.CoopMode;
             if (!force && minimapContextReady && arena == mapContextArena && coop == mapContextCoop && connected == mapContextConnected) return;
             minimapContextReady = true;
             mapContextArena = arena; mapContextCoop = coop; mapContextConnected = connected;
@@ -72,16 +77,14 @@ namespace OdysseyOracle
                 : coop ? connected ? "TUTORIAL ROOM · CO-OP" : "TUTORIAL ROOM · CO-OP OFFLINE" : "TUTORIAL ROOM · SOLO";
             mapLegend.text = arena
                 ? "GREEN: YOU · GOLD: TOWERS\nRED: MONSTERS · VIOLET: RIFTS\nNORTH IS UP"
-                : "GREEN: YOU · VIOLET: PORTAL\nM: MONSTER PRACTICE · R: RAYKON\nT: TOWER TRAINING";
+                : CurrentRefugeMapLegend;
+            ApplyRefugeMapGeometry(arena);
         }
 
         private void BuildTutorialZoneMapMarkers()
         {
-            if (session == null || session.World == null || !session.World.IsTutorialRefuge || session.World.IsCoopArena) return;
-            // World owns the actual interaction/spawn anchors. UI only projects them.
-            TutorialZoneMapMarker("MonsterPracticeMapZone", "M", session.World.TutorialMonsterPracticePosition, new Color(.87f, .40f, .30f));
-            TutorialZoneMapMarker("RaykonMapZone", "R", session.World.TutorialRaykonPosition, new Color(.54f, .78f, .98f));
-            TutorialZoneMapMarker("TowerTrainingMapZone", "T", session.World.TutorialTowerPracticePosition, Gold);
+            if(session==null||session.World==null)return;
+            BuildRefugeStationMapOverlay();
         }
 
         private void TutorialZoneMapMarker(string name, string glyph, Vector3 position, Color color)
@@ -100,3 +103,18 @@ namespace OdysseyOracle
 // Coordinate Space: Existing 1920x1080 Canvas and unchanged +XZ world-to-minimap projection.
 // Array Formats: Three fixed cold map markers and cached scalar context flags; no runtime native/GPU array or ownership changes.
 // Dependencies/Pointers: Existing session SkipTutorialToHub and pause/resume own state; World owns exact tutorial-zone anchors; no room leave/create call in UI.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing fitted guide/menu Canvas and actual guide view/audio state.
+// Array Formats: Existing bounded UI/state stores; cold immutable65status labels, no frame formatting.
+// Dependencies/Pointers: Original restart/portal/settings/narration/voice/input/achievement owners remain. Root owns source apply and full compile/native/browser/listening acceptance.

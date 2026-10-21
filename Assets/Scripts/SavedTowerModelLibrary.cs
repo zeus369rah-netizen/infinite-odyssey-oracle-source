@@ -12,6 +12,8 @@ namespace OdysseyOracle
         readonly TowerModelLibrary.Template[,] templates=new TowerModelLibrary.Template[4,3];
         readonly Material[] materials=new Material[4];
         bool disposed;
+        TowerElementVisualLibrary elements;
+        public TowerElementVisualLibrary Elements=>elements;
         SavedTowerModelLibrary(TowerModelAssetCatalog assets)
         {
             for(int type=0;type<4;type++)
@@ -24,6 +26,7 @@ namespace OdysseyOracle
                     templates[type,tier-1]=template;
                 }
             }
+            elements=TowerElementVisualLibrary.TryCreate();
         }
         public static bool TryCreate(TowerModelAssetCatalog assets,out SavedTowerModelLibrary library,out string reason)
         {
@@ -38,10 +41,15 @@ namespace OdysseyOracle
         {if(disposed||type<0||type>3)throw new ArgumentOutOfRangeException();return materials[type];}
         public void Dispose()
         {
-            if(disposed)return;disposed=true;
+            if(disposed)return;disposed=true;elements?.Dispose();elements=null;
             for(int type=0;type<4;type++)
             {materials[type]=null;for(int tier=0;tier<3;tier++)templates[type,tier]=null;}
             // AssetDatabase/scene owns every referenced asset. Never Destroy it.
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing tower Head-local/Y-up pivots and accepted target world points remain canonical; foundation/pads/target lock/range unchanged.
+// Array Formats: Existing saved72 meshes/four materials remain borrowed; additive12 original FX templates, two renderers and one fixed96-byte native state/pose pair per instance.
+// Dependencies/Pointers: Existing accepted tier/shot owners feed cosmetics only; Burst fences finish before Object writes. No authority/economy/radius/status/audio/network rewrite; native acceptance pending.

@@ -1,0 +1,13 @@
+{
+  "name": "Oracle.NatureBoundary020",
+  "rootNamespace": "OracleNatureBoundary020",
+  "references": [
+    "Unity.Burst",
+    "Unity.Collections"
+  ],
+  "includePlatforms": [],
+  "allowUnsafeCode": true,
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}

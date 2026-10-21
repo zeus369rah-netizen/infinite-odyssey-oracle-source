@@ -73,6 +73,10 @@ namespace OdysseyOracle
                     burst.Mesh.MarkDynamic();
                     burst.Mesh.SetVertexBufferParams(CosmicNovaGeometry.MaximumVertices,layout);
                     burst.Mesh.SetIndexBufferParams(CosmicNovaGeometry.MaximumIndices,IndexFormat.UInt16);
+                    burst.Mesh.SetVertexBufferData(burst.Vertices,0,0,burst.Vertices.Length,0,
+                        MeshUpdateFlags.DontRecalculateBounds|MeshUpdateFlags.DontValidateIndices);
+                    burst.Mesh.SetIndexBufferData(burst.Indices,0,0,burst.Indices.Length,
+                        MeshUpdateFlags.DontRecalculateBounds|MeshUpdateFlags.DontValidateIndices);
                     burst.Mesh.subMeshCount=CosmicNovaGeometry.PaletteCount;
                     burst.Mesh.bounds=new Bounds(Vector3.zero,Vector3.one*2f);
                     for(int band=0;band<burst.Blocks.Length;band++)burst.Blocks[band]=new MaterialPropertyBlock();

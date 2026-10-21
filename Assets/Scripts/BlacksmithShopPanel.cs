@@ -87,6 +87,8 @@ namespace OdysseyOracle.NextRelease
         private bool initialized, preview, passiveSelected, resumeOnClose;
         private float nextRefresh;
         private Vector2 lastCanvasSize;
+        readonly UnityEngine.UI.Image[] elementUpgradeImages011=new UnityEngine.UI.Image[4];
+        readonly float[] elementUpgradeEnd011=new float[4];int elementUpgradeMask011;
 
         public bool Visible => overlay != null && overlay.gameObject.activeSelf;
         public bool RuntimeBindingsReady => initialized && RuntimeBindingsUsable() && RuntimeViewsUsable();
@@ -138,6 +140,7 @@ namespace OdysseyOracle.NextRelease
         public void Hide(bool restorePreviousPause = true)
         {
             if (!EnsureRuntimeReady() || !Visible) return;
+            ClearElementUpgradeFeedback011();
             overlay.gameObject.SetActive(false);
             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
             if (restorePreviousPause && resumeOnClose) data.SetPaused(false);
@@ -187,10 +190,50 @@ namespace OdysseyOracle.NextRelease
                 new Vector2(0, -245), new Vector2(1312, 526));
             BuildWands();
             BuildPassives();
+            BuildElementUpgradeFeedback011();
             statusText = Text(card, "PurchaseFeedback", "", 18, Ivory, TextAnchor.UpperLeft,
                 new Vector2(0, 0), new Vector2(0, 0), new Vector2(44, 102), new Vector2(1000, 58));
             Button(card, "CloseBlacksmith", "RETURN", new Vector2(1, 0), new Vector2(1, 0),
                 new Vector2(-44, 34), new Vector2(240, 52), () => Hide());
+        }
+
+        void BuildElementUpgradeFeedback011()
+        {
+            for(int element=0;element<4;element++)
+            {
+                // Unused header space after the tabs, above the guidance text; same fitted card.
+                var rect=Rect(card,"AcceptedElementUpgrade"+element,new Vector2(0,1),new Vector2(0,1),
+                    new Vector2(734+48*element,-112),new Vector2(32,32));
+                var image=Paint(rect,data.WandColors[element]);image.raycastTarget=false;
+                image.sprite=OdysseyOracle.OracleElementEmblems.Get(element);image.preserveAspect=true;image.enabled=false;
+                elementUpgradeImages011[element]=image;
+            }
+        }
+        /// <summary>The bound shop calls this only after its existing save transaction succeeds.</summary>
+        public void ShowAcceptedElementUpgrade011(int element)
+        {
+            if(!initialized||preview||!Visible||element<0||element>3||elementUpgradeImages011[element]==null)return;
+            elementUpgradeEnd011[element]=Time.unscaledTime+.55f;elementUpgradeMask011|=1<<element;
+            Color tint=data.WandColors[element];tint.a=.8f;elementUpgradeImages011[element].color=tint;
+            elementUpgradeImages011[element].enabled=true;
+        }
+        void TickElementUpgradeFeedback011()
+        {
+            if(elementUpgradeMask011==0)return;
+            if(!Visible||!Application.isFocused){ClearElementUpgradeFeedback011();return;}
+            float now=Time.unscaledTime;
+            for(int element=0;element<4;element++)if((elementUpgradeMask011&(1<<element))!=0)
+            {
+                var image=elementUpgradeImages011[element];float remaining=elementUpgradeEnd011[element]-now;
+                if(image==null||remaining<=0){if(image!=null)image.enabled=false;elementUpgradeMask011&=~(1<<element);continue;}
+                Color tint=data.WandColors[element];tint.a=.8f*Mathf.Clamp01(remaining/.55f);image.color=tint;
+            }
+        }
+        void ClearElementUpgradeFeedback011()
+        {
+            if(elementUpgradeMask011==0)return;
+            for(int element=0;element<4;element++)if(elementUpgradeImages011[element]!=null)elementUpgradeImages011[element].enabled=false;
+            elementUpgradeMask011=0;
         }
 
         private void BuildWands()
@@ -248,6 +291,7 @@ namespace OdysseyOracle.NextRelease
         private void Update()
         {
             if (!EnsureRuntimeReady()) return;
+            TickElementUpgradeFeedback011();
             var hint = data.DrawHoverHint ? InteractionHint : "";
             hoverText.text = hint;
             hoverText.gameObject.SetActive(!string.IsNullOrEmpty(hint));
@@ -421,6 +465,7 @@ namespace OdysseyOracle.NextRelease
 
         private void HideOwnedVisuals()
         {
+            ClearElementUpgradeFeedback011();
             var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             if (selected != null && canvasRoot != null && selected.transform.IsChildOf(canvasRoot))
                 EventSystem.current.SetSelectedGameObject(null);
@@ -551,3 +596,7 @@ namespace OdysseyOracle.NextRelease
         }
     }
 }
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted elemental shop/UI/listener or cosmetic atlas space; no authority or saved-key changes.
+// Array Formats: Four bounded clip/image identities and accepted-element bits; existing12models/fourcuevoices and workshop mesh.
+// Dependencies/Pointers: Root follow-up imports four retained generated cues; baseline/replay/request failure stays silent, no hot loads/new audio sources or media/provider work here.

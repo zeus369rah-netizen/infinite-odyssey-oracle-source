@@ -28,7 +28,7 @@ namespace OdysseyOracle
             {
                 MeshFilter filter = filters[i];
                 if (filter.sharedMesh == null) continue;
-                Bounds local = filter.sharedMesh.bounds;
+                Bounds local = SpiderLegPresentation009.AuthorityBounds(filter.sharedMesh);
                 Matrix4x4 toActor = worldToActor * filter.transform.localToWorldMatrix;
                 Transform arm = filter.transform.IsChildOf(leftArm) ? leftArm :
                     filter.transform.IsChildOf(rightArm) ? rightArm : null;
@@ -117,3 +117,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original actor-local metres, +Y up/+Z forward; existing1.20 body scale only.
+// Array Formats: Eight rigid spider legs and bounded numeric job outputs; baseline admission geometry remains authoritative.
+// Dependencies/Pointers: New SpiderLegPresentation009 lease owns only visuals/native pose scratch; original V1/V2 lifetime and host damage remain.

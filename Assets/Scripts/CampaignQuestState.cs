@@ -3,7 +3,7 @@ using System;
 namespace OdysseyOracle
 {
     // # ARCHITECTURE SNAPSHOT
-    // Pure bounded campaign state: host-owned scalar IDs/flags, three150s target stages (180s admission hard deadline).
+    // Pure bounded campaign state: host-owned scalar IDs/flags, eight150s target levels (180s admission hard deadline).
     // No Unity objects, wallet IO, transport, native allocations or client authority.
     public enum CampaignPhase { None, Refuge, Preparing, Defense, StageClear, Complete, Failed }
     [Serializable] public sealed class CampaignPeerSnapshot
@@ -16,9 +16,10 @@ namespace OdysseyOracle
     {
         public string campaign;
         public int stage, completed, epoch, revision, phase;
+        public bool firstStageCoreLoadout;
         public CampaignPeerSnapshot[] peers;
     }
-    public sealed class CampaignQuestState
+    public sealed partial class CampaignQuestState
     {
         public const int StageCount = CampaignStagePacing.StageCount, StageSeconds = CampaignStagePacing.StageSeconds, MaximumCapacity = 8;
         public const int SmithRole = 1, RunekeeperRole = 2, RequiredVisits = 3, FourCoreTowers = 15;
@@ -26,6 +27,7 @@ namespace OdysseyOracle
         readonly int capacity;
         int count;
         string activeRun;
+        bool firstStageCoreLoadout;
         public string CampaignId { get; private set; }
         public CampaignPhase Phase { get; private set; }
         public int StageNumber { get; private set; }
@@ -42,10 +44,23 @@ namespace OdysseyOracle
         {
             if (!ValidNonce(campaignId) || !ValidMembers(members, capacity) || members.Length < 1) return false;
             CampaignId = campaignId; StageNumber = 1; CompletedStages = 0;
-            Phase = CampaignPhase.Refuge; Epoch = Revision = 1; activeRun = null;
+            Phase = CampaignPhase.Refuge; Epoch = Revision = 1; activeRun = null; firstStageCoreLoadout = false;
             for (int i = 0; i < peers.Length; i++) peers[i] = null;
             count = 0; ReplaceMembers(members); return true;
         }
+        // Only the validated room-start callback chooses this initial baseline loadout.
+        // This is permission, never an NPC visit or purchased/upgrade credit.
+        public bool BeginFromPortal(string campaignId, ulong[] members)
+        {
+            if (members == null || members.Length > 2 || !Begin(campaignId, members)) return false;
+            firstStageCoreLoadout = true;
+            for (int i = 0; i < count; i++)
+            { peers[i].towers = FourCoreTowers; peers[i].ready = peers[i].participating = true; }
+            Phase = CampaignPhase.Preparing; activeRun = null; Epoch++; Revision++;
+            return true;
+        }
+        bool ReadyEligible(CampaignPeerSnapshot peer) => peer.towers == FourCoreTowers &&
+            (peer.visits == RequiredVisits || firstStageCoreLoadout && StageNumber == 1);
         public bool ReplaceMembers(ulong[] members)
         {
             if (Phase == CampaignPhase.None || !ValidMembers(members, capacity)) return false;
@@ -56,6 +71,8 @@ namespace OdysseyOracle
             for (int i = 0; i < members.Length; i++) kept[i] = Find(members[i]) ?? new CampaignPeerSnapshot { id = members[i] };
             count = members.Length;
             for (int i = 0; i < peers.Length; i++) peers[i] = kept[i];
+            if (firstStageCoreLoadout && StageNumber == 1)
+                for (int i = 0; i < count; i++) peers[i].towers = FourCoreTowers;
             if (Phase == CampaignPhase.Preparing) AbortPreparation();
             else if (Phase == CampaignPhase.Refuge)
             {
@@ -82,7 +99,7 @@ namespace OdysseyOracle
         {
             var peer = Find(member);
             if (Phase != CampaignPhase.Refuge || peer == null || ready &&
-                (peer.visits != RequiredVisits || peer.towers != FourCoreTowers)) return false;
+                !ReadyEligible(peer)) return false;
             if (peer.ready == ready) return false;
             peer.ready = ready; Revision++; return true;
         }
@@ -91,7 +108,7 @@ namespace OdysseyOracle
             get
             {
                 if (Phase != CampaignPhase.Refuge || count < 1) return false;
-                for (int i = 0; i < count; i++) if (!peers[i].ready || peers[i].visits != RequiredVisits || peers[i].towers != FourCoreTowers) return false;
+                for (int i = 0; i < count; i++) if (!peers[i].ready || !ReadyEligible(peers[i])) return false;
                 return true;
             }
         }
@@ -112,11 +129,11 @@ namespace OdysseyOracle
             for (int i = 0; i < count; i++) { peers[i].ready = false; peers[i].participating = false; }
             Phase = CampaignPhase.Refuge; activeRun = null; Epoch++; Revision++; return true;
         }
-        public bool CompleteDefense(string hostRun, float remaining, bool survived, int acceptedAdmissions = 0)
+        public bool CompleteDefense(string hostRun, float remaining, bool survived, int acceptedAdmissions = 0, int completedWaves = 0)
         {
             if (Phase != CampaignPhase.Defense || hostRun != activeRun ||
-                float.IsNaN(remaining) || float.IsInfinity(remaining) || remaining < 0f || remaining > StageSeconds || acceptedAdmissions < 0 || acceptedAdmissions > CampaignStagePacing.AdmissionsPerStage ||
-                survived && (remaining != 0f || acceptedAdmissions != CampaignStagePacing.AdmissionsPerStage)) return false;
+                float.IsNaN(remaining) || float.IsInfinity(remaining) || remaining < 0f || remaining > StageSeconds || acceptedAdmissions < 0 || acceptedAdmissions > CampaignStagePacing.StageAdmissions(StageNumber) ||
+                survived && (remaining != 0f || acceptedAdmissions != CampaignStagePacing.StageAdmissions(StageNumber) || completedWaves != CampaignStagePacing.WavesPerStage)) return false;
             if (!survived) Phase = CampaignPhase.Failed;
             else
             {
@@ -128,7 +145,7 @@ namespace OdysseyOracle
         public bool ReturnToRefuge(ulong member)
         {
             if (Phase != CampaignPhase.StageClear || Find(member) == null || CompletedStages != StageNumber || StageNumber >= StageCount) return false;
-            StageNumber++;
+            StageNumber++; firstStageCoreLoadout = false;
             for (int i = 0; i < count; i++)
             { peers[i].visits = 0; peers[i].ready = false; peers[i].participating = false; }
             Phase = CampaignPhase.Refuge; Epoch++; Revision++; return true;
@@ -148,7 +165,7 @@ namespace OdysseyOracle
         public CampaignSnapshot Snapshot()
         {
             var snapshot = new CampaignSnapshot { campaign = CampaignId, stage = StageNumber, completed = CompletedStages,
-                phase = (int)Phase, epoch = Epoch, revision = Revision, peers = new CampaignPeerSnapshot[count] };
+                phase = (int)Phase, epoch = Epoch, revision = Revision, firstStageCoreLoadout = firstStageCoreLoadout, peers = new CampaignPeerSnapshot[count] };
             for (int i = 0; i < count; i++) snapshot.peers[i] = new CampaignPeerSnapshot { id = peers[i].id,
                 visits = peers[i].visits, towers = peers[i].towers, ready = peers[i].ready, participating = peers[i].participating };
             return snapshot;
@@ -159,6 +176,7 @@ namespace OdysseyOracle
                 s.stage < 1 || s.stage > StageCount || s.completed < 0 || s.completed > StageCount ||
                 s.phase < (int)CampaignPhase.Refuge || s.phase > (int)CampaignPhase.Failed || s.epoch < 1 || s.revision < 1 ||
                 s.peers == null || s.peers.Length < 1 || s.peers.Length > capacity) return false;
+            if (s.firstStageCoreLoadout && s.stage != 1) return false;
             var phase = (CampaignPhase)s.phase;
             if ((phase == CampaignPhase.Refuge || phase == CampaignPhase.Preparing || phase == CampaignPhase.Defense || phase == CampaignPhase.Failed) && s.completed != s.stage - 1 ||
                 phase == CampaignPhase.StageClear && (s.completed != s.stage || s.stage >= StageCount) ||
@@ -168,8 +186,8 @@ namespace OdysseyOracle
                 var p = s.peers[i];
                 if (p == null || p.visits < 0 || p.visits > RequiredVisits || p.towers != 0 && p.towers != FourCoreTowers ||
                     p.visits == RequiredVisits && p.towers != FourCoreTowers ||
-                    p.participating && (p.visits != RequiredVisits || p.towers != FourCoreTowers) ||
-                    p.ready && (p.visits != RequiredVisits || p.towers != FourCoreTowers)) return false;
+                    (p.participating || p.ready) && (p.towers != FourCoreTowers ||
+                        p.visits != RequiredVisits && !s.firstStageCoreLoadout)) return false;
                 for (int j = 0; j < i; j++) if (s.peers[j].id == p.id) return false;
             }
             bool host = false; for (int i=0;i<s.peers.Length;i++) host |= s.peers[i].id == 0;
@@ -193,8 +211,24 @@ namespace OdysseyOracle
             return true;
         }
         // Enemy/attack IDs remain stage-local. Only reward IDs use this bounded
-        // campaign namespace, preventing three stage resets from reusing a forge claim.
-        public static int ScopedDropId(int stage, int enemyId) => stage >= 1 && stage <= StageCount && enemyId >= 1 && enemyId <= 511
-            ? (stage - 1) * 512 + enemyId : 0;
+        // campaign namespace, preventing eight level resets from reusing a forge claim.
+        public static int ScopedDropId(int stage, int enemyId) => CampaignStagePacing.ValidStage(stage) &&
+            enemyId >= 1 && enemyId <= CampaignStagePacing.StageAdmissions(stage)
+            ? CampaignStagePacing.FirstRewardId(stage) + enemyId - 1 : 0;
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing host-owned campaign identities/phase and accepted arena world coordinates.
+// Array Formats: Explicit stage-one baseline entitlement scalar; inherited bounded peers and real arena barrier.
+// Dependencies/Pointers: Room validates the full ready roster before first Preparing; no fabricated NPC visits, HP, clock, reward or protocol change.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.

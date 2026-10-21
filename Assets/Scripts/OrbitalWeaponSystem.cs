@@ -235,18 +235,20 @@ namespace OdysseyOracle
         void UpdateReleased(Weapon weapon, int index, float dt)
         {
             float distance = Mathf.Min(FlightSpeed * dt, weapon.RemainingRange);
-            if (Sweep(weapon.Position, weapon.Direction, distance, false, out RaycastHit hit))
+            if (Sweep(weapon.Position, weapon.Direction, distance, false, out ProjectileContact015 hit))
             {
-                Vector3 impact = hit.distance <= .0001f ? hit.collider.ClosestPoint(weapon.Position) : hit.point;
-                OracleEnemy enemy = hit.collider.GetComponentInParent<OracleEnemy>();
+                if(hit.Blocked){BeginReturn(weapon,index);return;}
+                Vector3 impact=hit.Point;
+                OracleEnemy enemy=combat.ResolveMonsterContact015(hit);
+                if(hit.HasMonster&&enemy==null){BeginReturn(weapon,index);return;}
                 if (enemy != null && enemy.Targetable)
                 {
-                    enemy.TakeHit(10f * weapon.DamageScale);
+                    enemy.TakeHit(10f * weapon.DamageScale,weapon.Direction,weapon.Element>=0&&weapon.Element<4?1<<weapon.Element:0,impact,true);
                     enemy.ApplyElementEffect(weapon.Element, weapon.Direction);
                 }
                 else
                 {
-                    BreakableVoxelWall wall = hit.collider.GetComponentInParent<BreakableVoxelWall>();
+                    BreakableVoxelWall wall = hit.WorldCollider!=null?hit.WorldCollider.GetComponentInParent<BreakableVoxelWall>():null;
                     if (wall != null) wall.DamageAt(impact, .3f);
                 }
                 combat.SpawnImpact(impact, new Color(.5f, 1f, .88f), .36f);
@@ -283,7 +285,7 @@ namespace OdysseyOracle
             {
                 float distance = Mathf.Min(offset.magnitude, ReturnSpeed * dt);
                 if (weapon.ReturnElapsed > 3f ||
-                    Sweep(weapon.Position, offset.normalized, distance, true, out RaycastHit blocked))
+                    Sweep(weapon.Position, offset.normalized, distance, true, out ProjectileContact015 blocked))
                     weapon.Dissolving = true;
                 else
                 {
@@ -310,34 +312,10 @@ namespace OdysseyOracle
             PlaceInOrbit(weapon, index);
         }
 
-        bool Sweep(Vector3 origin, Vector3 direction, float distance, bool ignoreEnemies, out RaycastHit nearest)
+        bool Sweep(Vector3 origin,Vector3 direction,float distance,bool ignoreEnemies,out ProjectileContact015 nearest)
         {
-            nearest = default;
-            if (distance <= .00001f || direction.sqrMagnitude <= .00001f) return false;
-            RaycastHit[] hits = sweepBuffer;
-            int count = Physics.SphereCastNonAlloc(origin, CollisionRadius, direction, hits, distance,
-                ~0, QueryTriggerInteraction.Ignore);
-            if (count == hits.Length)
-            {
-                // Safe complete fallback only when the fixed buffer is crowded.
-                hits = Physics.SphereCastAll(origin, CollisionRadius, direction, distance, ~0, QueryTriggerInteraction.Ignore);
-                count = hits.Length;
-            }
-            float nearestDistance = float.PositiveInfinity;
-            bool found = false;
-            for (int i = 0; i < count; i++)
-            {
-                Collider collider = hits[i].collider;
-                if (collider == null || combat.IsPlayerCollider(collider) ||
-                    collider.GetComponentInParent<OracleProjectile>() != null) continue;
-                OracleEnemy enemy = collider.GetComponentInParent<OracleEnemy>();
-                if (enemy != null && (ignoreEnemies || !enemy.Targetable)) continue;
-                if (hits[i].distance >= nearestDistance) continue;
-                nearest = hits[i];
-                nearestDistance = hits[i].distance;
-                found = true;
-            }
-            return found;
+            return combat.SweepProjectileContact015(origin,CollisionRadius,direction,distance,
+                !ignoreEnemies,true,false,null,0,out nearest);
         }
 
         void CreateSharedWandVisual()
@@ -425,3 +403,13 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres/Y-up, original admission-cached oriented monster box; no gameplay geometry/HP changes.
+// Array Formats: Existing48 actor/projectile pools consume owned numeric48 snapshots and fixed World buffers.
+// Dependencies/Pointers: Atomic numeric sweep consumer migration; old triggers disabled only with complete packet; root owns native acceptance and actual source integration.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authoritative legacy Combat/World/revision and actor pool lifetime, world metres/Y-up.
+// Array Formats: Existing48 actors with bounded feedback values/Morton jobs and one synchronous accepted-damage observation; no extra damage, mesh or material owner.
+// Dependencies/Pointers: Positive actual HP loss owns immediate cached MPB red flash and observer dispatch. Root composes this exact work projection and verifies native collision/flash/audio/network/GC; replicas never move authoritatively.

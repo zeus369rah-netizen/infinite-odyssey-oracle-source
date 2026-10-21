@@ -43,7 +43,7 @@ namespace OdysseyOracle
             if(!destroying&&towerPracticeSuppressedShrine!=null)towerPracticeSuppressedShrine.enabled=towerPracticeShrineWasEnabled;
             towerPracticeSuppressedShrine=null;
             if(!object.ReferenceEquals(target,null))enemies.Remove(target);
-            if(target!=null){target.gameObject.SetActive(false);Destroy(target.gameObject);}
+            if(target!=null)RetireEnemy015(target);
             if(!destroying){targetGrid?.Clear();crowdSpacing?.Clear();towerAttackSlots.Clear();}
         }
     }
@@ -52,3 +52,8 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Existing OracleCombat owns its one fixed real enemy and existing native grid/crowd stores; no parallel HP/damage owner.
 // Exact World foot anchor, same TakeHit authority, zero rewards through existing defeat exclusion; teardown never allocates a replacement root.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres and original actor-local+Z/Y-up; pooled lifetime only.
+// Array Formats: Exactly48 persistent actor slots/four retained original templates/17 reusable part slots per actor.
+// Dependencies/Pointers: Existing HP/projectile/attack owners remain; root integrates guarded hunks; native/Burst/memory acceptance pending.

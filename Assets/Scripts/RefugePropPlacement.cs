@@ -36,9 +36,12 @@ namespace OdysseyOracle
                 if(mount==null||(mount.localPosition-V(RefugePlacementPolicy.LanternMount)).sqrMagnitude>1e-8f)throw new InvalidOperationException("Saved lantern mount changed.");}
         }
         public static TutorialRoomV2Catalog.PlacementReport Place(Transform parent,TutorialRoomV2Catalog catalog,TutorialRoomV2Layout layout)
+            =>Place(parent,catalog,layout,out _);
+        public static TutorialRoomV2Catalog.PlacementReport Place(Transform parent,TutorialRoomV2Catalog catalog,TutorialRoomV2Layout layout,out LanternSwingOwner swings)
         {
+            swings=null;
             if(parent==null||layout==null)throw new ArgumentNullException("Refuge ownership and layout required.");
-            ValidateCatalog(catalog);var report=new TutorialRoomV2Catalog.PlacementReport{requested=layout.PropPlacements.Length,missing=Array.Empty<string>()};
+            ValidateCatalog(catalog);DungeonWorld world=parent.GetComponentInParent<DungeonWorld>();var report=new TutorialRoomV2Catalog.PlacementReport{requested=layout.PropPlacements.Length,missing=Array.Empty<string>()};
             foreach(TutorialRoomV2Layout.Placement placement in layout.PropPlacements)
             {
                 GameObject instance=UnityEngine.Object.Instantiate(catalog.Get(placement.Id),parent,false);
@@ -48,9 +51,20 @@ namespace OdysseyOracle
                 // owned floor solids prevent walking through dressing in this room.
                 if(placement.Id!=PropId.WallLantern){var e=RefugePlacementPolicy.Expected(placement.Id);BoxCollider solid=instance.AddComponent<BoxCollider>();
                     solid.center=(V(e.Min)+V(e.Max))*.5f;solid.size=V(e.Max)-V(e.Min);}
+                if(placement.Id==PropId.BrazierRing)world?.BindRefugeBrazier020(instance.transform,report.placed);
+                if(placement.Id==PropId.WallLantern)
+                {
+                    if(LanternSwingOwner.TryPrepare(instance.transform,parent,catalog.ReactiveLantern,ref swings))report.renderers++;
+                    else world?.BindRefugeLanternStatic020(instance.transform);
+                }
                 report.placed++;report.renderers++;
             }return report;
         }
         static Vector3 V(TutorialRoomV2Layout.P3 p)=>new Vector3(p.X,p.Y,p.Z);
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: saved original prop instance and authored fire anchor; original collider/placement unchanged.
+// Array Formats: one cold existing flame presentation and reaction binding per brazier; no live prefab mutation.
+// Dependencies/Pointers: World owns animated fire/fuel; neutral catalog assets unchanged, exact missing brazier path repaired; native visible flame/fallback acceptance pending.

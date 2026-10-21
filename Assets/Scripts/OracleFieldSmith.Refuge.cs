@@ -22,7 +22,7 @@ namespace OdysseyOracle
             !string.IsNullOrEmpty(session.Defense.ForgeRunId);
         public bool AwaitingRefugeVisit=>InCampaignRefuge&&(forgeCampaign.LocalVisitMask&CampaignQuestState.SmithRole)==0;
         bool RefugeVisitAccepted=>!InCampaignRefuge||!AwaitingRefugeVisit;
-        bool ForgeActive=>RunActive||InCampaignRefuge;
+        bool ForgeActive=>InCampaignRefuge;
 
         void RefreshCampaignSaveFence()
         {
@@ -71,7 +71,7 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Unity world metres/Y-up/XZ; this partial borrows the existing town Smith and HUD.
 // Four core types use the existing CoopMatch adapter and host-owned campaign account.
-// ActorRoot remains owned solely by the arena owner; no saves, native buffers or quest bits are written.
+// Legacy actorRoot cleanup remains local; refuge art is borrowed, with no arena spawn, save write or quest grant.
 
 // # ARCHITECTURE SNAPSHOT
 // Existing metre/Y-up/XZ actor space, host Forge ledger and sole combat owners remain.
@@ -80,3 +80,8 @@ namespace OdysseyOracle
 // World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
 // Bounded cached collider/root references only; no new economy/native buffers or quest bits.
 // Root owns Unity integration and native acceptance; this is a guarded work candidate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Actual cleared-level monster portal world anchors and refuge-only Smith; stable same-party campaign identity.
+// Array Formats: Bounded cold8-point reach job and existing phase/ready/Forge stores; no new visual/actor/wire field.
+// Dependencies/Pointers: Existing host phase/epoch/pose/LOS and interlevel visits/readiness own progression; no midwave exit, battlefield shop or SDK session reset.

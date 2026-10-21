@@ -45,9 +45,7 @@ namespace OdysseyOracle
         public static bool ValidMask(int value) => value >= 1 && value <= 15;
         public static bool ValidCastMask(int value)
         {
-            if (!ValidMask(value)) return false;
-            int rest = value & (value - 1);
-            return value == 15 || rest == 0 || (rest & (rest - 1)) == 0;
+            return ValidMask(value);
         }
         public static bool ValidState(int prepared, int confirmedMask, int confirmedElement)
         {
@@ -99,3 +97,8 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Unity metres, Y-up/XZ; four ingredient bits and caller-owned four-double recovery timestamps.
 // Existing host/solo owners retain simulation clocks, pooled48 projectiles and private native memory lifetimes.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.

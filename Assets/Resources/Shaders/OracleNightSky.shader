@@ -10,6 +10,11 @@ Shader "OdysseyOracle/OracleNightSky"
         _MoonBrightness("Moon brightness",Range(0,1))=0.38
         _StarBrightness("Sparse star brightness",Range(0,1))=0.36
         _CloudAmount("Subtle distant wisps",Range(0,1))=0.20
+        _CycleDaylight020("Daylight weight",Range(0,1))=0
+        _CycleNight020("Night state",Range(0,1))=1
+        _CycleStorm020("Night storm weight",Range(0,1))=0
+        _CycleTwilight020("Twilight weight",Range(0,1))=0
+        _CycleSunDirection020("Session key sky direction",Vector)=(0,.67,-.74,0)
     }
     SubShader
     {
@@ -36,6 +41,11 @@ Shader "OdysseyOracle/OracleNightSky"
                 float _MoonBrightness;
                 float _StarBrightness;
                 float _CloudAmount;
+                float _CycleDaylight020;
+                float _CycleNight020;
+                float _CycleStorm020;
+                float _CycleTwilight020;
+                float4 _CycleSunDirection020;
             CBUFFER_END
 
             struct Attributes
@@ -77,8 +87,17 @@ Shader "OdysseyOracle/OracleNightSky"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 d=normalize(input.direction);
                 float upper=smoothstep(0.0,.90,saturate(d.y));
-                float3 color=lerp(_HorizonColor.rgb,_ZenithColor.rgb,upper);
-                color=lerp(_LowerColor.rgb,color,smoothstep(-.45,.06,d.y));
+                float3 nightColor=lerp(_HorizonColor.rgb,_ZenithColor.rgb,upper);
+                nightColor=lerp(_LowerColor.rgb,nightColor,smoothstep(-.45,.06,d.y));
+                float3 dayColor=lerp(float3(.10,.16,.26),float3(.18,.29,.43),upper);
+                dayColor=lerp(float3(.11,.15,.21),dayColor,smoothstep(-.45,.06,d.y));
+                float daylight=saturate(_CycleDaylight020);
+                float3 color=lerp(nightColor,dayColor,daylight);
+                float horizon=exp2(-abs(d.y-.035)*13.0);
+                float stormBreak=.58+.42*sin(d.x*2.3+d.y*1.7);
+                float visibleStorm=saturate(_CycleStorm020)*(1.0-saturate(_CycleTwilight020));
+                color+=float3(.24,.012,.075)*horizon*stormBreak*visibleStorm;
+                color+=float3(.018,.008,.004)*horizon*saturate(_CycleTwilight020);
 
                 // World-direction functions have no panoramic UV seam or finite edge.
                 // Two static, low-frequency waves suggest sparse, quiet cloud wisps.
@@ -93,17 +112,23 @@ Shader "OdysseyOracle/OracleNightSky"
                 float starDistance=length(frac(grid)-starPosition);
                 float aa=max(fwidth(starDistance),.018);
                 float star=(1.0-smoothstep(.018,.075+aa,starDistance))*step(.9958,seed.z);
-                star*=smoothstep(.015,.20,d.y)*(1.0-cloud*.65);
+                float nightWeight=saturate(_CycleNight020)*(1.0-saturate(_CycleTwilight020));
+                star*=smoothstep(.015,.20,d.y)*(1.0-cloud*.65)*nightWeight;
                 color+=star*_StarBrightness*lerp(float3(.62,.74,1.0),float3(1.0,.92,.78),seed.x);
 
-                float3 moonDirection=normalize(_MoonDirection.xyz);
+                float3 moonDirection=normalize(_CycleSunDirection020.xyz);
                 float moonDistance=length(d-moonDirection);
                 float moonAA=max(fwidth(moonDistance),.0004);
                 float disc=1.0-smoothstep(.020-moonAA,.020+moonAA,moonDistance);
                 float halo=exp2(-moonDistance*moonDistance*170.0)*.028;
                 // Soft tonal shading keeps the small disc quiet without an asset.
                 float moonFace=.66+.34*saturate(dot(d,float3(-.30,.40,.86))+.45);
-                color+=_MoonColor.rgb*_MoonBrightness*(disc*moonFace+halo);
+                float moonWeight=nightWeight;
+                color+=_MoonColor.rgb*_MoonBrightness*(disc*moonFace+halo)*moonWeight;
+                float sunAA=max(fwidth(moonDistance),.0004);
+                float sunDisc=1.0-smoothstep(.020-sunAA,.020+sunAA,moonDistance);
+                float sunHalo=exp2(-moonDistance*moonDistance*170.0)*.006+exp2(-moonDistance*moonDistance*32.0)*.0015;
+                color+=float3(.98,.87,.69)*(sunDisc*.10+sunHalo)*daylight;
                 return half4(max(color,0.0),1.0);
             }
             ENDHLSL
@@ -111,3 +136,7 @@ Shader "OdysseyOracle/OracleNightSky"
     }
     Fallback Off
 }
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Normalized world sky direction, Y-up; original static fallback geometry and star lattice remain unchanged.
+// Array Formats: Existing scalar fallback controls plus four cycle weights; no textures, buffers, additional passes, or allocations.
+// Dependencies/Pointers: Atmosphere writes only declared properties from the accepted cycle view, including the exact borrowed-key direction. Fallback supports day/night, twilight, storm, moon/star fades, and a faint shader-local sun halo; primary sky retains the softened aurora. No light, weather, clock, camera-postprocess, or render-settings ownership.

@@ -9,7 +9,7 @@ namespace OdysseyOracle
     // No self Update, per-voxel objects, damage, target query, audio source or gameplay collider.
     // Catalog owns saved mesh/material assets; provider only borrows them. This instance owns at most six animated groups.
     [DisallowMultipleComponent]
-    public sealed class SavedTowerModelPresentation:MonoBehaviour
+    public sealed partial class SavedTowerModelPresentation:MonoBehaviour
     {
         static readonly int EmissionId=Shader.PropertyToID("_EmissionColor");
         readonly Transform[] groups=new Transform[TowerModelRecipes.GroupCount];
@@ -56,7 +56,7 @@ namespace OdysseyOracle
                 filters[i].sharedMesh=template.Groups[i];
                 renderers[i].enabled=!destroyed&&template.Groups[i]!=null;
             }
-            boltVisible=true;
+            boltVisible=true;ApplyElementPresentationTier();
         }
         // Bind only after Director has committed/reflected the host-owned building rank.
         // A shop button or a pending client request must never call this method.
@@ -74,19 +74,21 @@ namespace OdysseyOracle
             if(!initialized||destroyed||!Finite(acceptedPrimary)||!state.OnAcceptedShot(serial,acceptedInterval))return false;
             Vector3 local=transform.InverseTransformPoint(acceptedPrimary);local.y=0;
             if(local.sqrMagnitude>.0001f){targetYaw=Quaternion.LookRotation(local.normalized,Vector3.up);groups[1].localRotation=targetYaw;}
+            elementalPresentation?.AcceptedShot(serial,VisualMuzzle,acceptedPrimary);
             return true;
         }
         public bool ApplyAcceptedCooldown(float secondsRemaining,float interval)
             =>initialized&&!destroyed&&state.ApplyAcceptedCooldown(secondsRemaining,interval);
         public void OnAcceptedDestroyed()
         {
-            if(!initialized||destroyed)return;destroyed=true;
+            if(!initialized||destroyed)return;destroyed=true;StopElementPresentation();
             for(int i=0;i<renderers.Length;i++)renderers[i].enabled=false;
         }
         public void Tick(float deltaTime,bool simulationActive,bool nearbyDecorations)
         {
             if(!initialized||destroyed||!simulationActive||float.IsNaN(deltaTime)||float.IsInfinity(deltaTime)||deltaTime<0||deltaTime>1)return;
             TowerModelPose p=state.Tick(deltaTime,nearbyDecorations);
+            TickElementPresentation(deltaTime,nearbyDecorations);
             groups[1].localRotation=Quaternion.Slerp(groups[1].localRotation,targetYaw,Mathf.Clamp01(deltaTime*9f));
             groups[2].localPosition=new Vector3(0,0,p.Recoil);groups[2].localRotation=Quaternion.Euler(p.Pitch,0,0);
             groups[3].localPosition=new Vector3(0,p.CoreLift,0);groups[3].localRotation=Quaternion.Euler(0,p.CoreYaw,0);groups[3].localScale=Vector3.one*p.CoreScale;
@@ -99,3 +101,8 @@ namespace OdysseyOracle
         static bool Finite(Vector3 p)=>!float.IsNaN(p.x)&&!float.IsInfinity(p.x)&&!float.IsNaN(p.y)&&!float.IsInfinity(p.y)&&!float.IsNaN(p.z)&&!float.IsInfinity(p.z);
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing tower Head-local/Y-up pivots and accepted target world points remain canonical; foundation/pads/target lock/range unchanged.
+// Array Formats: Existing saved72 meshes/four materials remain borrowed; additive12 original FX templates, two renderers and one fixed96-byte native state/pose pair per instance.
+// Dependencies/Pointers: Existing accepted tier/shot owners feed cosmetics only; Burst fences finish before Object writes. No authority/economy/radius/status/audio/network rewrite; native acceptance pending.

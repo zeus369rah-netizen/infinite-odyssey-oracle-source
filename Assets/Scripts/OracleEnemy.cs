@@ -42,7 +42,7 @@ namespace OdysseyOracle
             windup > 0f ? GuardianAttackPhase.Windup : strikeRemaining > 0f ? GuardianAttackPhase.Strike :
             attackCooldown > 0f ? GuardianAttackPhase.Recovery : GuardianAttackPhase.Ready;
         public int AttackPresentationSequence { get; private set; }
-        public int AttackPresentationStyle => (pendingTowerVolley || ranged && pendingTowerAttack) &&
+        public int AttackPresentationStyle => TowerAggressionAllowed011 && (pendingTowerVolley || ranged && pendingTowerAttack) &&
             (windup > 0f || strikeRemaining > 0f) ? 2 : ranged ? 1 : 0;
         public float AttackWindupSeconds => pendingTowerVolley ? Mathf.Max(.95f, configuredWindup) : configuredWindup;
         public float AttackStrikeSeconds => ranged || pendingTowerVolley ? .12f : .18f;
@@ -69,15 +69,15 @@ namespace OdysseyOracle
         int crowdMotionFrame = -1;
         GroundedGolemMotion bodyMotion;
         MonsterVisualLease cosmeticParts;
-        internal PlacedElementShrine AttackTower => blockingTower;
+        internal PlacedElementShrine AttackTower => TowerAggressionAllowed011 ? blockingTower : null;
         internal OracleShrine AttackCore => coreFan && owner != null && !IsAggroedOnPlayer &&
-            (blockingTower == null || blockingTower.IsDestroyed) ? owner.Shrine : null;
+            (!TowerAggressionAllowed011 || blockingTower == null || blockingTower.IsDestroyed) ? owner.Shrine : null;
         bool attackFan, coreFan;
         public bool AttackSlotReady { get; private set; }
         public Vector3 TowerApproachPoint { get; private set; }
         public Vector3 AttackApproachPoint => TowerApproachPoint;
         public bool IsCoreAttackFan => attackFan && coreFan;
-        public int TargetTowerId => blockingTower != null && !blockingTower.IsDestroyed ? blockingTower.Id : -1;
+        public int TargetTowerId => TowerAggressionAllowed011 && blockingTower != null && !blockingTower.IsDestroyed ? blockingTower.Id : -1;
         internal float AttackLaneHalfWidth => IsCoreAttackFan ? 2.15f : attackFan ? IsFlying ? 1.30f : 1.48f : .8f;
         int remoteAttackPhase = -1;
         int remoteAttackStyle, remoteWindupCueSequence = -1;
@@ -105,7 +105,9 @@ namespace OdysseyOracle
             int snapshotSequence, Vector3 lockedDirection, int style, float windupSeconds, float strikeSeconds, float recoverySeconds,
             int targetTowerId, Vector3 targetPoint)
         {
-            if (owner == null || !owner.RemotePresentation || !RemoteDangerPolicy.Direction(lockedDirection) ||
+            if (owner == null || !owner.RemotePresentation ||
+                !EnemyTowerAggressionPolicy011.PresentationAllowed(TowerAggressionAllowed011, style, targetTowerId) ||
+                !RemoteDangerPolicy.Direction(lockedDirection) ||
                 !RemoteDangerPolicy.Style(style, windupSeconds, strikeSeconds, recoverySeconds) ||
                 !RemoteDangerPolicy.Point(targetPoint) || targetTowerId < 0 || targetTowerId > 65535 ||
                 (style == 2 && (targetTowerId == 0 || (targetPoint - transform.position).sqrMagnitude > 81f)) ||
@@ -232,10 +234,11 @@ namespace OdysseyOracle
             solid = gameObject.AddComponent<BoxCollider>();
             solid.center = new Vector3(0f, 1f, 0f);
             solid.size = new Vector3(.9f, 1.95f, .75f);
-            solid.isTrigger = true; // Hits remain queryable; actors never hard-block each other.
+            solid.isTrigger = true; solid.enabled = false; // Canonical pooled actors use numeric hit shapes; no actor physics body.
             RefreshPresentationFootprint(false);
             CreateAggroAlert(attack);
             bodyMotion = new GroundedGolemMotion(transform, body, leftLeg, rightLeg, leftArm, rightArm, cosmeticParts.OriginalForMotion);
+            InitializeStatusHud009();
             elementStyled = visualStyle != MonsterVoxelCosmetics.Style.GuardianGolem;
             if (elementStyled)
             {
@@ -271,6 +274,7 @@ namespace OdysseyOracle
 
         internal void ConfigureFlying()
         {
+            if (ConfigurePooledFlying015()) return;
             if (IsFlying) return;
             IsFlying = true;
             hoverBaseY = transform.position.y + 1.1f;
@@ -352,15 +356,8 @@ namespace OdysseyOracle
             Vector3 sightPoint = owner.PeerArenaCombat?peerTargetAim:cachedCamera != null ? cachedCamera.transform.position : cachedPlayer != null ? cachedPlayer.transform.position + Vector3.up * 1.65f : AimPoint;
             bool blocked = LocalPlayerTargetable && PlayerBlocksLane(IsAggroedOnPlayer ? 6f : 4f, IsAggroedOnPlayer) &&
                 owner.HasLineOfSight(AimPoint, sightPoint);
-            Vector3 endpoint = blocked ? sightPoint : owner.Shrine != null ? owner.Shrine.AimPoint : AimPoint + laneForward * 6f;
-            PlacedElementShrine.TryFindBlockingTower(transform.position, endpoint, 6f, NavigationRadius, out blockingTower);
-            if (blockingTower == null && defenseConfigured && owner.Shrine != null)
-                // Ground/flying roles inspect eligible towers on the authored route before player aggro.
-                PlacedElementShrine.TryFindLaneThreatTower(transform.position, AimPoint, home,
-                    owner.Shrine.transform.position, 8f, out blockingTower);
-            if (windup > 0f && pendingTower != null && pendingTower != blockingTower)
-            { windup = 0f; warning.gameObject.SetActive(false); attackCooldown = Mathf.Max(attackCooldown, .15f); }
-            SetPlayerAggro(blocked && blockingTower == null);
+            // Normal defense never acquires a tower; only the explicit lab adapter supplies one.
+            SetPlayerAggro(blocked);
         }
 
         void SetPlayerAggro(bool value, bool cancelWrongWindup = true)
@@ -459,7 +456,7 @@ namespace OdysseyOracle
 
         void LateUpdate()
         {
-            if (owner != null && owner.Playing && Targetable && !owner.IsTutorialTowerPracticeTarget(this) && !TrainingLabBound && crowdMotionFrame != Time.frameCount)
+            if (owner != null && owner.Playing && Targetable && !owner.EnemyKickActive022(this) && !owner.IsTutorialTowerPracticeTarget(this) && !owner.IsRefugePracticeRepeat020(this) && !TrainingLabBound && crowdMotionFrame != Time.frameCount)
                 MoveWithSpacing(Vector3.zero, 1.3f, Time.deltaTime);
             bool remote = owner != null && owner.RemotePresentation;
             if (session != null && (session.SimulationActive || remote && session.Defense != null && session.Defense.Running))
@@ -467,7 +464,7 @@ namespace OdysseyOracle
                 GuardianAttackPhase phase = remote && remoteAttackPhase >= 0 ? (GuardianAttackPhase)remoteAttackPhase : AttackPhase;
                 bodyMotion?.Tick(remote ? Time.unscaledDeltaTime : Time.deltaTime, Alive, IsFlying, dormant || seatedBlend > .001f, !remote && owner.Playing,
                     phase, remote && remoteAttackPhase >= 0 ? remoteAttackProgress : AttackProgress, flash);
-                if (remote && (phase == GuardianAttackPhase.Windup || phase == GuardianAttackPhase.Strike))
+                if (!NativeBlendTreePoseActive015 && remote && (phase == GuardianAttackPhase.Windup || phase == GuardianAttackPhase.Strike))
                 {
                     float right = phase == GuardianAttackPhase.Windup ? -105f * remoteAttackProgress : Mathf.Lerp(-105f, 30f, remoteAttackProgress);
                     float leftStart = remoteAttackStyle == 0 ? -105f : -70f;
@@ -479,14 +476,15 @@ namespace OdysseyOracle
             UpdateAlertVisibility();
             if (alertShown && aggroAlert != null && cachedCamera != null)
                 aggroAlert.rotation = cachedCamera.transform.rotation;
+            PublishStatusHud009();
         }
 
         void MoveWithSpacing(Vector3 desired, float speed, float dt)
         {
-            if(TrainingLabBound)return;
+            if(TrainingLabBound||owner!=null&&owner.IsRefugePracticeRepeat020(this))return;
             crowdMotionFrame = Time.frameCount;
             Vector3 move = owner.SpaceMovement(this, desired, IsCoreAttackFan ? owner.Shrine.transform.position : attackFan && blockingTower != null ? blockingTower.Position : home, laneForward, !tutorialDuel && !attackFan, speed, dt);
-            if (move.sqrMagnitude > .000001f && owner.CanMove(this, move)) transform.position += move;
+            if (owner.CanMove(this, move)) transform.position += move;
         }
 
         public void ConfigureArchetype(MonsterArchetype archetype)
@@ -541,9 +539,11 @@ namespace OdysseyOracle
         void Update()
         {
             if (owner == null) return;
+            ApplyTowerAggressionPolicy011();
+            bodyMotion?.SynchronizeNativeOwner015();
             if (owner.RemotePresentation)
             {
-                if (session != null && session.Defense != null && session.Defense.Running) TickRemoteAttackPresentation(Time.unscaledDeltaTime);
+                if (session != null && (session.Defense != null && session.Defense.Running || session.SharedTrainingLab!=null&&session.SharedTrainingLab.ContextActive)) TickRemoteAttackPresentation(Time.unscaledDeltaTime);
                 return;
             }
             if (!owner.Playing)
@@ -574,6 +574,14 @@ namespace OdysseyOracle
                 if (!Alive) return;
             }
             weakenRemaining = Mathf.Max(0f, weakenRemaining - dt);
+            if(owner.IsRefugePracticeRepeat020(this))
+            {
+                SetPlayerAggro(false,false);
+                slowRemaining=Mathf.Max(0f,slowRemaining-dt);staggerRemaining=Mathf.Max(0f,staggerRemaining-dt);
+                earthVulnerabilityRemaining=Mathf.Max(0f,earthVulnerabilityRemaining-dt);attackCooldown=Mathf.Max(0f,attackCooldown-dt);
+                UpdateFlash(dt);if(cachedCamera!=null)healthBar.rotation=cachedCamera.transform.rotation;
+                return;
+            }
             if (IsFlying)
             {
                 hoverPhase += dt * 2f;
@@ -599,13 +607,16 @@ namespace OdysseyOracle
             staggerRemaining = Mathf.Max(0f, staggerRemaining - dt);
             earthVulnerabilityRemaining = Mathf.Max(0f, earthVulnerabilityRemaining - dt);
             attackCooldown = Mathf.Max(0f, attackCooldown - dt);
-            if (staggerRemaining > 0f) return;
+            if (staggerRemaining > 0f||owner.EnemyKickActive022(this)) return;
             if (strikeRemaining > 0f)
             {
                 strikeRemaining = Mathf.Max(0f, strikeRemaining - dt);
                 float strike = 1f - strikeRemaining / AttackStrikeSeconds;
-                rightArm.localRotation = Quaternion.Euler(Mathf.Lerp(-105f, 35f, strike), 0f, 0f);
-                leftArm.localRotation = Quaternion.Euler(Mathf.Lerp(ranged ? -70f : -105f, 30f, strike), 0f, 0f);
+                if(!NativeBlendTreePoseActive015)
+                {
+                    rightArm.localRotation = Quaternion.Euler(Mathf.Lerp(-105f, 35f, strike), 0f, 0f);
+                    leftArm.localRotation = Quaternion.Euler(Mathf.Lerp(ranged ? -70f : -105f, 30f, strike), 0f, 0f);
+                }
                 return;
             }
             OracleShrine shrine = TrainingLabBound?null:owner.Shrine;
@@ -613,7 +624,7 @@ namespace OdysseyOracle
             Vector3 playerPoint = owner.PeerArenaCombat?peerTargetAim:cachedCamera != null ? cachedCamera.transform.position : cachedPlayer != null ?
                 cachedPlayer.transform.position + Vector3.up * 1.65f : transform.position;
             bool targetShrine = shrineValid && !IsAggroedOnPlayer;
-            bool targetTower = blockingTower != null && !blockingTower.IsDestroyed && !IsAggroedOnPlayer;
+            bool targetTower = TowerAggressionAllowed011 && blockingTower != null && !blockingTower.IsDestroyed && !IsAggroedOnPlayer;
             if (!targetShrine && !LocalPlayerTargetable) return;
             Vector3 targetPoint = targetTower ? blockingTower.AimPoint : targetShrine ? shrine.AimPoint : playerPoint;
             bool slotCanStrike = true;
@@ -642,8 +653,11 @@ namespace OdysseyOracle
                     warning.position = pendingTower.Position + Vector3.up * .025f;
                 float warningSize = (pendingTowerVolley ? 1.8f : ranged ? 1.1f : 1.4f) * (1f + normalized * .3f);
                 warning.localScale = new Vector3(warningSize, .025f, warningSize);
-                rightArm.localRotation = Quaternion.Euler(-105f * normalized, 0f, 0f);
-                leftArm.localRotation = Quaternion.Euler((ranged ? -70f : -105f) * normalized, 0f, 0f);
+                if(!NativeBlendTreePoseActive015)
+                {
+                    rightArm.localRotation = Quaternion.Euler(-105f * normalized, 0f, 0f);
+                    leftArm.localRotation = Quaternion.Euler((ranged ? -70f : -105f) * normalized, 0f, 0f);
+                }
                 if (windup <= 0f)
                 {
                     strikeRemaining = AttackStrikeSeconds;
@@ -654,7 +668,7 @@ namespace OdysseyOracle
                         // Killing, staggering or weakening this enemy is counterplay.
                         Vector3 delta = pendingTower != null ? pendingTower.Position - transform.position : Vector3.one * 100f;
                         delta.y = 0f;
-                        if (pendingTower != null && !pendingTower.IsDestroyed && delta.sqrMagnitude <= 64f &&
+                        if (TowerAggressionAllowed011 && pendingTower != null && !pendingTower.IsDestroyed && delta.sqrMagnitude <= 64f &&
                             owner.HasLineOfSight(AimPoint, pendingTower.AimPoint))
                         {
                             float before = pendingTower.Health;
@@ -671,7 +685,7 @@ namespace OdysseyOracle
                         {
                             // Towers are collider-free: a telegraphed, LOS-checked
                             // tower bolt resolves here, never through the core/player.
-                            if (!pendingTower.IsDestroyed && owner.HasLineOfSight(origin, pendingTower.AimPoint))
+                            if (TowerAggressionAllowed011 && !pendingTower.IsDestroyed && owner.HasLineOfSight(origin, pendingTower.AimPoint))
                             {
                                 float before = pendingTower.Health;
                                 pendingTower.TakeDamage(7f * .6375f * CurrentDamageScale);
@@ -695,7 +709,7 @@ namespace OdysseyOracle
                     }
                     else
                     {
-                        bool towerVictim = pendingTower != null;
+                        bool towerVictim = TowerAggressionAllowed011 && pendingTower != null;
                         bool peerValid=FindPendingPeer(out Vector3 pendingAim);
                         Vector3 impactTarget=towerVictim?pendingTower.AimPoint:pendingShrine&&shrineValid?shrine.AimPoint:
                             owner.PeerArenaCombat?pendingAim:playerPoint;
@@ -723,8 +737,11 @@ namespace OdysseyOracle
                 }
                 return;
             }
-            rightArm.localRotation = Quaternion.Slerp(rightArm.localRotation, Quaternion.identity, dt * 10f);
-            leftArm.localRotation = Quaternion.Slerp(leftArm.localRotation, Quaternion.identity, dt * 10f);
+            if(!NativeBlendTreePoseActive015)
+            {
+                rightArm.localRotation = Quaternion.Slerp(rightArm.localRotation, Quaternion.identity, dt * 10f);
+                leftArm.localRotation = Quaternion.Slerp(leftArm.localRotation, Quaternion.identity, dt * 10f);
+            }
             float meleeReach = targetShrine ? 1.9f : 1.5f;
             if (visible && (!attackFan || slotCanStrike) && distance < (targetTower && defenseConfigured ? 8f : ranged ? 18.375f : meleeReach) && attackCooldown <= 0f)
             {
@@ -779,12 +796,8 @@ namespace OdysseyOracle
             if (element == 2 || element == 3)
             {
                 ApplyStagger(element == 2 ? PassiveStatusRules.EarthStaggerSeconds(statusMask) : .12f, element == 2 && exposeWeakness);
-                if (element == 3)
-                {
-                    direction.y = 0f;
-                    Vector3 push = direction.normalized * .5f;
-                    MoveWithSpacing(push, 10f, .05f);
-                }
+                // Physical Air displacement is requested once by the accepted
+                // HP transaction; status application cannot add a second push.
             }
         }
 
@@ -797,30 +810,42 @@ namespace OdysseyOracle
             warning.gameObject.SetActive(false);
         }
 
-        public void TakeHit(float damage)
+        public void TakeHit(float damage){TakeHit(damage,Vector3.zero,0,AimPoint);}
+        public void TakeHit(float damage,Vector3 direction,int ingredients){TakeHit(damage,direction,ingredients,AimPoint);}
+        public void TakeHit(float damage,Vector3 direction,int ingredients,Vector3 point,bool surfaceContact=false)
         {
-            if (!Targetable || damage <= 0f || float.IsNaN(damage) || float.IsInfinity(damage) || !owner.Playing) return;
-            // Primary, allied-player, tower, splash and burn damage all enter here.
-            // The hit that creates Earth stagger lands first; later hits gain 25%.
-            float trainingLabBefore=TrainingLabBound?hp:0f;
-            hp = Mathf.Max(0f, hp - damage * IncomingDamageMultiplier);
-            if(TrainingLabBound)ObserveTrainingLabHit(trainingLabBefore);
-            flash = .15f;
-            healthFill.localScale = new Vector3(.76f * hp / maxHP, .045f, .026f);
-            healthFill.localPosition = new Vector3(-.38f * (1f - hp / maxHP), 0f, -.025f);
-            if (hp <= 0f)
+            if(feedbackTransaction022||!Targetable||damage<=0f||float.IsNaN(damage)||float.IsInfinity(damage)||owner==null||!owner.CanCommitEnemyDamage022(this))return;
+            feedbackTransaction022=true;
+            try
             {
-                SetPlayerAggro(false);
-                solid.enabled = false;
-                warning.gameObject.SetActive(false);
-                healthBar.gameObject.SetActive(false);
-                owner.GuardianDefeated(this);
+                // Preserve the sole existing incoming-damage formula. Feedback
+                // acknowledges actual HP loss, never impact intent or a request.
+                float before=hp;uint generation=PoolGeneration015;int id=TargetId;
+                hp=Mathf.Max(0f,hp-damage*IncomingDamageMultiplier);
+                if(!(hp<before))return;
+                flash=.15f;UpdateFlash(0f); // immediate cached MPB, same transaction
+                healthFill.localScale=new Vector3(.76f*hp/maxHP,.045f,.026f);
+                healthFill.localPosition=new Vector3(-.38f*(1f-hp/maxHP),0f,-.025f);
+                bool lethal=hp<=0f;
+                if(lethal)
+                {
+                    SetPlayerAggro(false);solid.enabled=false;warning.gameObject.SetActive(false);healthBar.gameObject.SetActive(false);
+                }
+                var hit=owner.CommitEnemyDamageFeedback022(this,before,hp,maxHP,direction,ingredients,point,surfaceContact);
+                owner.PublishEnemyDamageFeedback022(hit); // synchronous audio/UI requests
+                // Observers cannot mutate this transaction recursively. A
+                // retired/rerented slot must not receive old-life follow-up.
+                if(!PoolLeased015||PoolGeneration015!=generation||TargetId!=id)return;
+                if(TrainingLabBound)ObserveTrainingLabHit(before);
+                if(lethal&&PoolLeased015&&PoolGeneration015==generation&&TargetId==id)owner.GuardianDefeated(this);
             }
+            finally{feedbackTransaction022=false;}
         }
 
         public void ConfigureDefenseWave(float healthMultiplier, float speedMultiplier, float damageMultiplier, bool? heavyOverride = null)
         {
-            maxHP = baseHealth * Mathf.Clamp(healthMultiplier, .1f, 10f);
+            if(!CampaignBalance015.ValidHealthMultiplier(healthMultiplier))return;
+            maxHP = baseHealth * healthMultiplier;
             hp = maxHP;
             defenseConfigured = true;
             bool heavy = !ranged && Archetype == MonsterArchetype.Stalker && (heavyOverride ?? maxHP >= 45f);
@@ -840,7 +865,7 @@ namespace OdysseyOracle
             hp = alive ? Mathf.Clamp(health, .001f, maxHP) : 0f;
             dormant = false; seatedBlend = 0f;
             if (alive && !gameObject.activeSelf) gameObject.SetActive(true);
-            solid.enabled = alive;
+            solid.enabled = false;
             warning.gameObject.SetActive(false);
             healthBar.gameObject.SetActive(alive);
             if (cachedCamera != null) healthBar.rotation = cachedCamera.transform.rotation;
@@ -860,10 +885,13 @@ namespace OdysseyOracle
             if (warning != null) warning.gameObject.SetActive(false);
             SetPlayerAggro(false, false);
         }
-        void OnDisable() { ClearRemoteAttackPresentation(); SetPlayerAggro(false, false); }
+        void OnDisable() { ClearFeedbackPresentation022();ClearRemoteAttackPresentation(); SetPlayerAggro(false, false); ReleaseStatusHud009(); }
 
         void OnDestroy()
         {
+            bodyMotion?.DisposeNativePose015();
+            DisposePooledResources015();
+            ReleaseStatusHud009();
             cosmeticParts?.Dispose(); cosmeticParts = null;
             if (!ownsAlertResources) return;
             ownsAlertResources = false;
@@ -882,9 +910,9 @@ namespace OdysseyOracle
             flash = Mathf.Max(0f, flash - dt);
             Color stone = vulnerable ? new Color(.45f, .46f, .20f) : appearanceStone;
             flashBlock.Clear();
-            Color color = Color.Lerp(stone, new Color(.92f, 1f, .95f), flash / .15f);
-            flashBlock.SetColor("_BaseColor", color);
-            flashBlock.SetColor("_Color", color);
+            Color color = Color.Lerp(stone, new Color(1f, .06f, .04f), flash / .15f);
+            flashBlock.SetColor(feedbackBaseColor022, color);
+            flashBlock.SetColor(feedbackColor022, color);
             foreach (Renderer renderer in stoneRenderers) renderer.SetPropertyBlock(flashBlock);
         }
     }
@@ -900,3 +928,38 @@ namespace OdysseyOracle
 // Coordinate Space: Existing metre/Y-up/XZ routes, saved art local+Z with existing1.20 scale only.
 // Array Formats: Four fixed numeric tower value slots; stable-ID four-theme palette; no new spatial/native storage.
 // Dependencies/Pointers: Main-thread registry/LOS adapter is separate from pure math; V1 owns pivots/gait and composite V2 lease owns disposal; host HP/damage/projectile authority remains unchanged.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing actor world healthbar anchor and authenticated host status snapshot.
+// Array Formats: Five live bits31 distinct from caster12bit passive mask; fixed status presentation slots,256B lab word224 dedicated.
+// Dependencies/Pointers: Existing HP/damage/timer owners unchanged; root composes protocol/version bumps and verifies native/two-peer visuals.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres and original actor-local+Z/Y-up; pooled lifetime only.
+// Array Formats: Exactly48 persistent actor slots/four retained original templates/17 reusable part slots per actor.
+// Dependencies/Pointers: Existing HP/projectile/attack owners remain; root integrates guarded hunks; native/Burst/memory acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres/Y-up, original admission-cached oriented monster box; no gameplay geometry/HP changes.
+// Array Formats: Existing48 actor/projectile pools consume owned numeric48 snapshots and fixed World buffers.
+// Dependencies/Pointers: Atomic numeric sweep consumer migration; old triggers disabled only with complete packet; root owns native acceptance and actual source integration.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authored world-metre lanes/shrine support; no teleport/root/collider rewrite.
+// Array Formats: Existing48actors/fourtowers and snapshot bounds; default-deny numeric tower permission, no frame allocations.
+// Dependencies/Pointers: Only exact intentionally toggled training owner permits tower combat; host shrine/player/world/HP/reward/replay owners preserved. Native/peer acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authoritative legacy Combat/World/revision and actor pool lifetime, world metres/Y-up.
+// Array Formats: Existing48 actors with bounded feedback values/Morton jobs and one synchronous accepted-damage observation; no extra damage, mesh or material owner.
+// Dependencies/Pointers: Positive actual HP loss owns immediate cached MPB red flash and observer dispatch. Root composes this exact work projection and verifies native collision/flash/audio/network/GC; replicas never move authoritatively.

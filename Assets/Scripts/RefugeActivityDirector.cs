@@ -17,7 +17,7 @@ namespace OdysseyOracle
         public string Hint{get;private set;}="";
         public void Initialize(GameSession owner)
         {
-            session=owner;unlocked=PlayerPrefs.GetInt(AchievementKey,0)&31;
+            session=owner;unlocked=OracleProgressPrefs015.GetInt(AchievementKey,0)&31;
             voice=gameObject.AddComponent<AudioSource>();voice.playOnAwake=false;voice.spatialBlend=0;voice.volume=.7f;
             chime=gameObject.AddComponent<AudioSource>();chime.playOnAwake=false;chime.spatialBlend=0;chime.volume=.22f;
             monsterVoice=Resources.Load<AudioClip>("Tutorial/lesson_monster_practice");
@@ -31,11 +31,16 @@ namespace OdysseyOracle
             rect.anchoredPosition=new Vector2(0,-100);rect.sizeDelta=new Vector2(800,48);
             notice=panel.GetComponent<Text>();notice.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");notice.fontSize=24;
             notice.color=new Color(1f,.82f,.38f);notice.alignment=TextAnchor.MiddleCenter;notice.raycastTarget=false;panel.SetActive(false);
+            InitializeDiscoveryProgress();
+            InitializeRefugeFlames020();
+            InitializeNpcVoices009(canvas);
         }
         void Update()
         {
             if(session==null)return;
             voice.volume=session.Tutorial!=null?session.Tutorial.VoiceVolume:.7f;
+            TickNpcVoices009();
+            SyncRaykonMouth();
             chime.volume=.22f*(session.Audio!=null?session.Audio.SfxVolume:1f);
             if(notice.gameObject.activeSelf && Time.unscaledTime>=noticeUntil)notice.gameObject.SetActive(false);
             if(!session.HasStarted)return;
@@ -65,13 +70,13 @@ namespace OdysseyOracle
         void Unlock(int index)
         {
             int bit=1<<index;if((unlocked&bit)!=0)return;unlocked|=bit;
-            PlayerPrefs.SetInt(AchievementKey,unlocked);PlayerPrefs.Save();
+            OracleProgressPrefs015.SetInt(AchievementKey,unlocked);OracleProgressPrefs015.Save();
             notice.text=Notices[index];noticeUntil=Time.unscaledTime+4f;notice.gameObject.SetActive(true);
             if(achievementSound!=null)chime.PlayOneShot(achievementSound);
         }
         public bool IsUnlocked(int index)=>index>=0&&index<5&&(unlocked&(1<<index))!=0;
         public static string AchievementName(int index)=>index>=0&&index<5?Names[index]:"";
-        void OnDisable(){if(session!=null&&session.Hud!=null)session.Hud.HideRaykonMentor(this);if(voice!=null)voice.Stop();if(chime!=null)chime.Stop();}
+        void OnDisable(){StopMechanicsGuide();StopNpcGreeting009(null);FlushDiscoveryProgress();FlushRefugeFlames020();if(session!=null&&session.Hud!=null)session.Hud.HideRaykonMentor(this);if(voice!=null)voice.Stop();session?.World?.SetRaykonSpeaking(false);if(chime!=null)chime.Stop();}
     }
 }
 
@@ -80,6 +85,11 @@ namespace OdysseyOracle
 // Array Formats: Five-bit once-only achievement state, fixed clip references and cached static notices.
 // Dependencies/Pointers: Existing session/World/Tutorial owners remain authoritative; preferences write only at a real award, never each frame.
 // # ARCHITECTURE SNAPSHOT
-// World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
-// Bounded cached collider/root references only; no new economy/native buffers or quest bits.
-// Root owns Unity integration and native acceptance; this is a guarded work candidate.
+// Coordinate Space: World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
+// Array Formats: Bounded cached references and speaking bool only; no new economy/native buffers, quest bits or audio samples.
+// Dependencies/Pointers: Existing Activity owns real greeting playback; World forwards a visual bool. Root owns integration/native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: current local achievement owner and existing notice/chime.
+// Array Formats: separate cached one-bit flame achievement state/key; original five legacy bits and20discovery rows untouched.
+// Dependencies/Pointers: cold init and explicit disable flush only; accepted World Air completion invokes the new once-only adapter. Badge/book UI is owned by the achievement helper.

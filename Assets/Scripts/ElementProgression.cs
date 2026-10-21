@@ -54,7 +54,7 @@ namespace OdysseyOracle
         public int LastXpGainAmount { get; private set; }
         public int XpGainSequence { get; private set; }
         public int UpgradeMask { get; private set; }
-        public int ExperienceToNextLevel => 2 + (Level - 1) / 2;
+        public int ExperienceToNextLevel => CampaignBalance015.XpThreshold(Level);
         public float Experience01 => Level >= MaximumLevel ? 1f : Mathf.Clamp01((float)experience / ExperienceToNextLevel);
         public float DamageMultiplier { get; private set; } = 1f;
         public float CooldownMultiplier { get; private set; } = 1f;
@@ -129,8 +129,11 @@ namespace OdysseyOracle
             if (AbilityBindings.IsRebinding || Time.frameCount <= AbilityBindings.LastChangeFrame || !CanCollect) return;
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
+            int freshMask = OracleCombat.ReadPhysicalElementEdges015();
+            if (freshMask != 0 && session != null && session.Combat != null && session.Combat.HeldFireContext015)
+            { session.Combat.TrySelectHeldElements015(freshMask); return; }
             for (int element = 0; element < 4; element++)
-                if (keyboard[AbilityBindings.GetKey(element)].wasPressedThisFrame) SelectElement(element);
+                if ((freshMask & (1 << element)) != 0) SelectElement(element);
         }
 
         public void SelectElement(int element)
@@ -170,6 +173,7 @@ namespace OdysseyOracle
             nodes[element, node] = true;
             Levels[element]++;
             RecalculateBonuses();
+            GameSession.Instance?.RefugeActivities?.RecordAcceptedIntroUpgrade(false);
             PlayPassiveUnlockCue();
             return true;
         }
@@ -208,7 +212,7 @@ namespace OdysseyOracle
 
         public float GetElementDamageMultiplier(int element)
         {
-            return GetDamageMultiplier(EffectivePassiveMask, element);
+            return GetDamageMultiplier(EffectivePassiveMask, element, Level);
         }
 
         public float GetElementCooldownMultiplier(int element)
@@ -227,6 +231,7 @@ namespace OdysseyOracle
 
         public void SpawnNetworkXp(int dropId, Vector3 position, int amount)
         {
+            if(GameSession.Instance!=null&&GameSession.Instance.Defense!=null&&GameSession.Instance.Defense.CampaignXp015Active)return;
             if (player == null || dropId < 0 || amount <= 0 || !Finite(position) || seenNetworkDrops.Contains(dropId)) return;
             XpPickup pickup = AcquirePickup();
             seenNetworkDrops.Add(dropId);
@@ -279,6 +284,7 @@ namespace OdysseyOracle
             if (acceptedGain > 0) MarkXpGain((int)System.Math.Min(int.MaxValue, acceptedGain));
             if ((mask12 & ~previousMask & pendingUpgradeBits) != 0) PlayPassiveUnlockCue();
             pendingUpgradeBits &= ~mask12;
+            if(mask12!=0)GameSession.Instance?.RefugeActivities?.RecordAcceptedIntroUpgrade(false);
         }
 
         internal bool RequestNetworkXp(int dropId)
@@ -294,6 +300,7 @@ namespace OdysseyOracle
         // fair128-entry windows without dropping or silently granting rewards.
         private void UpdateXpPickups()
         {
+            if(GameSession.Instance!=null&&GameSession.Instance.Defense!=null&&GameSession.Instance.Defense.CampaignXp015Active)return;
             if (!CanCollect || pickups.Count == 0) return;
             float dt = Mathf.Clamp(Time.deltaTime, 0f, .1f);
             if (float.IsNaN(dt) || float.IsInfinity(dt)) dt = 0f;
@@ -357,7 +364,7 @@ namespace OdysseyOracle
         }
 
         internal static bool IsTutorialRewardClaimed(string token, bool heartstone) =>
-            token == TutorialRewardToken && PlayerPrefs.GetInt(heartstone ? TutorialHeartstoneClaimKey : TutorialXpClaimKey, 0) == 1;
+            token == TutorialRewardToken && OracleProgressPrefs015.GetInt(heartstone ? TutorialHeartstoneClaimKey : TutorialXpClaimKey, 0) == 1;
 
         internal static bool TryCommitTutorialReward(string token, bool heartstone, System.Func<bool> acceptReward, out bool awarded)
         {
@@ -376,17 +383,17 @@ namespace OdysseyOracle
             awarded = false;
             // Read at collection, including for another active copy in this frame.
             // Run reset and spawning never reserve or consume a profile claim.
-            if (PlayerPrefs.GetInt(key, 0) == 1) return true;
+            if (OracleProgressPrefs015.GetInt(key, 0) == 1) return true;
             if (acceptReward == null || !committingProfileRewards.Add(key)) return false;
             try
             {
                 if (!acceptReward()) return false;
                 awarded = true;
-                PlayerPrefs.SetInt(key, 1);
+                OracleProgressPrefs015.SetInt(key, 1);
                 // The accepted wallet save (or XP change) precedes this separate ledger.
                 // Keep the in-memory claim if the platform rejects a persistence flush,
                 // preventing retries from granting a second reward in this session.
-                try { PlayerPrefs.Save(); }
+                try { OracleProgressPrefs015.Save(); }
                 catch (System.Exception exception) { Debug.LogWarning("Tutorial reward claim persistence failed: " + exception.Message); }
                 return true;
             }
@@ -403,7 +410,7 @@ namespace OdysseyOracle
         private static long TotalEarnedExperience(int level, int currentExperience)
         {
             long result = currentExperience;
-            for (int previous = 1; previous < level; previous++) result += 2 + (previous - 1) / 2;
+            for (int previous = 1; previous < level; previous++) result += CampaignBalance015.XpThreshold(previous);
             return result;
         }
 
@@ -416,7 +423,7 @@ namespace OdysseyOracle
             UpgradeMask = mask;
             usedPermanentTraining = UsesPermanentTraining;
             mask = EffectivePassiveMask;
-            DamageMultiplier = GlobalDamage(mask);
+            DamageMultiplier = GlobalDamage(mask) * CampaignBalance015.RunDamageMultiplier(Level);
             CooldownMultiplier = 1f;
             MoveSpeedMultiplier = GetMoveSpeedMultiplier(mask);
         }
@@ -434,6 +441,7 @@ namespace OdysseyOracle
             // Loading a saved profile does not pretend that a purchase just occurred.
             observedPermanentMask = observedShop != null ? observedShop.PermanentPassiveMask : 0;
             RecalculateBonuses();
+            if(observedPermanentMask!=0)GameSession.Instance?.RefugeActivities?.RecordAcceptedIntroUpgrade(false);
         }
 
         private void OnPermanentTrainingChanged()
@@ -443,6 +451,7 @@ namespace OdysseyOracle
             bool added = (mask & ~observedPermanentMask) != 0;
             observedPermanentMask = mask;
             RecalculateBonuses();
+            if(added)GameSession.Instance?.RefugeActivities?.RecordAcceptedIntroUpgrade(false);
             if (added && SoloMode) PlayPassiveUnlockCue();
         }
 
@@ -628,18 +637,18 @@ namespace OdysseyOracle
             { checks++; if (!condition) throw new System.InvalidOperationException(name); };
             try
             {
-                check(!CommitProfileRewardKey(heartKey, () => false, out bool awarded) && !awarded && !PlayerPrefs.HasKey(heartKey), "Rejected wallet save leaves claim unconsumed");
+                check(!CommitProfileRewardKey(heartKey, () => false, out bool awarded) && !awarded && !OracleProgressPrefs015.HasKey(heartKey), "Rejected wallet save leaves claim unconsumed");
                 check(CommitProfileRewardKey(xpKey, () => { xpAwards++; return true; }, out awarded) && awarded && xpAwards == 1, "First accepted XP writes profile claim");
-                check(!PlayerPrefs.HasKey(heartKey), "XP claim does not consume Heartstone claim");
+                check(!OracleProgressPrefs015.HasKey(heartKey), "XP claim does not consume Heartstone claim");
                 check(CommitProfileRewardKey(xpKey, () => { xpAwards++; return true; }, out awarded) && !awarded && xpAwards == 1, "Second active XP copy dismisses without award");
-                PlayerPrefs.Save();
+                OracleProgressPrefs015.Save();
                 // No static claim cache: a fresh read uses the saved profile key.
                 check(CommitProfileRewardKey(xpKey, () => { xpAwards++; return true; }, out awarded) && !awarded && xpAwards == 1, "Fresh ledger read after save cannot replay XP");
                 check(CommitProfileRewardKey(heartKey, () => { walletAwards++; return true; }, out awarded) && awarded && walletAwards == 1, "First accepted wallet save writes independent claim");
                 for (int copy = 0; copy < 3; copy++)
                     check(CommitProfileRewardKey(heartKey, () => { walletAwards++; return true; }, out awarded) && !awarded && walletAwards == 1, "Duplicate Heartstone resolves successfully without grant or retry");
-                check(PlayerPrefs.GetInt(xpKey) == 1 && PlayerPrefs.GetInt(heartKey) == 1, "Both profile claims persist independently");
-                PlayerPrefs.DeleteKey(heartKey);
+                check(OracleProgressPrefs015.GetInt(xpKey) == 1 && OracleProgressPrefs015.GetInt(heartKey) == 1, "Both profile claims persist independently");
+                OracleProgressPrefs015.DeleteKey(heartKey);
                 bool nestedAccepted = true;
                 check(CommitProfileRewardKey(heartKey, () => {
                     nestedAccepted = CommitProfileRewardKey(heartKey, () => { walletAwards++; return true; }, out _);
@@ -647,9 +656,12 @@ namespace OdysseyOracle
                 }, out awarded) && awarded && !nestedAccepted && walletAwards == 2, "Save-event reentry cannot award a second active copy");
                 return "PASS: " + checks + " tutorial profile reward ledger checks.";
             }
-            finally { PlayerPrefs.DeleteKey(xpKey); PlayerPrefs.DeleteKey(heartKey); PlayerPrefs.Save(); }
+            finally { OracleProgressPrefs015.DeleteKey(xpKey); OracleProgressPrefs015.DeleteKey(heartKey); OracleProgressPrefs015.Save(); }
         }
 #endif
+
+        public static float GetDamageMultiplier(int mask12, int element, int acceptedLevel) =>
+            GetDamageMultiplier(mask12, element) * CampaignBalance015.RunDamageMultiplier(acceptedLevel);
 
         public static float GetDamageMultiplier(int mask12, int element) =>
             GlobalDamage(mask12) * (1f + .08f * BranchCount(mask12, element));
@@ -693,3 +705,13 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.

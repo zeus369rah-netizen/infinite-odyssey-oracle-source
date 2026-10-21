@@ -9,11 +9,11 @@ namespace OdysseyOracle
     // Saved explicit camera choices win over the staged fresh-profile vertical-FOV default.
     /// <summary>First-person movement. GameSession owns all requests to lock the cursor.</summary>
     [DisallowMultipleComponent]
-    public sealed class OraclePlayer : MonoBehaviour
+    public sealed partial class OraclePlayer : MonoBehaviour
     {
         private const float EyeHeight = 1.65f;
         private const float WalkSpeed = 4.2f;
-        private const float SprintSpeed = 6.2f;
+        private const float SprintSpeed = 6.2f * 1.15f;
         private const float Acceleration = 22f;
         private const float Deceleration = 30f;
         private const float Gravity = -24f;
@@ -176,12 +176,14 @@ namespace OdysseyOracle
 #endif
             windowHasFocus = Application.isFocused;
             initialized = true;
+            ResetSprint020();
             Teleport(spawnPoint);
         }
 
         public void Teleport(Vector3 position, float yaw = 0f)
         {
             ClearDamageFeedback();
+            SuspendSprint020();
             if (!IsFinite(position))
                 position = spawnPoint;
             if (float.IsNaN(yaw) || float.IsInfinity(yaw))
@@ -233,6 +235,7 @@ namespace OdysseyOracle
 
         private void Update()
         {
+            SuspendSprint020();
             FlushControlPreferences(false);
             RemoveDamageFeedback();
             if (!initialized || controller == null || !controller.enabled || ViewRoot == null)
@@ -294,9 +297,10 @@ namespace OdysseyOracle
                 suppressInputThroughFrame = Time.frameCount + 1;
             }
 
-            if (transform.position.y < -8f || !IsFinite(transform.position))
+            if (transform.position.y < (session.CampaignHubActive020?PortalLandingContour020.RecoveryPlaneY:-8f) || !IsFinite(transform.position))
             {
-                Teleport(spawnPoint);
+                if(session.CampaignHubActive020)Teleport(session.World.PlayerSpawn,session.World.CampaignHubSpawnYaw020);
+                else Teleport(spawnPoint);
                 return;
             }
 
@@ -356,6 +360,7 @@ namespace OdysseyOracle
             }
 
             GameSession session = GameSession.Instance;
+            sprinting = UpdateSprint020(sprinting, input.sqrMagnitude > 0f, !suppressInput, dt, session);
             int passiveMask = session != null && session.Progression != null ? session.Progression.EffectivePassiveMask : 0;
             float progressionSpeed = ElementProgression.GetMoveSpeedMultiplier(passiveMask);
             float speed = (sprinting ? SprintSpeed : WalkSpeed) * progressionSpeed;
@@ -408,6 +413,7 @@ namespace OdysseyOracle
 
         private void StopInput()
         {
+            SuspendSprint020();
             wasPlayable = false;
             hadLockedCursor = false;
             planarVelocity = Vector3.zero;
@@ -419,7 +425,9 @@ namespace OdysseyOracle
         {
             StopInput();
             if (session != null && session.HasStarted && !session.Paused && !session.Victory)
-                session.Pause();
+            {
+                if(!windowHasFocus||!Application.isFocused||!session.TryShowMouse015())session.Pause();
+            }
         }
 
         private void OnApplicationFocus(bool hasFocus)
@@ -437,8 +445,9 @@ namespace OdysseyOracle
         {
             if (isPaused)
             {
-                FlushControlPreferences(true);
-                PauseForLostControl(GameSession.Instance);
+                FlushControlPreferences(true);StopInput();
+                var session=GameSession.Instance;
+                if(session!=null&&session.HasStarted&&!session.Paused&&!session.Victory)session.Pause();
             }
         }
 
@@ -516,3 +525,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing player world metres/Y-up, listener-relative audio and lower-left HUD vitals Canvas.
+// Array Formats: One scalar stamina state, cold cached UI/clip references and same four shared cue voices; no save, wire, collision or authority fields change.
+// Dependencies/Pointers: OraclePlayer owns controlled stamina transitions and existing motion smoothing. Exhaustion locks until fresh recovered press; root owns all Assets/import/runtime/browser acceptance.

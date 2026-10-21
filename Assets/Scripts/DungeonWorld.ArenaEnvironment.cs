@@ -23,6 +23,9 @@ namespace OdysseyOracle
         private void BuildArenaGround()
         {
             // The floor is physically continuous. Water is a shallow turquoise floor treatment, not a pit.
+            var dryGround015=PrepareDryBuildPockets015();
+            try
+            {
             BoxCollider("Continuous arena foundation",new Vector3(0,-.35f,0),new Vector3((ArenaRadius + 1f) * 2f, .7f, (ArenaRadius + 1f) * 2f));
             for(int z=-(int)ArenaRadius;z<=(int)ArenaRadius;z++)
             for(int x=-(int)ArenaRadius;x<=(int)ArenaRadius;x++)
@@ -43,8 +46,13 @@ namespace OdysseyOracle
                     case 7:s=random.Next(4)==0?Surface.Azure:Surface.PaleStone;break;
                 }
                 if(radius<8.5f||radius>ArenaRingRadius-2.5f)s=Surface.Floor;
+                s=SelectDryBuildPocketSurface015(s,x,z,sector,in dryGround015);
                 TerrainTile(s,new Vector3(x,0,z),1f);
+                RecordLaneGround015(x,z,s==Surface.Water);
             }
+            CompleteDryBuildPocketGround015(in dryGround015);
+            }
+            finally {dryGround015.Dispose();}
             ArenaRing(Surface.DarkStone,ArenaRadius-.7f,.35f,.9f,.7f,256);
             ArenaRing(Surface.PaleStone,ArenaRadius-.7f,.79f,1.0f,.18f,256);
             ArenaRing(Surface.Brass,ArenaRadius-.7f,.905f,.08f,.055f,256);
@@ -132,21 +140,37 @@ namespace OdysseyOracle
         private void BuildArenaBiomes()
         {
             // Replace the old80-cluster decorations; the bounded reusable recipe owns the new vistas.
-            // The four existing fire positions match the four existing brazier Light identities.
-            foreach(float x in new[]{-36f,36f})foreach(float z in new[]{-36f,36f})Campfire(new Vector3(x,0,z));
+            // Geometry and its four retained lights share the same footprint-checked anchors.
+            for(int index=0;index<4;index++)
+            {
+                Vector3 p=ArenaCampfirePosition020(index);
+                if(!ArenaPositionReserved(p,ArenaCampfireRadius020))Campfire(p);
+            }
         }
 
-        private bool ArenaPositionReserved(Vector3 p)
+        private const float ArenaCampfireRadius020=1.25f;
+        private static Vector3 ArenaCampfirePosition020(int index)
         {
-            // Compatibility helper for retained cold recipes. New tree placement uses whole-envelope guards.
-            foreach(Vector3 pad in TowerBuildPads){Vector3 d=p-pad;d.y=0;if(d.sqrMagnitude<9f)return true;}
-            if(p.x*p.x+p.z*p.z<100f)return true;
+            if(index<0||index>=4)throw new ArgumentOutOfRangeException(nameof(index));
+            return new Vector3(index<2?-43.5f:43.5f,0,(index&1)==0?-36f:36f);
+        }
+
+        private bool ArenaPositionReserved(Vector3 p,float radius=0f)
+        {
+            // Cold whole-footprint guard: reserve every future-open road, independent of active masks.
+            if(float.IsNaN(p.x)||float.IsInfinity(p.x)||float.IsNaN(p.z)||float.IsInfinity(p.z)||
+                float.IsNaN(radius)||float.IsInfinity(radius)||radius<0f)return true;
+            foreach(Vector3 pad in TowerBuildPads){Vector3 d=p-pad;d.y=0;float gap=3f+radius;if(d.sqrMagnitude<gap*gap)return true;}
+            float inner=10f+radius,outer=ArenaRingRadius-2.1f-radius,planar=p.x*p.x+p.z*p.z;
+            if(outer<=inner||planar<inner*inner||planar>outer*outer)return true;
             for(int lane=0;lane<8;lane++)
             {
                 Vector3 direction=LaneDirection(lane),tangent=new Vector3(-direction.z,0,direction.x);
-                if(Vector3.Dot(p,direction)>=0&&Mathf.Abs(Vector3.Dot(p,tangent))<ArenaLaneWidth*.5f+1.1f)return true;
+                if(Vector3.Dot(p,direction)>=-radius&&Mathf.Abs(Vector3.Dot(p,tangent))<ArenaLaneWidth*.5f+1.1f+radius)return true;
+                Vector3 d=p-direction*ArenaPortalRadius;d.y=0;float gap=5f+radius;
+                if(d.sqrMagnitude<gap*gap)return true;
             }
-            return Mathf.Abs(Mathf.Abs(p.x)+Mathf.Abs(p.z)-ArenaPortalRadius)*.7071068f<2.4f;
+            return Mathf.Abs(Mathf.Abs(p.x)+Mathf.Abs(p.z)-ArenaPortalRadius)*.7071068f<2.4f+radius;
         }
 
         // # ARCHITECTURE SNAPSHOT
@@ -176,14 +200,20 @@ namespace OdysseyOracle
             vignetteKeepoutSnapshot=vignetteKeepouts.ToArray();
             var pieces=new List<LaneVignettePiece>(1400);
             var proxies=new List<VignetteTrunkProxy>(16);
-            VignetteBuildResult=LaneVignetteRecipes.Build(CreateCurrentVignetteLayout(),pieces.Add,proxies.Add);
-            GameObject root=new GameObject("Curated elemental canopy weather");root.transform.SetParent(geometryRoot,false);
-            laneVignetteRenderer=root.AddComponent<LaneVignetteRenderer>();laneVignetteRenderer.Initialize();
-            foreach(LaneVignettePiece piece in pieces)AppendLaneVignette(piece);
-            foreach(VignetteTrunkProxy proxy in proxies)
-                BoxCollider(proxy.Kind==VignetteProxyKind.Trunk?"Curated elemental tree trunk":"Nonwalkable elemental landmark",new Vector3((float)proxy.Center.X,(float)proxy.Center.Y,(float)proxy.Center.Z),
-                    new Vector3((float)proxy.Size.X,(float)proxy.Size.Y,(float)proxy.Size.Z),Quaternion.Euler(0,(float)proxy.YawDegrees,0));
-            laneVignetteRenderer.Finish();
+            var trees=new List<OdysseyOracle.Foundation.World.BlossomTreePlan48>(16);
+            VignetteBuildResult=LaneVignetteRecipes.Build(CreateCurrentVignetteLayout(),pieces.Add,proxies.Add,trees.Add);
+            // Complete/validate all native geometry and retained budgets before publishing any new mesh/proxy.
+            using(var treeBuild=LaneBlossomTreeBuild.Build(trees,VignetteBuildResult))
+            {
+                GameObject root=new GameObject("Curated elemental canopy weather");root.transform.SetParent(geometryRoot,false);
+                laneVignetteRenderer=root.AddComponent<LaneVignetteRenderer>();laneVignetteRenderer.Initialize();
+                foreach(LaneVignettePiece piece in pieces)AppendLaneVignette(piece);
+                AppendRefinedArenaTrees(treeBuild);
+                foreach(VignetteTrunkProxy proxy in proxies)
+                    BoxCollider(proxy.Kind==VignetteProxyKind.Trunk?"Curated elemental tree trunk":"Nonwalkable elemental landmark",new Vector3((float)proxy.Center.X,(float)proxy.Center.Y,(float)proxy.Center.Z),
+                        new Vector3((float)proxy.Size.X,(float)proxy.Size.Y,(float)proxy.Size.Z),Quaternion.Euler(0,(float)proxy.YawDegrees,0));
+                laneVignetteRenderer.Finish();
+            }
             // Exactly two real, shadow-free lights for the exterior lava caldera. No per-cube light.
             Vector3 direction=LaneDirection(1),tangent=new Vector3(-direction.z,0,direction.x);
             PointLight("Lava caldera primary actual spill",direction*(ArenaRadius+6f)+Vector3.up*10f,
@@ -196,6 +226,9 @@ namespace OdysseyOracle
             Vector3 p=new Vector3((float)piece.Center.X,(float)piece.Center.Y,(float)piece.Center.Z);
             Vector3 size=new Vector3((float)piece.Size.X,(float)piece.Size.Y,(float)piece.Size.Z);
             Quaternion q=Quaternion.Euler(0,(float)piece.YawDegrees,0);
+            if(piece.Primitive==VignettePrimitive.LavaTop)RecordLaneStamp015(p,size,q,OdysseyOracle.Foundation.World.LaneBuildMath015.Lava);
+            else if(piece.Surface==VignetteSurface.Water&&piece.Primitive!=VignettePrimitive.CanopyBox&&piece.Center.Y<=.25)
+                RecordLaneStamp015(p,size,q,OdysseyOracle.Foundation.World.LaneBuildMath015.Water);
             bool weather=piece.Primitive==VignettePrimitive.CanopyBox||piece.Primitive==VignettePrimitive.LavaTop||piece.Primitive==VignettePrimitive.SteamQuad;
             if(weather&&laneVignetteRenderer.ShaderReady){laneVignetteRenderer.Append(piece);return;}
             if(piece.Primitive==VignettePrimitive.SteamQuad)return; // graceful missing-shader fallback: no opaque smoke cards.
@@ -246,3 +279,23 @@ namespace OdysseyOracle
 
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing authoritative arena root/floor/routes/pads/spawns; original16tree roles use wider declared reservations before seed submission.
+// Array Formats: cold16blittable seeds ->disjoint Burst occupancy/greedy outputs ->existing shared10m batches; using lease completes/disposes TempJob slabs before return.
+// Dependencies/Pointers: existing World finalgeometry/collider/material owner and oldweather fallback preserved. Triangle/cell/bounds errors reject before publishing refined geometry. No runtime randomstream consumption/extraactors/newlights.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world-XZ1m ground atY0; quarter-root dry support union, unchanged raised roads/curbs and actual water/lava vignette faces.
+// Array Formats: Cold bounded1024-word Morton mask/18 diagnostics leased only during ground construction; one final Surface feeds one top and its semantic record.
+// Dependencies/Pointers: World retains geometry, random stream, terrain/stamp hashes and reservation ownership. Complete reader before finally disposal; no placement authority or active-frame work added.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing arena world metres/Y-up/XZ; eight radial lane strips and four signed brazier identities.
+// Array Formats: Four cold scalar anchors, one conservative footprint radius; existing material/mesh/light stores unchanged.
+// Dependencies/Pointers: World geometry and brazier lights consume the same guarded anchor; no admission/geometry-mask, actor, reward, protocol or runtime pool owner changes. Native/browser acceptance pending.

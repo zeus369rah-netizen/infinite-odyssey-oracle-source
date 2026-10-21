@@ -21,11 +21,17 @@ namespace OdysseyOracle
         readonly List<UnityEngine.Object> resources = new List<UnityEngine.Object>();
         readonly Dictionary<Material, Shape> bodyShapes = new Dictionary<Material, Shape>();
         readonly List<Transform> motes = new List<Transform>();
+        readonly Renderer[] moteRenderers = new Renderer[14];
+        static readonly int MoteFadeId = Shader.PropertyToID("_MoteFade"), MoteTintId = Shader.PropertyToID("_Tint");
+        Material motePaint;
+        MaterialPropertyBlock moteBlock;
+        public bool MoteAlphaFadingSupported => motePaint != null;
         OracleCombat owner;
         SpatialTargetGrid targetGrid;
         OracleEnemy target;
         Transform focus, healthBar, healthFill;
         Light wardLight;
+        int roomReactionLightNode=-1;
         Material crystal, crystalLight, rune, goldStone;
         bool awakened;
         float scanRemaining, shotRemaining, damageFlash;
@@ -56,10 +62,16 @@ namespace OdysseyOracle
             highlights.Crystal(new Vector3(-.1f, .12f, -.21f), .13f, 1.98f, Quaternion.Euler(0, 18, 5));
             highlights.Crystal(new Vector3(.17f, -.2f, -.26f), .12f, 1.42f, Quaternion.Euler(0, 35, -8));
             CreateMesh("Chartreuse light facets", highlights, crystalLight, focus);
+            Shader moteShader = Resources.Load<Shader>("OracleLifetimeMote");
+            if (moteShader != null && moteShader.isSupported)
+            {
+                motePaint = new Material(moteShader) { name = "Owned living-ward lifetime motes" };
+                moteBlock = new MaterialPropertyBlock(); resources.Add(motePaint);
+            }
             for (int i = 0; i < 14; i++)
             {
-                Transform mote = OracleCombat.CreateBlock(transform, "Living crystal mote " + i, Vector3.zero, Vector3.one * (.035f + i % 3 * .012f), rune);
-                motes.Add(mote);
+                Transform mote = OracleCombat.CreateBlock(transform, "Living crystal mote " + i, Vector3.zero, Vector3.one * (.035f + i % 3 * .012f), motePaint != null ? motePaint : rune);
+                motes.Add(mote); moteRenderers[i] = mote.GetComponent<Renderer>();
             }
             wardLight = new GameObject("Living ward green illumination").AddComponent<Light>();
             wardLight.transform.SetParent(transform, false);
@@ -70,6 +82,7 @@ namespace OdysseyOracle
             wardLight.range = 9.5f;
             wardLight.shadows = LightShadows.None;
             wardLight.bounceIntensity = 0;
+            roomReactionLightNode=GameSession.Instance?.World?.RegisterRoomReactionExternalLight(wardLight,0x70000001u)??-1;
             BoxCollider collider = gameObject.AddComponent<BoxCollider>();
             collider.center = new Vector3(0, 1.45f, 0);
             collider.size = new Vector3(1.8f, 2.9f, 1.8f);
@@ -90,6 +103,11 @@ namespace OdysseyOracle
         {
             Shape dark = GetShape(shadowStone), pale = GetShape(sageStone);
             Shape trim = GetShape(goldStone), glow = GetShape(rune);
+            if(GameSession.Instance?.World?.IsTutorialRefuge==true)
+            {
+                var dressing=new RefugeDressSink020(dark,pale,trim,glow);
+                RefugeShrineDress020.Build(ref dressing);
+            }
             // Closed faceted discs stay flush to y0. The top disc supports every corner of all four feet.
             dark.Cylinder(new Vector3(0, .10f, 0), 1.40f, .20f, 32);
             pale.Cylinder(new Vector3(0, .30f, 0), 1.31f, .40f, 32);
@@ -151,6 +169,19 @@ namespace OdysseyOracle
                 Vector2 tip = SacredArchProfile[SacredArchProfile.Length - 1];
                 trim.Box(radial * tip.x + Vector3.up * tip.y, new Vector3(.12f, .10f, .12f), Quaternion.LookRotation(radial));
             }
+        }
+
+        readonly struct RefugeDressSink020:IRefugeShrineDressSink020
+        {
+            readonly Shape dark,pale,trim,glow;
+            public RefugeDressSink020(Shape dark,Shape pale,Shape trim,Shape glow)
+            {this.dark=dark;this.pale=pale;this.trim=trim;this.glow=glow;}
+            Shape Pick(RefugeShrineDressPaint020 paint)=>paint==RefugeShrineDressPaint020.Dark?dark:
+                paint==RefugeShrineDressPaint020.Pale?pale:paint==RefugeShrineDressPaint020.Gold?trim:glow;
+            public void Box(RefugeShrineDressPaint020 paint,float x,float y,float z,float width,float height,float depth,float yaw)
+            {Pick(paint).Box(new Vector3(x,y,z),new Vector3(width,height,depth),Quaternion.Euler(0,yaw,0));}
+            public void Crystal(RefugeShrineDressPaint020 paint,float x,float y,float z,float radius,float height,float yaw)
+            {Pick(paint).Crystal(new Vector3(x,y,z),radius,height,Quaternion.Euler(0,yaw,0));}
         }
 
         static void SacredBeam(Shape shape, Vector3 from, Vector3 to, Vector3 up, float thickness, float width)
@@ -227,17 +258,24 @@ namespace OdysseyOracle
             focus.localScale = Vector3.one * (IsDestroyed ? .25f : 1f);
             float energy = IsDestroyed ? .025f : (Active ? 1f : .78f);
             if (damageFlash > 0) energy += damageFlash * 2f;
-            crystal.SetColor("_EmissionColor", new Color(.12f, 1.1f, .015f) * energy);
-            crystalLight.SetColor("_EmissionColor", new Color(.55f, 2.5f, .06f) * energy);
+            MoteBreathingState breath = MoteEnvelopeMath.Breath(time);
+            crystal.SetColor("_EmissionColor", new Color(.12f, 1.1f, .015f) * (energy * breath.Brightness));
+            crystalLight.SetColor("_EmissionColor", new Color(.55f, 2.5f, .06f) * (energy * breath.Brightness));
+            if (motePaint != null) motePaint.SetColor(MoteTintId, new Color(.16f * energy * breath.Brightness, energy * breath.Brightness, .02f * energy * breath.Brightness, 1f));
             rune.SetColor("_EmissionColor", new Color(.20f, 1.5f, .025f) * energy);
             wardLight.enabled = !IsDestroyed;
-            wardLight.intensity = (Active ? 7.5f : 6f) * (1f + Mathf.Sin(time * 2f) * .025f);
+            wardLight.intensity = (Active ? 7.5f : 6f) * breath.Brightness*(GameSession.Instance?.World?.RoomReactionGain(roomReactionLightNode)??1);
+            wardLight.range = 9.5f * breath.RangeFactor;
             for (int i = 0; i < motes.Count; i++)
             {
                 float phase = time * (.24f + i % 3 * .04f) + i * 2.399f;
                 float radius = .62f + i % 4 * .12f;
-                motes[i].localPosition = new Vector3(Mathf.Cos(phase) * radius, .8f + Mathf.Repeat(time * .23f + i * .27f, 2.7f), Mathf.Sin(phase) * radius);
+                float height = Mathf.Repeat(time * .23f + i * .27f, 2.7f);
+                float fade = MoteEnvelopeMath.Envelope(height / 2.7f);
+                motes[i].localPosition = new Vector3(Mathf.Cos(phase) * radius, .8f + height, Mathf.Sin(phase) * radius);
                 motes[i].localRotation = Quaternion.Euler(i * 27f, time * 32f, 45f);
+                motes[i].localScale = Vector3.one * ((.035f + i % 3 * .012f) * fade);
+                if (motePaint != null && moteRenderers[i] != null) { moteBlock.SetFloat(MoteFadeId, fade); moteRenderers[i].SetPropertyBlock(moteBlock); }
                 motes[i].gameObject.SetActive(!IsDestroyed);
             }
         }
@@ -373,3 +411,13 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: unchanged main-refuge ward local origin, original radius1.40 footprint and box collider; open centre radius.90.
+// Array Formats: cold pure16-group/40-primitive recipe adds528 triangles to the existing four body material Shape batches.
+// Dependencies/Pointers: no new Object/material/light/collider/Update or tutorial mutation; all original collider/placement/gameplay source bytes retained outside exact inserted regions, native add-on visual gate pending.

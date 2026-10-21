@@ -11,6 +11,9 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
         _BrewEmission("Brew emission (no Light)",Range(0,2))=.8
         _StaffMode("Rigid staff0/1",Float)=0
         _TalkBlend("Talk normalized progress",Range(0,1))=0
+        _Speaking("Approximate greeting jaw amount",Range(0,1))=0
+        _HeadAngles009("Rigid head pitch yaw radians",Vector)=(0,0,0,0)
+        _RoomTorchFuel("Host torch fuel",Range(0,1))=1
         _StaffPivot("Local staff pivot",Vector)=(.5,1.28,.43,0)
         _TipAndSupport("Local support vertex/world floorY",Vector)=(0,0,0,0)
     }
@@ -38,8 +41,8 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor,_Brew0,_Brew1,_Brew2,_Brew3;
                 float _BrewCycleSeconds,_BrewEmission;
-                float _StaffMode,_TalkBlend;
-                float4 _StaffPivot,_TipAndSupport;
+                float _StaffMode,_TalkBlend,_Speaking,_RoomTorchFuel;
+                float4 _StaffPivot,_TipAndSupport,_HeadAngles009;
             CBUFFER_END
             struct Attributes{float3 p:POSITION;float3 n:NORMAL;half4 color:COLOR;float2 uv:TEXCOORD0;float4 fx:TEXCOORD1;UNITY_VERTEX_INPUT_INSTANCE_ID};
             struct Varyings
@@ -51,17 +54,43 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
                     half3 vertexLight:TEXCOORD5;
                 #endif
             };
+            float3 OracleHeadRotate009(float3 p,float2 angles)
+            {
+                float sx,cx,sy,cy;sincos(angles.x,sx,cx);sincos(angles.y,sy,cy);
+                float3 pitched=float3(p.x,cx*p.y-sx*p.z,sx*p.y+cx*p.z);
+                return float3(cy*pitched.x+sy*pitched.z,pitched.y,-sy*pitched.x+cy*pitched.z);
+            }
             Varyings Vert(Attributes v)
             {
                 UNITY_SETUP_INSTANCE_ID(v);
-                float3 local=v.p;
-                if(v.uv.y>1.5)
+                float3 local=v.p;float3 localNormal=v.n;
+                if(_StaffMode>.5)
                 {
-                    float progress=frac(_Time.y/6.0+v.fx.w);
+                    // Clear cauldron orbit only while idle. Fully zero before the
+                    // existing slam/support kernel takes its final contact pose.
+                    float idleWeight=1-OracleSmooth01(saturate(_TalkBlend/.35));
+                    float phase=_Time.y*1.35;
+                    local+=float3(cos(phase)*.14,.015*sin(phase*2),.23+sin(phase)*.14)*idleWeight;
+                }
+                if(v.uv.y>2.5&&v.uv.y<3.5)
+                {
+                    // Approximate rigid speaking cadence, not phoneme or amplitude lip sync.
+                    float cadence=.3+.7*abs(sin(_Time.y*9.5)*sin(_Time.y*6.1+.4));
+                    local.y-=.04*saturate(_Speaking)*cadence;
+                }
+                else if(v.uv.y>1.5&&v.uv.y<2.5)
+                {
+                    float progress=frac(_Time.y/3.2+v.fx.w);
                     float envelope=sin(3.14159265359*progress);envelope*=envelope;
                     local=v.fx.xyz+(v.p-v.fx.xyz)*envelope+float3(0,progress*.22,0);
                 }
-                else if(v.uv.y>.5)local.y+=.008*sin(_Time.y*.7+v.p.x*8+v.p.z*6);
+                else if(v.uv.y>.5&&v.uv.y<1.5)local.y+=.008*sin(_Time.y*.7+v.p.x*8+v.p.z*6);
+                // Original whole head/hood boxes are above1.60; low beard is explicit effect3.
+                // Torso tops at1.56, so no box is split and feet/staff/cauldron stay fixed.
+                if(_StaffMode<.5&&(v.p.y>=1.60||v.uv.y>2.5)){
+                    float2 angles=clamp(_HeadAngles009.xy,float2(-.31415927,-.9599311),float2(.31415927,.9599311));
+                    float3 pivot=float3(0,1.60,0);local=pivot+OracleHeadRotate009(local-pivot,angles);localNormal=OracleHeadRotate009(localNormal,angles);
+                }
                 Varyings o;float4x4 m=GetObjectToWorldMatrix();OracleRigidMatrix64 root;
                 root.C0=float4(m._m00_m10_m20,0);root.C1=float4(m._m01_m11_m21,0);
                 root.C2=float4(m._m02_m12_m22,0);root.C3=float4(m._m03_m13_m23,1);
@@ -72,7 +101,7 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
                 float4 formula=float4(1.1,.07,.8,.35);float4 recoil=float4(0,0,1,0);
                 uint kind=_StaffMode>.5?1u:0u;
                 float3 world=OracleRigidPosition(local,root,packet,formula,recoil,kind);
-                o.p=TransformWorldToHClip(world);o.n=OracleRigidVertexNormal(v.n,root,packet,formula,recoil,kind);
+                o.p=TransformWorldToHClip(world);o.n=OracleRigidVertexNormal(localNormal,root,packet,formula,recoil,kind);
                 o.color=v.color*_BaseColor;o.glow=v.uv.x;o.effectLocal=float3(v.uv.y,v.p.x,v.p.z);
                 o.world=world;
                 VertexPositionInputs shadowVertex=(VertexPositionInputs)0;
@@ -87,7 +116,7 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
             {
                 half3 albedo=i.color.rgb;
                 half3 emission=i.color.rgb*i.glow*1.7;
-                if(i.effectLocal.x>.5)
+                if(i.effectLocal.x>.5&&i.effectLocal.x<2.5)
                 {
                     float cycle=frac(_Time.y/clamp(_BrewCycleSeconds,12,32)+i.effectLocal.y*.23+i.effectLocal.z*.17)*4;
                     int segment=(int)floor(cycle);float blend=smoothstep(0,1,frac(cycle));
@@ -96,6 +125,7 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
                     half3 brew=lerp(a,b,blend);
                     albedo=brew*.35;emission=brew*clamp(_BrewEmission,0,2);
                 }
+                if(i.effectLocal.x>3.5&&i.effectLocal.x<4.5){clip(_RoomTorchFuel-.001);albedo*=saturate(_RoomTorchFuel);emission*=saturate(_RoomTorchFuel);}
                 SurfaceData surface=(SurfaceData)0;
                 surface.albedo=albedo;surface.emission=emission;surface.alpha=1;
                 surface.metallic=0;surface.smoothness=.055;surface.occlusion=1;
@@ -129,4 +159,13 @@ Shader "Oracle/Presentation/RaykonRigidCandidate"
 // Array Formats: Existing rigid64 ABI/UV0/UV1 unchanged; bounded interpolants through TEXCOORD5, no new buffers.
 // Dependencies/Pointers: Installed URP17.6 public UniversalFragmentPBR receives existing point-light distance/shadow
 // attenuation in Forward/cluster variants; target3.5 retained. Existing brew albedo/emission cycle remains local
-// presentation, not dynamic GI. No new Light, shadowcaster pass, skin, compute or runtime allocation owner.
+// presentation, not dynamic GI. Idle-only 14 cm cauldron orbit fades completely by TalkBlend .35;
+// original support kernel/normal rotation remains authoritative. Six bubbles retain original bounds/lift/colors at 3.2 s.
+// Effect3 is only the existing rigid jaw/beard: <=4 cm local downward motion while the real greeting source is active;
+// approximate cadence, no phoneme claim. Ordinary body colors stay outside the unchanged four-brew fragment path.
+// No new Light, shadowcaster pass, skin, compute or runtime allocation owner.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.

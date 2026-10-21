@@ -1,1 +1,16 @@
-{"schemaVersion":1,"snapshotKind":"selected-code-only / source-view / rights-reserved","sourceCommit":"22c485eef3b2ac60682270c4f54226b22e2528a9","committedCodeConfigFiles":298,"csharpFiles":284,"shaderFiles":9,"hlslFiles":1,"assemblyMetadataFiles":2,"packageMetadataFiles":2,"publicNoticeAndManifestFiles":5,"sourceBytesModified":false,"sourceNamesChanged":false,"denyPrefixes":["Documentation/",".git/","GeneratedAssets/","Assets/PreservedUnverified/","Assets/Plugins/","Assets/TutorialInfo/","ProjectSettings/","UserSettings/","Library/","Temp/","Logs/"],"excludedOtherCategories":["all binary/serialized game assets and .meta GUID bindings","all art/audio/model/font/provider output and raw licensed media","private history/operational/provenance/evidence records","builds/caches/local credentials/settings/saves/preferences"],"documentationFilesIncluded":0,"architecturePublication":false,"runnableWholeGame":false,"cleanReconstructionVerified":false,"aiAssistanceDisclosed":true,"openSourceLicenseGranted":false,"exclusiveOriginalityClaimed":false}
+{
+  "status": "CODE_ONLY_NOT_RUNNABLE_GAME",
+  "sourceCommit": "91c30d1910696faccbf3c7a542c683d30e38a4cf",
+  "fullProjectMadePublic": false,
+  "mediaPublished": false,
+  "privateHistoryPublished": false,
+  "sourceSelectionSha256": "968c8ebf981b3b0b9033c1dec3387f99cc39ea799546a8dec6d9344b865dc2d1",
+  "excluded": [
+    "media/assets",
+    "Editor/internal tools",
+    "vendor/package implementations",
+    "private history",
+    "credentials"
+  ],
+  "policy": "Original covered code: attributed noncommercial reuse; commercial use needs a separate written license. Third-party terms remain separate."
+}

@@ -40,6 +40,7 @@ namespace OdysseyOracle
             internal readonly Transform[] SpiderLegs;
             internal readonly Bounds[] SpiderLegBounds;
             readonly Vector3[] spiderOrigins;
+            SpiderLegPresentation009 spiderPresentation;
             readonly List<GameObject> objects;
             readonly List<Renderer> flashes;
             readonly List<Renderer> addedFlashes;
@@ -73,11 +74,17 @@ namespace OdysseyOracle
                 }
                 if(SpiderLegs!=null){LeftLeg=SpiderLegs[0];RightLeg=SpiderLegs[1];}
             }
+            internal void AttachSpiderRefinement009(Transform body)
+            {
+                if(SpiderLegs==null || spiderPresentation!=null)throw new InvalidOperationException("One Spider refinement per original lease is required.");
+                spiderPresentation=new SpiderLegPresentation009(body,SpiderLegs,SpiderLegBounds);
+            }
             // Called by the existing owner motion tick only. Eight independent rigid leg pivots,
             // alternating tripod-like pairs; no biped clip, damage event or new Update is introduced.
             internal void PoseSpider(float gait,float weight,bool flying)
             {
                 if(entry==null || SpiderLegs==null)return;
+                if(spiderPresentation!=null){spiderPresentation.Pose(gait,weight,flying);return;}
                 weight=Mathf.Clamp01(weight);
                 for(int i=0;i<8;i++)
                 {
@@ -86,9 +93,11 @@ namespace OdysseyOracle
                     SpiderLegs[i].localRotation=Quaternion.Euler(0f,wave*4f,0f);
                 }
             }
+            internal void SetNativeSpiderSole015(){spiderPresentation?.SetNativeGroundedSole015();}
             internal float LowestSpiderSole()
             {
                 if(entry==null || SpiderLegs==null)throw new InvalidOperationException("A live Spider visual lease is required.");
+                if(spiderPresentation!=null)return spiderPresentation.LowestSoleY;
                 float minimum=float.PositiveInfinity;
                 for(int i=0;i<8;i++)
                 {
@@ -101,6 +110,7 @@ namespace OdysseyOracle
             {
                 if(entry==null)return;
                 for(int i=0;i<objects.Count;i++)if(objects[i]!=null)DestroyOwned(objects[i]);
+                spiderPresentation?.Dispose();spiderPresentation=null;
                 if(flashes!=null)for(int i=0;i<addedFlashes.Count;i++)flashes.Remove(addedFlashes[i]);
                 objects.Clear();addedFlashes.Clear();
                 Entry retired=entry;entry=null;
@@ -429,3 +439,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original actor-local metres, +Y up/+Z forward; existing1.20 body scale only.
+// Array Formats: Eight rigid spider legs and bounded numeric job outputs; baseline admission geometry remains authoritative.
+// Dependencies/Pointers: New SpiderLegPresentation009 lease owns only visuals/native pose scratch; original V1/V2 lifetime and host damage remain.

@@ -30,7 +30,8 @@ namespace OdysseyOracle
                 CooldownDuration[i] = seconds;
             }
             primaryReadyAt = abilityClock + PrimaryCadenceSeconds;
-            selection.MarkCastAccepted();
+            RapidCastRules015.Accepted(ref selection, usedMask, false);
+            if(!selection.HasConfirmedSelection)RefreshSelectionStatus();
         }
 
         double abilityClock, primaryReadyAt;
@@ -58,7 +59,7 @@ namespace OdysseyOracle
         public float[] ElementSwitchCooldowns { get; } = new float[4];
         public enum ElementCombo { None, Combustion, BindingMud, Steam, Shrapnel, Magma, FrostGale }
         public bool AutoFireEnabled { get; private set; }
-        public string CastIndicator => castFlash > 0f ? "CAST" : SpellIngredientRules.Count(ConfirmedMask) == 3 ? "ADD FOURTH ELEMENT" : SelectionPending ? "PREPARING" :
+        public string CastIndicator => castFlash > 0f ? "CAST" : SelectionPending ? "PREPARING" :
             HasConfirmedSelection ? AutoFireEnabled ? "AUTO-FIRE ON" : "Left-click to cast" : "Prepare and confirm an element";
         public string ComboText => selectionStatus;
         public string CombatStatus { get; private set; } = "Prepare, confirm, then aim and click";
@@ -117,7 +118,7 @@ namespace OdysseyOracle
         public float ShrineMaxHP => shrine != null ? shrine.MaxHealth : 300f;
         public string ShrineHint => shrine != null ? shrine.InteractionHint : "";
         public bool TutorialGuardianAwake => tutorialGuardian != null && tutorialGuardian.IsAwake;
-        public bool TutorialGuardianDefeated => tutorialGuardian != null && !tutorialGuardian.Alive;
+        public bool TutorialGuardianDefeated => refugePracticeCycle020.FirstDefeated || tutorialGuardian != null && !tutorialGuardian.Alive;
         public IReadOnlyList<OracleEnemy> ActiveEnemies => enemies;
         public OracleEnemy TutorialGuardian => tutorialGuardian;
         public event System.Action<int, Vector3> AuthoritativeShotHit;
@@ -127,11 +128,11 @@ namespace OdysseyOracle
             get
             {
                 var session = GameSession.Instance;
-                if (!initialized || session == null || player == null || world == null || remoteSimulation || !session.HasStarted ||
+                if (!initialized || session == null || player == null || world == null || !session.LegacyCombatWorld020 || remoteSimulation || !session.HasStarted ||
                     (!session.CombatUnlocked && !TutorialTowerPracticeActive) || session.Victory || session.IsDead) return false;
                 bool sharedAuthority = session.CoopMode && session.Defense != null && session.Defense.Running &&
                     session.Rooms != null && session.Rooms.IsHost;
-                return !session.Paused || sharedAuthority;
+                return !session.Paused || sharedAuthority || (session.SharedTrainingLab!=null&&session.SharedTrainingLab.HostSimulationActive);
             }
         }
         internal bool RemotePresentation => initialized && remoteSimulation;
@@ -223,7 +224,7 @@ namespace OdysseyOracle
             public Renderer FocusRenderer, WingRendererA, WingRendererB;
             public Vector3 Direction;
             public float Remaining, Speed, Radius;
-            public int Element, Combo, PiercedCount;
+            public int Element, Combo, PiercedCount, NetworkShotId;
             public bool CosmicNova;
             public readonly int[] PiercedIds = new int[2];
         }
@@ -232,7 +233,8 @@ namespace OdysseyOracle
         {
             public Transform Root;
             public Renderer[] Renderers;
-            public float Remaining, Duration, Size;
+            public float Remaining, Duration, Size, PairLift020, PairSpread020;
+            public Vector3 PairStretch020;
         }
 
         public void Initialize(OraclePlayer oraclePlayer, DungeonWorld dungeonWorld)
@@ -243,6 +245,7 @@ namespace OdysseyOracle
             impactBlock = new MaterialPropertyBlock();
             targetGrid = new SpatialTargetGrid(MaxActiveEnemies, 2f);
             crowdSpacing = new CrowdSpacingSolver(MaxActiveEnemies);
+            InitializeMonsterCollision015();
             stone = MakeMaterial("Golem weathered stone", new Color(.26f, .29f, .31f));
             darkStone = MakeMaterial("Golem joints", new Color(.085f, .105f, .13f));
             turquoise = MakeMaterial("Oracle living light", new Color(.282f, .871f, .835f), 1.3f);
@@ -255,6 +258,7 @@ namespace OdysseyOracle
             novaVisuals = gameObject.AddComponent<CosmicNovaVfx>();
             novaVisuals.Initialize(pale);
             initialized = true;
+            InitializeEnemyStatus009();
             ResetEncounter();
         }
 
@@ -262,18 +266,23 @@ namespace OdysseyOracle
         {
             if (!initialized) return;
             AbortTrainingLab();
-            remoteHostileBolts?.Dispose(); remoteHostileBolts = null; hostileGeneration = 0;
-            if (encounterRoot != null) { encounterRoot.gameObject.SetActive(false); Destroy(encounterRoot.gameObject); }
-            encounterRoot = new GameObject("Oracle staged encounter").transform;
-            encounterRoot.SetParent(world.transform, false);
-            enemies.Clear(); projectiles.Clear(); impacts.Clear();
+            bool coldPool015 = encounterRoot == null;
+            if (!coldPool015) { RetireAllEnemies015(); ResetRetainedCombatPresentation015(); }
+            if (coldPool015)
+            {
+                encounterRoot = new GameObject("Oracle staged encounter").transform;
+                encounterRoot.SetParent(world.transform, false);
+                projectiles.Clear(); impacts.Clear();
+            }
+            enemies.Clear();
             tutorialGuardian = null;
+            ResetRefugePractice020();
             targetGrid.Clear();
             crowdSpacing.Clear();
             InvalidatePeerTargetCache(); towerAttackSlots.Clear();
             portalUnlocked = encounterActive = portalEntered = false;
             HitFlash = 0f; SelectedSpell = 0; messageRemaining = targetSearchRemaining = castRemaining = castFlash = 0f;
-            AutoFireEnabled = false; manualClick.Clear(); autoSelectionWait.Clear(); selection.Clear(); hasRemoteSelection = false; remoteSelectionSequence = 0; primaryReadyAt = 0d; RefreshSelectionStatus();
+            AutoFireEnabled = false; manualClick.Clear(); autoSelectionWait.Clear(); ResetHeldFire015(); selection.Clear(); hasRemoteSelection = false; remoteSelectionSequence = 0; primaryReadyAt = 0d; RefreshSelectionStatus();
             abilityClock = 0d;
             ResetNovaState();
             for (int i = 0; i < elementReadyAt.Length; i++) elementReadyAt[i] = 0d;
@@ -282,6 +291,8 @@ namespace OdysseyOracle
             for (int i = 0; i < 4; i++) { CooldownRemaining[i] = 0f; ElementSwitchCooldowns[i] = 0f; CooldownDuration[i] = AbilityCooldownSeconds; }
             GameSession.Instance.Goal = GameSession.Instance.Defeated = 0;
             InteractionHint = "Complete the movement tutorial to awaken your abilities.";
+            if (coldPool015)
+            {
             enemyRoot = new GameObject("Stage guardians").transform;
             enemyRoot.SetParent(encounterRoot, false);
             for (int i = 0; i < ProjectilePoolSize; i++)
@@ -326,7 +337,12 @@ namespace OdysseyOracle
             shrineObject.transform.position = world.ShrinePosition;
             shrine = shrineObject.AddComponent<OracleShrine>();
             shrine.Initialize(this, darkStone, stone, turquoise, gold);
-            shrine.ResetShrine();
+            PrepareEnemyPool015();
+            }
+            // Retained objective follows the accepted current refuge/arena support anchor.
+            shrine.transform.position = world.ShrinePosition;
+            shrine.ResetShrine();SetLegacyWorldPresentation020(WorldModeRules020.LegacyCombat(world.Mode020));
+            world.RebuildXpClearance015();
         }
 
         public void BeginTutorialEncounter()
@@ -334,6 +350,7 @@ namespace OdysseyOracle
             if (!initialized) return;
             PrepareStage(1);
             tutorialGuardian = SpawnGuardian(world.TutorialMonsterPracticePosition, false, true);
+            BeginRefugePractice020(tutorialGuardian);
             Tell("A stone guardian rests in the first left alcove. Approach to awaken it.", 5f);
         }
 
@@ -358,12 +375,12 @@ namespace OdysseyOracle
         public void ClearEnemies()
         {
             if (!initialized) return;
+            SuspendRefugePractice020();
+            CancelHeldFire015();
             AbortTrainingLab();
             if (towerPracticeOwned) EndTutorialTowerPractice();
             if (CosmicNovaTrialActive) EndCosmicNovaTrial();
-            if (enemyRoot != null) { enemyRoot.gameObject.SetActive(false); Destroy(enemyRoot.gameObject); }
-            enemyRoot = new GameObject("Stage guardians").transform;
-            enemyRoot.SetParent(encounterRoot, false);
+            RetireAllEnemies015();
             enemies.Clear(); targetGrid.Clear(); crowdSpacing.Clear(); towerAttackSlots.Clear(); tutorialGuardian = null;
             CosmicNovaTrialActive = false;
             for (int i=0;i<novaTrialTargets.Length;i++) novaTrialTargets[i]=null;
@@ -391,13 +408,7 @@ namespace OdysseyOracle
         {
             if (!initialized) return null;
             for (int i = 0; i < enemies.Count; i++) if (enemies[i].TargetId == stableId) return enemies[i];
-            for (int i = enemies.Count - 1; i >= 0; i--)
-                if (!enemies[i].Alive)
-                {
-                    enemies[i].gameObject.SetActive(false);
-                    Destroy(enemies[i].gameObject);
-                    enemies.RemoveAt(i);
-                }
+            SweepRetiredEnemies015();
             crowdSpacing.Refresh(enemies, Time.time);
             if (!remoteSimulation && !crowdSpacing.CanAdmit(position, OracleEnemy.SpawnFootprintRadius(flying))) return null;
             OracleEnemy spawned = SpawnGuardian(position, archetype == OracleEnemy.MonsterArchetype.Shade, false, stableId, flying,
@@ -435,22 +446,15 @@ namespace OdysseyOracle
         OracleEnemy SpawnGuardian(Vector3 spawn, bool ranged, bool seated, int? stableId = null, bool flying = false,
             MonsterVoxelCosmetics.Style? visualStyle = null)
         {
-            if (enemies.Count >= MaxActiveEnemies) return null;
-            var go = new GameObject(seated ? "Seated portal guardian" : ranged ? "Shade guardian" : "Stalker guardian");
-            go.transform.SetParent(enemyRoot, false);
-            go.transform.position = spawn;
+            if (!enemyPoolReady015 || enemies.Count >= MaxActiveEnemies) return null;
+            int id = stableId ?? nextTargetId + 1;
+            if (id < 1) return null;
             if (Physics.Raycast(spawn + Vector3.up * 2f, Vector3.down, out RaycastHit floor, 4f, ~0, QueryTriggerInteraction.Ignore))
-                go.transform.position = new Vector3(spawn.x, floor.point.y, spawn.z);
-            var enemy = go.AddComponent<OracleEnemy>();
-            int id = stableId ?? ++nextTargetId;
-            nextTargetId = Mathf.Max(nextTargetId, id);
-            enemy.Initialize(this, ranged, stone, darkStone, turquoise, violet, red, barBack, id,
-                visualStyle ?? (seated ? MonsterVoxelCosmetics.Style.GuardianGolem : ranged ?
-                    MonsterVoxelCosmetics.Style.Shade : MonsterVoxelCosmetics.Style.Stalker));
-            if (flying) enemy.ConfigureFlying();
-            if (seated) enemy.SitDormant();
-            enemies.Add(enemy);
-            return enemy;
+                spawn = new Vector3(spawn.x, floor.point.y, spawn.z);
+            OracleEnemy enemy = RentPooledEnemy015(spawn, id, visualStyle ?? (seated ? MonsterVoxelCosmetics.Style.GuardianGolem :
+                ranged ? MonsterVoxelCosmetics.Style.Shade : MonsterVoxelCosmetics.Style.Stalker), flying, seated);
+            if (enemy == null) return null;
+            nextTargetId = Mathf.Max(nextTargetId, id); enemies.Add(enemy); return enemy;
         }
 
         void Update()
@@ -458,6 +462,9 @@ namespace OdysseyOracle
             // A script reload can clear the static owner before runtime bindings exist.
             var liveSession = GameSession.Instance;
             if (!initialized || liveSession == null || player == null || world == null) return;
+            TickEnemyFeedback022(Time.deltaTime);
+            if(!liveSession.LegacyCombatWorld020){SetLegacyWorldPresentation020(false);return;}
+            TickRefugePractice020(Time.deltaTime);
             HitFlash = Mathf.Max(0f, HitFlash - Time.unscaledDeltaTime * 4f);
             var progression = GameSession.Instance.Progression;
             if (progression != null) SelectedSpell = Mathf.Clamp(progression.SelectedElement, 0, 3);
@@ -473,7 +480,7 @@ namespace OdysseyOracle
                 for (int i = 0; i < 4; i++)
                 {
                     if (ElementSwitchCooldowns[i] <= 0f) CooldownDuration[i] = AbilityCooldownSeconds;
-                    bool sharedClock = GameSession.Instance.CoopMode && GameSession.Instance.Defense != null && GameSession.Instance.Defense.Running;
+                    bool sharedClock = (GameSession.Instance.CoopMode && GameSession.Instance.Defense != null && GameSession.Instance.Defense.Running) || (GameSession.Instance.SharedTrainingLab!=null&&GameSession.Instance.SharedTrainingLab.ContextActive);
                     float remaining = sharedClock ? Mathf.Max(0f, ElementSwitchCooldowns[i] - clockDt) :
                         Mathf.Max(0f, (float)(elementReadyAt[i] - abilityClock));
                     CooldownRemaining[i] = ElementSwitchCooldowns[i] = remaining;
@@ -496,13 +503,18 @@ namespace OdysseyOracle
                 (EventSystem.current == null || !EventSystem.current.IsPointerOverGameObject());
             bool pressed = Mouse.current != null && Mouse.current.leftButton.isPressed;
             bool pressEdge = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-            if (manualClick.Step(castContext && Mouse.current != null, pressed, pressEdge)) ManualCast();
+            int physicalEdges015 = pressed ? ReadPhysicalElementEdges015() : 0;
+            bool manual015 = manualClick.Step(castContext && Mouse.current != null, pressed, pressEdge);
+            if (!castContext || !pressed) CancelHeldFire015();
+            // Same-frame element+click belongs to the fresh batch, regardless of Update order.
+            if (manual015 && physicalEdges015 == 0) ManualCast();
+            if (physicalEdges015 == 0) TickHeldFire015(castContext && pressed);
             if (!Playing) return;
             float dt = Time.deltaTime;
             UpdateImpacts(dt);
             targetSearchRemaining = Mathf.Max(0f, targetSearchRemaining - dt);
             if (messageRemaining > 0f) messageRemaining -= dt;
-            if (!world.IsCoopArena && !CosmicNovaTrialActive && encounterActive && !portalUnlocked &&
+            if (world.Mode020==WorldMode020.TutorialRefuge && !CosmicNovaTrialActive && encounterActive && !portalUnlocked &&
                 (GameSession.Instance.Tutorial == null || GameSession.Instance.Tutorial.Finished) &&
                 GameSession.Instance.Goal > 0 && GameSession.Instance.Defeated >= GameSession.Instance.Goal)
             {
@@ -511,15 +523,15 @@ namespace OdysseyOracle
                 GameSession.Instance.Objective = "The portal is open. Walk into its light.";
                 Tell("All guardians defeated · Walk into the awakened portal", 4f);
             }
-            if (!world.IsCoopArena && portalUnlocked && !portalEntered && Vector3.Distance(player.transform.position, world.PortalPosition) < 1.45f)
+            if (world.Mode020==WorldMode020.TutorialRefuge && portalUnlocked && !portalEntered && Vector3.Distance(player.transform.position, world.PortalPosition) < 1.45f)
             {
                 portalEntered = true;
                 GameSession.Instance.CompleteStage();
                 return;
             }
             InteractionHint = messageRemaining > 0f ? message : portalUnlocked ? "Walk into the portal to continue" : selectionStatus;
-            bool sharedAuto = GameSession.Instance.CoopMode && GameSession.Instance.Defense != null && GameSession.Instance.Defense.Running;
-            if (AutoFireEnabled && HasConfirmedSelection && !sharedAuto && GameSession.Instance.IsPlaying && encounterActive &&
+            bool sharedAuto = (GameSession.Instance.CoopMode && GameSession.Instance.Defense != null && GameSession.Instance.Defense.Running) || (GameSession.Instance.SharedTrainingLab!=null&&GameSession.Instance.SharedTrainingLab.ContextActive);
+            if (!localHeld015.Active && !heldRequest015 && physicalEdges015 == 0 && AutoFireEnabled && HasConfirmedSelection && !sharedAuto && GameSession.Instance.IsPlaying && encounterActive &&
                 !AbilityBindings.IsRebinding && (GameSession.Instance.Builder == null || !GameSession.Instance.Builder.IsPlacing)) TryCastConfirmed(true);
 
         }
@@ -529,6 +541,7 @@ namespace OdysseyOracle
             AutoFireEnabled = enabled;
             CombatStatus = enabled ? "AUTO-FIRE ON | Change in Settings" : "MANUAL CAST | Left-click confirmed spell";
             var session = GameSession.Instance;
+            if(session!=null&&session.SharedTrainingLab!=null&&session.SharedTrainingLab.ContextActive){session.SharedTrainingLab.RequestAuto(enabled);return;}
             if (session != null && session.CoopMode && session.Defense != null && session.Defense.Running)
                 session.Defense.RequestAutoFire(enabled);
         }
@@ -545,8 +558,10 @@ namespace OdysseyOracle
         public bool TrySelectElement(int index)
         {
             var session = GameSession.Instance;
-            if (index < 0 || index > 3 || session == null || !session.IsPlaying || !session.CombatUnlocked ||
+            if (index < 0 || index > 3 || session == null || !session.LegacyCombatWorld020 || !session.IsPlaying || !session.CombatUnlocked ||
                 AbilityBindings.IsRebinding || Time.frameCount <= AbilityBindings.LastChangeFrame) return false;
+            CancelHeldFire015();
+            if(session.SharedTrainingLab!=null&&session.SharedTrainingLab.ContextActive)return session.SharedTrainingLab.RequestTap(index);
             if (session.CoopMode && session.Defense != null && session.Defense.Running) return session.Defense.RequestSelectElement(index);
             if (!selection.Tap(index)) return false;
             autoSelectionWait.NotifyInput(abilityClock);
@@ -558,7 +573,6 @@ namespace OdysseyOracle
         void RefreshSelectionStatus()
         {
             selectionStatus = SelectionPending ? SpellNames[PreparedElement] + " prepared | Tap again or add an element" :
-                SpellIngredientRules.Count(ConfirmedMask) == 3 ? "3 elements selected | Add fourth for Cosmic Nova" :
                 HasConfirmedSelection ? RecipeName(ConfirmedMask, ConfirmedElement, CurrentCombo) + " ready | Add elements or left-click to cast" :
                 "Tap an element to select";
             CombatStatus = selectionStatus;
@@ -592,6 +606,7 @@ namespace OdysseyOracle
         string RecipeName(int mask, int dominant, int combo)
         {
             if (mask == 15) return "Cosmic Nova";
+            if (SpellIngredientRules.Count(mask) == 3) return "Three-element volley";
             return combo == 0 ? SpellNames[dominant] : ComboName((ElementCombo)combo);
         }
 
@@ -600,11 +615,14 @@ namespace OdysseyOracle
         static string ComboName(ElementCombo combo) => combo == ElementCombo.BindingMud ? "Binding Mud" : combo == ElementCombo.FrostGale ? "Frost Gale" : combo.ToString();
 
         public void Cast() { ManualCast(); }
-        public void ManualCast() { TryCastConfirmed(false); }
+        public void ManualCast() { CancelHeldFire015(); TryCastConfirmed(false); }
 
         bool TryCastConfirmed(bool automatic)
         {
             var session = GameSession.Instance;
+            if(session!=null&&session.SharedTrainingLab!=null&&session.SharedTrainingLab.ContextActive)
+                return !automatic&&session.IsPlaying&&session.CombatUnlocked&&!AbilityBindings.IsRebinding&&
+                    Time.frameCount>AbilityBindings.LastChangeFrame&&(session.Builder==null||!session.Builder.IsPlacing)&&session.SharedTrainingLab.RequestCast();
             if (automatic && (!AutoFireEnabled || !autoSelectionWait.Ready(abilityClock)) || !HasConfirmedSelection || session == null || !session.IsPlaying ||
                 !session.CombatUnlocked || AbilityBindings.IsRebinding || Time.frameCount <= AbilityBindings.LastChangeFrame ||
                 session.Builder != null && session.Builder.IsPlacing) return false;
@@ -616,14 +634,18 @@ namespace OdysseyOracle
             float scale = SelectedDamageMultiplier(usedMask);
             float speed = element == 3 ? 32f : element == 2 ? 17f : 740f / UnitsPerMetre;
             bool nova = SpellIngredientRules.IsSuper(usedMask);
-            if (!Launch((OracleProjectile.Kind)((int)OracleProjectile.Kind.Fire + element), origin,
+            int passive = session.Progression != null ? session.Progression.EffectivePassiveMask : 0;
+            bool launched = SpellIngredientRules.Count(usedMask) == 3 ? TryLaunchThree015(origin, player.ViewCamera.transform.forward,
+                usedMask, DamageMultiplier(0), DamageMultiplier(1), DamageMultiplier(2), DamageMultiplier(3), 0, passive) :
+                Launch((OracleProjectile.Kind)((int)OracleProjectile.Kind.Fire + element), origin,
                 player.ViewCamera.transform.forward, speed, MissileRange, element == 2 ? .19f : .11f,
-                elementMaterials[element], scale, combo, 0, nova, statusMask: session.Progression != null ? session.Progression.EffectivePassiveMask : 0, ingredientMask: usedMask)) return false;
+                elementMaterials[element], scale, combo, 0, nova, statusMask: passive, ingredientMask: usedMask);
+            if (!launched) return false;
             CommitAcceptedRecovery(usedMask, nova);
             novaChain.Reset();
             if (nova) { CountAcceptedNovaLaunch(); novaCastFlash = 1f; }
             castRemaining = PrimaryCadenceSeconds; castFlash = .22f;
-            session.Audio?.PlayCast(element); session.Viewmodel?.PulseCast(element);
+            session.Audio?.PlayPairCast020(element,nova?0:combo); session.Viewmodel?.PulseCast(element,usedMask);
             return true;
         }
 
@@ -641,25 +663,25 @@ namespace OdysseyOracle
                 elementMaterials[element], Mathf.Max(.1f, damageMultiplier), Mathf.Clamp(combo, 0, 6), Mathf.Max(0, networkShotId), cosmicNova, statusMask: statusMask & 0xFFF, ingredientMask: ingredientMask);
         }
 
-        public void PlayNetworkShotFeedback(int element, Vector3 origin, Vector3 direction, int combo, bool ownCaster, bool cosmicNova = false)
+        public void PlayNetworkShotFeedback(int element, Vector3 origin, Vector3 direction, int combo, bool ownCaster, bool cosmicNova = false, int networkShotId = 0)
         {
             var session = GameSession.Instance;
             if (!initialized || session == null || !session.CombatUnlocked || !session.SimulationActive ||
                 element < 0 || element >= 4 || !FinitePosition(origin) || !FiniteDirection(direction)) return;
-            if (!ownCaster) session.Audio?.PlayRemoteCast(element, origin);
+            if (!ownCaster) session.Audio?.PlayPairRemoteCast020(element,cosmicNova?0:combo,origin);
             if (ownCaster)
             {
                 castFlash = .22f;
-                if (cosmicNova) { OwnCosmicNovaCastCount++; novaCastFlash = 1f; }
-                if (session.Viewmodel != null) session.Viewmodel.PulseCast(element);
-                if (session.Audio != null) session.Audio.PlayCast(element);
+                if (cosmicNova) { if(!TrainingLabActive&&(session.SharedTrainingLab==null||!session.SharedTrainingLab.ContextActive))OwnCosmicNovaCastCount++; novaCastFlash = 1f; }
+                if (session.Viewmodel != null) session.Viewmodel.PulseCast(element,RecoveryIngredientMask(element,combo,cosmicNova));
+                if (session.Audio != null) session.Audio.PlayPairCast020(element,cosmicNova?0:combo);
             }
             // The host already has the damaging projectile. Only clients borrow
             // this separate pool; these records have no damage or wall-edit API.
             if (!remoteSimulation) return;
             CosmeticShot shot = cosmeticShots[cosmeticCursor];
             cosmeticCursor = (cosmeticCursor + 1) % cosmeticShots.Length;
-            shot.Element = element; shot.Combo = Mathf.Clamp(combo, 0, 6); shot.PiercedCount = 0; shot.CosmicNova = cosmicNova;
+            shot.Element = element; shot.Combo = Mathf.Clamp(combo, 0, 6); shot.PiercedCount = 0; shot.CosmicNova = cosmicNova; shot.NetworkShotId = Mathf.Max(0,networkShotId);
             shot.Direction = direction.normalized;
             shot.Speed = element == 3 ? 32f : element == 2 ? 17f : 740f / UnitsPerMetre;
             shot.Remaining = MissileRange;
@@ -673,6 +695,7 @@ namespace OdysseyOracle
             shot.WingA.localScale = shot.WingB.localScale = element == 3 ? new Vector3(.22f, .025f, .08f) :
                 element == 0 ? new Vector3(.06f, .06f, .18f) : new Vector3(.07f, .07f, .07f);
             shot.FocusRenderer.sharedMaterial = shot.WingRendererA.sharedMaterial = shot.WingRendererB.sharedMaterial = elementMaterials[element];
+            ApplyPairFlight020(shot.Element,shot.Combo,shot.CosmicNova,shot.Radius,shot.Focus,shot.WingA,shot.WingB,shot.FocusRenderer,shot.WingRendererA,shot.WingRendererB);
             shot.Root.gameObject.SetActive(true);
         }
 
@@ -681,7 +704,6 @@ namespace OdysseyOracle
             var session = GameSession.Instance;
             if (!initialized || session == null || !session.CombatUnlocked || !session.SimulationActive || !FinitePosition(point)) return;
             HitFlash = 1f;
-            if (remoteSimulation) SpawnImpact(point, SpellColors[SelectedSpell], .35f);
         }
 
         void ClearCosmeticShots()
@@ -698,34 +720,19 @@ namespace OdysseyOracle
                 CosmeticShot shot = cosmeticShots[i];
                 if (shot == null || !shot.Root.gameObject.activeSelf) continue;
                 float distance = Mathf.Min(shot.Speed * dt, shot.Remaining);
-                int count = QueryProjectileSweep(shot.Root.position, shot.Radius, shot.Direction, distance, out RaycastHit[] hits);
-                RaycastHit nearest = default;
-                float nearestDistance = float.PositiveInfinity;
-                bool found = false;
-                for (int j = 0; j < count; j++)
-                {
-                    Collider collider = hits[j].collider;
-                    if (IsPlayerCollider(collider) || collider.GetComponentInParent<OracleProjectile>() != null ||
-                        collider.GetComponentInParent<OracleShrine>() != null) continue;
-                    OracleEnemy enemy = collider.GetComponentInParent<OracleEnemy>();
-                    if (enemy != null)
-                    {
-                        bool skip = !enemy.Targetable;
-                        for (int p = 0; p < shot.PiercedCount; p++) skip |= shot.PiercedIds[p] == enemy.TargetId;
-                        if (skip) continue;
-                    }
-                    if (hits[j].distance < nearestDistance)
-                    { nearest = hits[j]; nearestDistance = hits[j].distance; found = true; }
-                }
+                bool found=SweepProjectileContact015(shot.Root.position,shot.Radius,shot.Direction,distance,
+                    true,true,true,shot.PiercedIds,shot.PiercedCount,out ProjectileContact015 nearest);
                 if (found)
                 {
-                    Vector3 point = nearest.distance <= .0001f ? nearest.collider.ClosestPoint(shot.Root.position) : nearest.point;
-                    SpawnImpact(point, SpellColors[shot.Element], shot.Element == 2 ? .6f : .35f);
-                    OracleEnemy enemy = nearest.collider.GetComponentInParent<OracleEnemy>();
+                    if(nearest.Blocked){shot.Root.gameObject.SetActive(false);continue;}
+                    OracleEnemy enemy=ResolveMonsterContact015(nearest);
+                    if(nearest.HasMonster&&enemy==null){shot.Root.gameObject.SetActive(false);continue;}
+                    Vector3 point = nearest.Point;
+                    if(shot.NetworkShotId==0)SpawnPairImpact020(point, SpellColors[shot.Element], shot.Element == 2 ? .6f : .35f,shot.CosmicNova?0:shot.Combo);
                     if (!shot.CosmicNova && shot.Combo == 4 && enemy != null && shot.PiercedCount < shot.PiercedIds.Length)
                     {
                         shot.PiercedIds[shot.PiercedCount++] = enemy.TargetId;
-                        float advance = Mathf.Max(0f, nearest.distance);
+                        float advance = Mathf.Max(0f, nearest.Distance);
                         shot.Root.position += shot.Direction * advance;
                         shot.Remaining -= advance;
                     }
@@ -860,23 +867,27 @@ namespace OdysseyOracle
         { if (Playing) Launch(OracleProjectile.Kind.ShrineBolt, origin, (target - origin).normalized, 740f / UnitsPerMetre, MissileRange, .11f, gold, DamageMultiplier(SelectedSpell, false)); }
 
         internal void ProjectileHit(OracleProjectile.Kind kind, OracleEnemy direct, Vector3 point,
-            float damageScale = 1f, Vector3 impactDirection = default, int combo = 0, int networkShotId = 0, bool cosmicNova = false, int statusMask = 0, int ingredientMask = 0)
+            float damageScale = 1f, Vector3 impactDirection = default, int combo = 0, int networkShotId = 0, bool cosmicNova = false, int statusMask = 0, int ingredientMask = 0,uint roomReactionFlight=0,int impactOrdinal=0,bool terminalImpact=true,uint expectedDirectGeneration015=0)
         {
             if (!Playing) return;
             int element = (int)kind - (int)OracleProjectile.Kind.Fire;
             bool elemental = element >= 0 && element < 4;
             ingredientMask = elemental ? SpellIngredientRules.ResolveMask(element, combo, ingredientMask) : 0;
             if (elemental && ingredientMask == 0) return;
+            NotifyRoomReactionImpact(kind,combo,cosmicNova,ingredientMask,networkShotId,roomReactionFlight,point);
 
             Color color = elemental ? SpellColors[element] : new Color(.5f, 1f, .88f);
-            SpawnImpact(point, color, elemental && element == 2 ? .85f : .45f);
+            SpawnPairImpact020(point, color, elemental && element == 2 ? .85f : .45f,elemental&&!cosmicNova?combo:0);
+            if(elemental&&!cosmicNova)NotifyAcceptedSpellImpact(networkShotId,impactOrdinal,element,point,terminalImpact,combo);
             Vector3 effectDirection = impactDirection.sqrMagnitude > .001f ? impactDirection :
                 player.ViewCamera.transform.forward;
             bool damaged = false;
+            // Impact feedback may dispatch callbacks; recheck the accepted pool generation immediately before HP mutation.
+            if(direct!=null&&expectedDirectGeneration015!=0&&direct.PoolGeneration015!=expectedDirectGeneration015)direct=null;
             if (direct != null && direct.Targetable)
             {
                 float before = direct.HP;
-                direct.TakeHit((elemental ? Foundation.CombatConfig.Default.PlayerDamage : 10f) * damageScale);
+                direct.TakeHit((elemental ? Foundation.CombatConfig.Default.PlayerDamage : 10f) * damageScale,effectDirection,elemental?(cosmicNova?15:ingredientMask):0,point,true);
                 damaged = direct.HP < before;
                 if (elemental && !cosmicNova) ApplyIngredientEffects(direct, ingredientMask, effectDirection, damageScale, statusMask);
                 if (!cosmicNova) direct.ApplyComboEffect(combo, effectDirection, damageScale, statusMask);
@@ -901,7 +912,7 @@ namespace OdysseyOracle
             {
                 float splashDamage = combo == 0 ? 5.5f / count : combo == 2 ? 3f : combo == 4 ? 2f : 4f;
                 float before = splashTargets[i].HP;
-                splashTargets[i].TakeHit(splashDamage * damageScale);
+                splashTargets[i].TakeHit(splashDamage * damageScale,splashTargets[i].AimPoint-point,ingredientMask,splashTargets[i].AimPoint);
                 damaged |= splashTargets[i].HP < before;
                 ApplyIngredientEffects(splashTargets[i], ingredientMask, effectDirection, damageScale, statusMask);
                 splashTargets[i].ApplyComboEffect(combo, effectDirection, damageScale, statusMask);
@@ -943,7 +954,7 @@ namespace OdysseyOracle
             {
                 OracleEnemy enemy = novaTargets[i];
                 float before = enemy.HP;
-                enemy.TakeHit(CosmicNovaBaseDamage * damageScale);
+                enemy.TakeHit(CosmicNovaBaseDamage * damageScale,enemy.AimPoint-point,15,enemy.AimPoint);
                 ApplyIngredientEffects(enemy, 15, direction, damageScale, statusMask);
                 if (enemy.HP < before) damaged++;
                 novaTargets[i] = null;
@@ -973,7 +984,7 @@ namespace OdysseyOracle
 
         void ResetNovaState()
         {
-            novaChain.Reset(); abilityClock = primaryReadyAt = 0d; selection.Clear(); manualClick.Clear(); autoSelectionWait.Clear(); hasRemoteSelection = false; remoteSelectionSequence = 0; RefreshSelectionStatus(); remoteNovaMask = 0; remoteNovaSeconds = novaCastFlash = 0f;
+            novaChain.Reset(); abilityClock = primaryReadyAt = 0d; selection.Clear(); manualClick.Clear(); autoSelectionWait.Clear(); ResetHeldFire015(); hasRemoteSelection = false; remoteSelectionSequence = 0; RefreshSelectionStatus(); remoteNovaMask = 0; remoteNovaSeconds = novaCastFlash = 0f;
             for (int i = 0; i < 4; i++) { elementReadyAt[i] = 0d; CooldownRemaining[i] = ElementSwitchCooldowns[i] = 0f; }
             OwnCosmicNovaCastCount = CosmicNovaResolvedCount = LastNovaDamagedTargets = 0;
             RestoreTrialShrine();
@@ -1023,8 +1034,7 @@ namespace OdysseyOracle
             // from guide OnDisable/OnDestroy, nor reuse disposed native containers.
             if (!destroying)
             {
-                for (int i=0;i<enemies.Count;i++) if (enemies[i]!=null)
-                { enemies[i].gameObject.SetActive(false); Destroy(enemies[i].gameObject); }
+                RetireAllEnemies015();
                 enemies.Clear(); targetGrid?.Clear(); crowdSpacing?.Clear(); towerAttackSlots.Clear();
                 foreach (OracleProjectile projectile in projectiles)
                     if(projectile!=null) { projectile.Retire(); projectile.ClearDangerState(); }
@@ -1069,11 +1079,12 @@ namespace OdysseyOracle
         internal void GuardianDefeated(OracleEnemy enemy)
         {
             if (!Playing) return;
+            if(HandleRefugePracticeDefeat020(enemy,out bool originalEarned020)&&!originalEarned020)return;
             if (IsNovaTrialTarget(enemy)||IsTutorialTowerPracticeTarget(enemy)||IsTrainingLabTarget(enemy)) return;
             GameSession.Instance.AddKill();
             var session = GameSession.Instance;
             if (session.CoopMode && session.Defense != null && session.Defense.Running && session.Defense.IsAuthority)
-                session.Defense.RegisterXpDrop(enemy.TargetId, enemy.transform.position, 1);
+                session.Defense.RegisterDefeatedEnemyXp015(enemy);
             else if (!session.CoopMode && session.Progression != null)
                 session.Progression.SpawnXp(enemy.transform.position, 1, tutorialReward: enemy == tutorialGuardian);
             SpawnImpact(enemy.AimPoint, new Color(.4f, 1f, .8f), .9f);
@@ -1102,17 +1113,19 @@ namespace OdysseyOracle
 
         internal bool CanMove(OracleEnemy enemy, Vector3 movement)
         {
-            if (movement.sqrMagnitude < .00001f) return false;
+            if (!MovementStepMath.TryNormalize(movement.x,movement.y,movement.z,out MovementSweepStep sweep)) return false;
+            Vector3 direction = new Vector3(sweep.UnitX,sweep.UnitY,sweep.UnitZ);
+            float castDistance = sweep.Distance + .04f;
             Vector3 foot = enemy.transform.position;
             // Admission-cached body capsule follows the actual upright mesh, in world metres.
             int count = Physics.CapsuleCastNonAlloc(foot + Vector3.up * enemy.NavigationBottom,
-                foot + Vector3.up * enemy.NavigationTop, enemy.NavigationRadius, movement.normalized, capsuleHits,
-                movement.magnitude + .04f, ~0, QueryTriggerInteraction.Ignore);
+                foot + Vector3.up * enemy.NavigationTop, enemy.NavigationRadius, direction, capsuleHits,
+                castDistance, ~0, QueryTriggerInteraction.Ignore);
             RaycastHit[] hits = capsuleHits;
             if (count == capsuleHits.Length)
             {
                 hits = Physics.CapsuleCastAll(foot + Vector3.up * enemy.NavigationBottom, foot + Vector3.up * enemy.NavigationTop,
-                    enemy.NavigationRadius, movement.normalized, movement.magnitude + .04f, ~0, QueryTriggerInteraction.Ignore);
+                    enemy.NavigationRadius, direction, castDistance, ~0, QueryTriggerInteraction.Ignore);
                 count = hits.Length;
             }
             for (int i = 0; i < count; i++)
@@ -1143,26 +1156,11 @@ namespace OdysseyOracle
             return count;
         }
 
-        internal int QueryProjectileSweep(Vector3 origin, float radius, Vector3 direction,
-            float distance, out RaycastHit[] hits)
-        {
-            hits = sphereHits;
-            int count = Physics.SphereCastNonAlloc(origin, radius, direction, hits,
-                distance, ~0, QueryTriggerInteraction.Collide);
-            if (count == hits.Length)
-            {
-                hits = Physics.SphereCastAll(origin, radius, direction, distance, ~0, QueryTriggerInteraction.Collide);
-                count = hits.Length;
-            }
-            int kept = 0;
-            for (int i = 0; i < count; i++)
-                if (!hits[i].collider.isTrigger || hits[i].collider.GetComponentInParent<OracleEnemy>() != null)
-                    hits[kept++] = hits[i];
-            return kept;
-        }
-
         internal void SpawnImpact(Vector3 point, Color color, float size)
+        {SpawnPairImpact020(point,color,size,0);}
+        internal void SpawnPairImpact020(Vector3 point, Color color, float size,int combo020)
         {
+            if(SpellPairPresentation020.TryGet(combo020,out var palette020))color=PairColor020(palette020.Tint);
             if (GameSession.Instance != null && GameSession.Instance.SpellLights != null)
                 GameSession.Instance.SpellLights.Pulse(point, color, size);
             if (impacts.Count == 0) return;
@@ -1171,7 +1169,7 @@ namespace OdysseyOracle
             effect.Root.position = point;
             effect.Root.localScale = Vector3.one;
             effect.Size = size;
-            effect.Duration = effect.Remaining = .3f;
+            PreparePairImpact020(effect,combo020,ref color);effect.Remaining=effect.Duration;
             effect.Root.gameObject.SetActive(true);
             impactBlock.SetColor("_BaseColor", color);
             impactBlock.SetColor("_Color", color);
@@ -1190,8 +1188,8 @@ namespace OdysseyOracle
                 {
                     Transform bit = effect.Renderers[i].transform;
                     float angle = i * Mathf.PI * 2f / 3f;
-                    bit.localPosition = new Vector3(Mathf.Cos(angle), .3f + i * .18f, Mathf.Sin(angle)) * t * effect.Size;
-                    bit.localScale = Vector3.one * Mathf.Max(.004f, .12f * (1f - t) * effect.Size);
+                    bit.localPosition = new Vector3(Mathf.Cos(angle)*effect.PairSpread020, effect.PairLift020 + i * .18f, Mathf.Sin(angle)*effect.PairSpread020) * t * effect.Size;
+                    bit.localScale = effect.PairStretch020 * Mathf.Max(.004f, .12f * (1f - t) * effect.Size);
                 }
                 if (effect.Remaining <= 0f) effect.Root.gameObject.SetActive(false);
             }
@@ -1230,9 +1228,13 @@ namespace OdysseyOracle
 
         void OnDestroy()
         {
+            ResetRefugePractice020();
             destroying = true;
             AbortTrainingLab();
             EndTutorialTowerPractice();
+            DisposeMonsterCollision015();
+            DisposeEnemyPool015();
+            DisposeEnemyStatus009();
             remoteHostileBolts?.Dispose(); remoteHostileBolts = null;
             if (targetGrid != null) targetGrid.Dispose();
             if (crowdSpacing != null) crowdSpacing.Dispose();
@@ -1259,3 +1261,58 @@ namespace OdysseyOracle
 
 // # ARCHITECTURE SNAPSHOT
 // Bounded offline tutorial adapter; existing actor/HP/tower/native owners and reward boundaries remain.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing actor world healthbar anchor and authenticated host status snapshot.
+// Array Formats: Five live bits31 distinct from caster12bit passive mask; fixed status presentation slots,256B lab word224 dedicated.
+// Dependencies/Pointers: Existing HP/damage/timer owners unchanged; root composes protocol/version bumps and verifies native/two-peer visuals.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: host accepted World contacts and existing run/epoch/shot identity; no damage/HP/path permission changes.
+// Array Formats: existing bounded launch receipts add three-bit landing dedupe; fixed256B shared wire unchanged; new64B arena frame through existing NGO pipeline.
+// Dependencies/Pointers: sole host/network/audio owners retain authority, lifetime and gesture/focus policies; actual peer/audio acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres and original actor-local+Z/Y-up; pooled lifetime only.
+// Array Formats: Exactly48 persistent actor slots/four retained original templates/17 reusable part slots per actor.
+// Dependencies/Pointers: Existing HP/projectile/attack owners remain; root integrates guarded hunks; native/Burst/memory acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres/Y-up, original admission-cached oriented monster box; no gameplay geometry/HP changes.
+// Array Formats: Existing48 actor/projectile pools consume owned numeric48 snapshots and fixed World buffers.
+// Dependencies/Pointers: Atomic numeric sweep consumer migration; old triggers disabled only with complete packet; root owns native acceptance and actual source integration.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current world solid AABB supersets and original XP anchors; floor and complete rotating/bobbing octahedron envelope included.
+// Array Formats: Fixed4104 native solids/Morton grid and4095 source-pair certificates; independent world/source generations.
+// Dependencies/Pointers: World and source owners complete readers before mutation/dispose. Existing claims/recipient masks/range/LOS and XP arithmetic remain canonical; native real merges/performance pending root.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world contacts, projectile-local three-part visuals and cached shot identity; physical collision and gameplay semantics unchanged.
+// Array Formats: Existing48/12 bolt pools,20 three-part impact slots, fixed six numeric/cue recipes and one extra local combo integer per accepted-shot receipt;64B/256B wire formats unchanged.
+// Dependencies/Pointers: Existing host acceptance/dedupe/expiry and audio voice policies remain canonical. Presentation failures grant no damage, status, recovery or authority; root owns actual renderer/listening/browser/peer/performance acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authoritative legacy Combat/World/revision and actor pool lifetime, world metres/Y-up.
+// Array Formats: Existing48 actors with bounded feedback values/Morton jobs and one synchronous accepted-damage observation; no extra damage, mesh or material owner.
+// Dependencies/Pointers: Positive actual HP loss owns immediate cached MPB red flash and observer dispatch. Root composes this exact work projection and verifies native collision/flash/audio/network/GC; replicas never move authoritatively.

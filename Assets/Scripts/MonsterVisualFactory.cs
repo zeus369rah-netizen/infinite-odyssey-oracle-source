@@ -23,6 +23,7 @@ namespace OdysseyOracle
             try
             {
                 original=MonsterVoxelCosmetics.Create(style,body,leftArm,rightArm,stone,joints,rune,flashes);
+                if(style==MonsterVoxelCosmetics.Style.Spider)original.AttachSpiderRefinement009(body);
                 if(version==MonsterArtVersion.DetailV2)
                     detail=MonsterVoxelCosmeticsV2.Attach(style,body,leftArm,rightArm);
                 return new MonsterVisualLease(original,detail);
@@ -55,3 +56,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original actor-local metres, +Y up/+Z forward; existing1.20 body scale only.
+// Array Formats: Eight rigid spider legs and bounded numeric job outputs; baseline admission geometry remains authoritative.
+// Dependencies/Pointers: New SpiderLegPresentation009 lease owns only visuals/native pose scratch; original V1/V2 lifetime and host damage remain.

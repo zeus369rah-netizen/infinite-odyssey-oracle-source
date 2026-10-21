@@ -17,7 +17,7 @@ namespace OdysseyOracle
         public int TowerPracticeAcceptedHits{get;private set;}
         public int TowerPracticeAcceptedDefeats{get;private set;}
         public bool TowerPracticeCompleted=>towerPracticePhase==TutorialTowerPracticePhase.Complete;
-        internal bool TowerPracticeOwnerContext=>session!=null&&session.World!=null&&
+        internal bool TowerPracticeOwnerContext=>session!=null&&session.World!=null&&session.World.Mode020==WorldMode020.TutorialRefuge&&
             TutorialTowerPracticeRules.CanOwn(active&&CurrentLesson==Lesson.TowerPractice,Finished,session.HasStarted,
                 session.CoopMode,session.Rooms!=null&&session.Rooms.Connected,session.World.IsCoopArena,
                 session.Defense!=null&&session.Defense.Running,session.IsDead,session.IsDowned,session.Victory);

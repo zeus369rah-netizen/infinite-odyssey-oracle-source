@@ -78,7 +78,7 @@ namespace OdysseyOracle
             }
         }
 
-        private bool ActiveGame => session != null && session.HasStarted && !session.Victory && session.World != null &&
+        private bool ActiveGame => session != null && session.LegacyCombatWorld020 && session.HasStarted && !session.Victory && session.World != null &&
             (session.Combat == null || session.Combat.Shrine == null || !session.Combat.Shrine.IsDestroyed);
         private bool Networked => ActiveGame && session.CoopMode && rooms != null && rooms.Connected;
 

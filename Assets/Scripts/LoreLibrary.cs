@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 namespace OdysseyOracle
 {
     /// <summary>Three original refuge pages, read by looking at their physical books.</summary>
-    public sealed class LoreLibrary : MonoBehaviour
+    public sealed partial class LoreLibrary : MonoBehaviour
     {
         private sealed class Book
         {
@@ -14,7 +14,7 @@ namespace OdysseyOracle
         }
 
         private readonly List<Object> resources = new List<Object>(20);
-        private readonly Book[] books = new Book[3];
+        private readonly Book[] books = new Book[12];
         private GameSession session;
         private GameObject libraryRoot;
         private Mesh cubeMesh;
@@ -60,35 +60,16 @@ namespace OdysseyOracle
                 "Beyond the refuge, they offer different answers. Fire parts a crowd. Water slows a hurried foe. " +
                 "Earth interrupts a heavy blow. Air makes room to breathe.\n\n" +
                 "Choose what the moment needs. There is time to learn the rest.",
-                new Vector3(8.65f, .86f, -1.55f), 90f, new Color(.29f, .075f, .045f));
+                new Vector3(8.65f, .855f, -1.55f), 90f, new Color(.29f, .075f, .045f));
+            InitializeDiscoveryLibrary();
         }
 
-        private void Update()
-        {
-            Hint = "";
-            if (session == null || libraryRoot == null || session.World == null) return;
-            bool visible = !session.World.IsCoopArena;
-            if (libraryRoot.activeSelf != visible) libraryRoot.SetActive(visible);
-            if (!visible || !session.IsPlaying || (session.Revival != null && session.Revival.IsHelping) || session.Player == null || session.Player.ViewCamera == null ||
-                AbilityBindings.IsRebinding || Cursor.lockState != CursorLockMode.Locked) return;
-            Transform eye = session.Player.ViewCamera.transform;
-            // The nearest physical hit enforces both range and clear line of sight.
-            if (!Physics.Raycast(eye.position, eye.forward, out RaycastHit hit, 2.5f, ~(1 << 2), QueryTriggerInteraction.Ignore)) return;
-            for (int i = 0; i < books.Length; i++)
-            {
-                Book book = books[i];
-                if (book == null || hit.collider != book.Collider) continue;
-                Hint = "[" + GameActionBindings.GetLabel("Interact") + "] Read " + book.Title;
-                if (Keyboard.current != null && Keyboard.current[GameActionBindings.GetKey("Interact")].wasPressedThisFrame && session.Hud != null)
-                    session.Hud.ShowLoreBook(book.Title, book.Body);
-                return;
-            }
-        }
+        private void Update() => UpdateDiscoveryLibrary();
 
-        private Book CreateBook(string title, string body, Vector3 position, float yaw, Color color)
+        private Book CreateBook(string title, string body, Vector3 position, float yaw, Color color, Transform bookParent = null)
         {
             var root = new GameObject(title);
-            root.transform.SetParent(libraryRoot.transform, false);
+            root.transform.SetParent(bookParent != null ? bookParent : libraryRoot.transform, false);
             root.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             Material cover = CreateMaterial(title + " cloth cover", color);
             Batch(root.transform, "Cloth cover and spine", cover, new[]
@@ -103,8 +84,8 @@ namespace OdysseyOracle
                 Part(new Vector3(0f,.078f,-.22f), new Vector3(.19f,.008f,.035f)),
                 Part(new Vector3(0f,.078f,-.22f), new Vector3(.035f,.008f,.19f)),
                 Part(new Vector3(0f,.08f,-.22f), new Vector3(.07f,.01f,.07f), Quaternion.Euler(0f,45f,0f)),
-                Part(new Vector3(-.31f,0f,-.23f), new Vector3(.025f,.15f,.025f)),
-                Part(new Vector3(-.31f,0f,.23f), new Vector3(.025f,.15f,.025f))
+                Part(new Vector3(-.31f,.005f,-.23f), new Vector3(.025f,.15f,.025f)),
+                Part(new Vector3(-.31f,.005f,.23f), new Vector3(.025f,.15f,.025f))
             });
             BoxCollider collider = root.AddComponent<BoxCollider>();
             collider.size = new Vector3(.66f, .16f, .76f);
@@ -158,6 +139,7 @@ namespace OdysseyOracle
 
         private void OnDestroy()
         {
+            DisposeDiscoveryLibrary();
             if (libraryRoot != null) Destroy(libraryRoot);
             for (int i = 0; i < resources.Count; i++) if (resources[i] != null) Destroy(resources[i]);
         }

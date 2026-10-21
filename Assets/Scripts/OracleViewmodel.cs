@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -11,7 +12,7 @@ namespace OdysseyOracle
     /// and the original four-point Oracle sigil in native-champion-sigils-v91.
     /// Everything is camera local, has no collider, and casts no world shadows.
     /// </summary>
-    public sealed class OracleViewmodel : MonoBehaviour
+    public sealed partial class OracleViewmodel : MonoBehaviour
     {
         const int Emerald = 0, Fold = 1, Brass = 2, BrassDark = 3, Glove = 4,
             GloveShade = 5, Wood = 6, Wrap = 7, Inlay = 8, Crystal = 9,
@@ -75,8 +76,9 @@ namespace OdysseyOracle
             visualRoot = new GameObject("Oracle first-person hands and wrapped wand");
             cameraRig = visualRoot.transform;
             cameraRig.SetParent(viewCamera.transform, false);
+            CreateHandPivot015();
             wandRoot = new GameObject("Right hand and astral focus").transform;
-            wandRoot.SetParent(cameraRig, false);
+            wandRoot.SetParent(nativeHandPivot015, false);
             wandRoot.localPosition = RestPosition;
             wandRoot.localRotation = RestRotation;
 
@@ -106,7 +108,15 @@ namespace OdysseyOracle
             SetEmission(inlayPaint, Aether * .30f);
             var shape = new ShapeBuilder(paints.Length);
             BuildWand(shape);
+            int armStart020 = shape.VertexCount;
             BuildArm(shape);
+            Vector3 cameraRight020 = Quaternion.Inverse(RestRotation) * Vector3.right;
+            if (!OracleViewmodelGrip020.TryRotation(new float3(0f, 1f, 0f),
+                new float3(cameraRight020.x, cameraRight020.y, cameraRight020.z),
+                new float3(0f, 1f, 0f), new float3(1f, 0f, 0f),
+                OracleViewmodelGrip020.GripRadians, out quaternion grip020))
+                throw new System.InvalidOperationException("Invalid authored right-hand grip frame.");
+            shape.RotateFrom(armStart020, new Quaternion(grip020.value.x, grip020.value.y, grip020.value.z, grip020.value.w));
             var bodyMesh = shape.Finish("Oracle bevel-voxel hand, cuff and focus");
             owned.Add(bodyMesh);
             var body = new GameObject("Combined Oracle viewmodel");
@@ -117,7 +127,9 @@ namespace OdysseyOracle
             BuildElementGlyphs(paints[SigilInk]);
             BuildSparks();
             BuildElectricArcs();
+            BuildStaffSpiral(bodyMesh, armStart020);
             CachePresentationBounds(bodyMesh);
+            PrepareHandsCold015();
             lastPosition = owner.transform.position;
             previousAngles = viewCamera.transform.eulerAngles;
             kickAge = 10f;
@@ -129,15 +141,19 @@ namespace OdysseyOracle
             RefreshElementAppearance();
             UpdateSparks();
             UpdateElectricArcs();
-            visualRoot.SetActive(GameSession.Instance != null && GameSession.Instance.HasStarted
-                && (GameSession.Instance.CombatUnlocked || GameSession.Instance.Tutorial!=null && GameSession.Instance.Tutorial.WandPreviewVisible));
+            visualRoot.SetActive(CanShowStaff020(GameSession.Instance));
         }
 
-        public void PulseCast(int spellIndex)
+        public void PulseCast(int spellIndex) => PulseCast(spellIndex,1<<Mathf.Clamp(spellIndex,0,3));
+        public void PulseCast(int spellIndex,int acceptedMask)
         {
-            if (visualRoot == null) return;
+            if (visualRoot == null || !StaffSpiralState.ValidMask(acceptedMask)) return;
             lastSpell = Mathf.Clamp(spellIndex, 0, 3);
+            if((acceptedMask&(1<<lastSpell))==0)return;
+            PulseNativeHands015();
             kickAge = 0f;
+            staffAttackSway.Kick(CastStrength[lastSpell]*(acceptedMask==15?1.2f:1f));
+            PulseAcceptedStaff(acceptedMask);
         }
 
         /// <summary>Legacy cosmetic input; confirmed casting uses SetConfirmedElementAppearance.</summary>
@@ -146,10 +162,11 @@ namespace OdysseyOracle
             SetConfirmedElementAppearance(1<<Mathf.Clamp(selectedElement,0,3),acceptedMask,finisherReady);
         }
 
-        /// <summary>Presentation only: confirmed one/two-bit choice and host/local accepted chain remain separate.</summary>
+        /// <summary>Presentation only: confirmed one/two/four-bit choice and host/local accepted chain remain separate.</summary>
         public void SetConfirmedElementAppearance(int confirmedSelectionMask,int acceptedMask,bool authorityReady)
         {
             if(!confirmedAppearance.SetMasks(confirmedSelectionMask,acceptedMask,authorityReady))return;
+            NotifyStaffSelection(confirmedMask);
             // Update at the same frozen pose even while a guide/menu pauses animation.
             UpdateFocusPaint(0f);UpdateSparks();UpdateElectricArcs();
         }
@@ -157,8 +174,8 @@ namespace OdysseyOracle
         /// <summary>Combat's own reset hook prevents replay across restart/trial/stage resets. Never changes visibility.</summary>
         public void ResetConfirmedAppearance(int acceptedNovaCount=0)
         {
-            bool repaint=confirmedMask!=0||ingredientMask!=0||finisherCue||novaPulseAge<10f;
-            confirmedAppearance.Reset(acceptedNovaCount);novaPulseAge=10f;
+            bool repaint=confirmedMask!=0||ingredientMask!=0||finisherCue||novaPulseAge<10f||staffSpiralState.PulseMask!=0;
+            confirmedAppearance.Reset(acceptedNovaCount);novaPulseAge=10f;ResetStaffSpiral();ResetNativeHands015();
             if(!repaint)return;
             UpdateFocusPaint(0f);UpdateSparks();UpdateElectricArcs();
         }
@@ -222,11 +239,13 @@ namespace OdysseyOracle
         void UpdateFocusPaint(float recoil)
         {
             float nova=Mathf.Clamp01(1f-novaPulseAge/.65f);
-            Color focus=Color.Lerp(finisherCue?PrismaticFocus:ConfirmedAccent(),NovaWhite,nova);
+            int focusMask=staffSpiralState.AcceptedActive?staffSpiralState.PulseMask:confirmedMask;
+            Color selectedFocus=MaskAccent(focusMask,ConfirmedAccent());
+            Color focus=Color.Lerp(finisherCue?PrismaticFocus:selectedFocus,NovaWhite,nova);
             Color inlay=Color.Lerp(finisherCue?PrismaticFocus:ChargedAccent(),NovaWhite,nova);
             float glow=.75f+Mathf.Sin(clock*2.7f)*.08f+recoil*1.6f+(finisherCue?.45f:0f)+nova*1.4f;
             ApplyPaint(bodyRenderer,Crystal,focus,focus*glow);
-            Color facet=Color.Lerp(ConfirmedFacet(focus),NovaWhite,nova);
+            Color facet=Color.Lerp(StaffFacetAccent(focusMask,focus),NovaWhite,nova);
             ApplyPaint(bodyRenderer,CrystalShade,facet,facet*(.13f+recoil*.32f+nova*.7f));
             ApplyPaint(bodyRenderer,Inlay,inlay,inlay*(.28f+recoil*1.4f+(finisherCue?.45f:0f)+nova));
         }
@@ -237,13 +256,14 @@ namespace OdysseyOracle
             var session = GameSession.Instance;
             RefreshElementAppearance();
             RefreshConfirmedAppearance();
-            bool visible = session != null && session.HasStarted && (session.CombatUnlocked || session.Tutorial!=null && session.Tutorial.WandPreviewVisible) && !session.Victory && !session.IsDowned;
+            bool visible = CanShowStaff020(session);
+            ObserveStaffPickup020(session);
             if (visualRoot.activeSelf != visible) visualRoot.SetActive(visible);
             if (!visible || session.Paused) {
                 lastPosition = player.transform.position;
                 previousAngles = viewCamera.transform.eulerAngles;
                 if (!visible) {
-                    novaPulseAge=10f;
+                    novaPulseAge=10f;ResetStaffSpiral();ResetNativeHands015();
                     walkingOffset = sway = Vector3.zero;
                     movement = 0f;
                     wandRoot.localPosition = RestPosition;
@@ -256,6 +276,7 @@ namespace OdysseyOracle
             clock += dt;
             kickAge += dt;
             novaPulseAge += dt;
+            AdvanceStaffSpiral(dt);
             float targetMovement = player.GroundedForBobbing ? player.StepBlend : 0f;
             movement = Mathf.Lerp(movement, targetMovement, 1f - Mathf.Exp(-dt * 9f));
             lastPosition = player.transform.position;
@@ -263,22 +284,28 @@ namespace OdysseyOracle
             Vector3 turn = new Vector3(Mathf.DeltaAngle(previousAngles.x, angles.x),
                 Mathf.DeltaAngle(previousAngles.y, angles.y), 0f);
             previousAngles = angles;
-            Vector3 targetSway = new Vector3(Mathf.Clamp(-turn.y * .18f, -1.7f, 1.7f),
-                Mathf.Clamp(turn.x * .16f, -1.5f, 1.5f), 0f);
+            float3 turnTarget020 = OracleViewmodelGrip020.Turn(turn.y, turn.x, dt);
+            Vector3 targetSway = new Vector3(turnTarget020.x, turnTarget020.y, 0f);
             sway = Vector3.Lerp(sway, targetSway, 1f - Mathf.Exp(-dt * 10f));
             float recoil = Mathf.Exp(-kickAge * CastRecovery[lastSpell]);
-            float impulse = recoil * CastStrength[lastSpell];
             float strength = player.BobbingIntensity * Mathf.Lerp(1f, .75f, player.SprintBobBlend);
-            float breathing = player.GroundedForBobbing ? Mathf.Sin(clock * 1.6f) * .001f * (1f - movement) : 0f;
-            Vector3 bob = player.GroundedForBobbing ? new Vector3(Mathf.Sin(player.StepPhase * .5f) * .010f * movement,
-                Mathf.Sin(player.StepPhase) * .007f * movement + breathing, 0f) * strength : Vector3.zero;
+            OracleViewMotion020 walk020 = OracleViewmodelGrip020.Walk(player.StepPhase, clock, movement, strength, player.GroundedForBobbing);
+            Vector3 bob = new Vector3(walk020.Position.x, walk020.Position.y, walk020.Position.z);
             walkingOffset = Vector3.Lerp(walkingOffset, bob, 1f - Mathf.Exp(-dt * 16f));
             if (bob == Vector3.zero && walkingOffset.sqrMagnitude < .000000001f) walkingOffset = Vector3.zero;
-            wandRoot.localPosition = RestPosition + walkingOffset + new Vector3(-impulse * .012f,
-                impulse * .008f, -impulse * .040f);
+            bool nativePose=EvaluateHands015(dt,strength);
+            if(nativePose)walkingOffset=Vector3.zero;
+            float3 attack020 = OracleViewmodelGrip020.Attack(staffAttackSway.PitchDegrees, staffAttackSway.YawDegrees);
+            Vector3 walkAngles020 = nativePose ? Vector3.zero : new Vector3(walk020.Angles.x, walk020.Angles.y, walk020.Angles.z);
+            // The parent is camera-local: convert the reticle axis into that parent's rigid frame.
+            Vector3 slingAim020 = nativeHandPivot015 != null ? Quaternion.Inverse(nativeHandPivot015.localRotation) * Vector3.forward : Vector3.forward;
+            wandRoot.localPosition = RestPosition + walkingOffset + new Vector3(attack020.x, attack020.y, attack020.z)
+                + slingAim020 * StaffEngulfState020.Sling(staffAttackSway.PitchDegrees);
             wandRoot.localRotation = RestRotation * Quaternion.Euler(
-                sway.y + impulse * 7f, sway.x - impulse * 3f,
-                Mathf.Sin(player.StepPhase * .5f) * movement * .45f * strength + impulse * 5f);
+                sway.y + staffAttackSway.PitchDegrees + walkAngles020.x,
+                sway.x + staffAttackSway.YawDegrees + walkAngles020.y,
+                walkAngles020.z + staffAttackSway.RollDegrees);
+            ApplyStaffPickup020(dt);
             UpdateClearance(dt);
             UpdateFocusPaint(recoil);
             UpdateSparks();
@@ -309,6 +336,7 @@ namespace OdysseyOracle
         void CachePresentationBounds(Mesh bodyMesh)
         {
             presentationBounds=bodyMesh.bounds;presentationBounds.Encapsulate(sparks.bounds);presentationBounds.Encapsulate(electricArcs.bounds);
+            if(staffSpiralMesh!=null)presentationBounds.Encapsulate(staffSpiralMesh.bounds);
             // Cold only: cache real outer-hand and grip vertices, rather than hand-authored frame offsets.
             Vector3[] vertices=bodyMesh.vertices;float outer=float.NegativeInfinity,grip=float.NegativeInfinity;
             for(int i=0;i<vertices.Length;i++)
@@ -321,11 +349,12 @@ namespace OdysseyOracle
 
         float MinimumNearPlaneScale()
         {
+            Matrix4x4 handMatrix=HandLocalMatrix015();
             float minimumDepth=float.PositiveInfinity;Vector3 c=presentationBounds.center,e=presentationBounds.extents;
             for(int i=0;i<8;i++)
             {
                 Vector3 corner=c+new Vector3((i&1)==0?-e.x:e.x,(i&2)==0?-e.y:e.y,(i&4)==0?-e.z:e.z);
-                minimumDepth=Mathf.Min(minimumDepth,(wandRoot.localPosition+wandRoot.localRotation*corner).z);
+                minimumDepth=Mathf.Min(minimumDepth,handMatrix.MultiplyPoint3x4(corner).z);
             }
             // Near-plane safety wins if a wall and the near plane cannot both contain the whole model.
             // Uniform camera-origin scale preserves projected framing; it never disables a renderer.
@@ -334,7 +363,7 @@ namespace OdysseyOracle
 
         float ProbeScale(Vector3 localPoint)
         {
-            Vector3 end=wandRoot.localPosition+wandRoot.localRotation*localPoint;float distance=end.magnitude;
+            Vector3 end=HandLocalMatrix015().MultiplyPoint3x4(localPoint);float distance=end.magnitude;
             if(distance<.001f)return 1f;
             int count=Physics.SphereCastNonAlloc(viewCamera.transform.position,.055f,
                 viewCamera.transform.TransformDirection(end/distance),obstructionHits,distance,~0,QueryTriggerInteraction.Ignore);
@@ -713,6 +742,8 @@ namespace OdysseyOracle
         void OnDestroy() { DisposeVisuals(); }
         void DisposeVisuals()
         {
+            DisposeHands015();
+            ReleaseStaffSpiralReferences();
             if (visualRoot!=null) {visualRoot.SetActive(false);Destroy(visualRoot);}
             for (int i=owned.Count-1;i>=0;i--) if (owned[i]!=null) Destroy(owned[i]);
             owned.Clear();visualRoot=null;sparks=null;electricArcs=null;cameraRig=null;wandRoot=null;
@@ -728,6 +759,18 @@ namespace OdysseyOracle
             readonly List<Vector3> normals=new List<Vector3>(14000);
             readonly List<Vector2> uv=new List<Vector2>(14000);
             readonly List<int>[] triangles;
+            public int VertexCount => vertices.Count;
+            // Cold authoring only: preserve all original connectivity and UV/material records.
+            public void RotateFrom(int first, Quaternion rotation)
+            {
+                if (first < 0 || first > vertices.Count)
+                    throw new System.ArgumentOutOfRangeException(nameof(first));
+                for (int i = first; i < vertices.Count; i++)
+                {
+                    vertices[i] = rotation * vertices[i];
+                    normals[i] = rotation * normals[i];
+                }
+            }
             static readonly Vector3[] Axes={Vector3.right,Vector3.up,Vector3.forward};
             public ShapeBuilder(int materialCount) {
                 triangles=new List<int>[materialCount];
@@ -866,3 +909,18 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original Oracle accepted world roots and camera/child-local poses only; no authority geometry changes.
+// Array Formats: Fixed31shared body slots/2prewarmed player graphs and original palette/pose/feedback buffers; no wire ABI growth.
+// Dependencies/Pointers: Player/Rooms/Combat remain sole owners; root integrates default-OFF original native player pilot and verifies real bindings/peer/clearance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing camera/wand-local metres; only cold authored right-arm vertices/normals rotate around the fixed staff axis; scales remain positive.
+// Array Formats: Existing packed thirteen-material mesh and bounded presentation state plus one24B numeric gait value; no new hot resources/allocations or saved animation assets.
+// Dependencies/Pointers: Original accepted attack spring, native hand graph, camera/aim, muzzle, movement, masks and full-mesh clearance retain ownership; root verifies geometry/native/browser presentation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: unchanged proper60degree hand frame; cold BuildWand vertex prefix alone feeds the existing wand-local effect renderer.
+// Array Formats: original thirteen-material body geometry/palette and existing effect mesh owner; no new renderer, GameObject or active-frame allocation.
+// Dependencies/Pointers: full-mesh clearance includes the extended staff effect bounds and accepted spring drives a bounded0.028m reticle-axis sling under the same rigid wrist/staff frame. Original models, pickup, glove/cuff and gameplay retain their owners.

@@ -22,6 +22,9 @@ namespace OdysseyOracle
         void SetSelected(int slot, int index);
     }
 
+#if UNITY_5_3_OR_NEWER
+    [BurstCompile]
+#endif
     public static class FireLightSelector
     {
         public const int MaximumEmitters = 128, MaximumLights = 4;

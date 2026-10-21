@@ -14,6 +14,7 @@ Shader "OdysseyOracle/LaneWeather"
         HLSLINCLUDE
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+        #include "../../Oracle/Presentation/Shaders/WorldWind015.hlsl"
         CBUFFER_START(UnityPerMaterial)
         float4 _BaseColor;
         float _Mode, _SrcBlend, _DstBlend, _ZWrite;
@@ -31,19 +32,18 @@ Shader "OdysseyOracle/LaneWeather"
         };
         float Hash(float2 p)
         { p=frac(p*float2(.1031,.11369)); p+=dot(p,p.yx+19.19); return frac(p.x*p.y); }
-        float3 WeatherPosition(float3 world, float4 anchor)
+        void WeatherPosition(inout float3 world,inout float3 normal,float4 anchor)
         {
-            if (_Mode > .5 || anchor.w <= 0) return world;
-            float t=_Time.y*saturate(_OracleLaneWeather.w);
-            float weight=anchor.w<2 ? saturate((world.y-anchor.y)/anchor.w)
-                : saturate((world.y-anchor.y-anchor.w*.40)/(anchor.w*.60));
+            if(_Mode>.5||anchor.w<=0)return;
+            float span=anchor.w<2?anchor.w:anchor.w*.60;
+            float baseHeight=anchor.y+(anchor.w<2?0:anchor.w*.40);
+            float weight=saturate((world.y-baseHeight)/max(span,.05));
             float phase=Hash(anchor.xz)*6.2831853;
-            float gust=.72+.28*sin(t*.17+phase);
-            float wave=sin(t*.64+phase)*.76+sin(t*.31+phase*1.7)*.24;
-            float maxOffset=anchor.w<2 ? .08 : .72;
-            float2 direction=_OracleLaneWeather.xy*rsqrt(max(dot(_OracleLaneWeather.xy,_OracleLaneWeather.xy),.0001));
-            world.xz+=direction*wave*gust*saturate(_OracleLaneWeather.z)*saturate(_OracleLaneWeather.w)*maxOffset*weight*weight;
-            return world;
+            float2 direction,offset,slope;float speed,time,gain;WindField015(direction,speed,time,gain);
+            WindSample015(weight,phase,time,direction,
+                gain*saturate(speed),anchor.w<2?.12:.72,1,offset,slope);
+            world.xz+=offset;
+            normal=WindNormal015(normal,slope/max(span,.05));
         }
         struct Varyings
         {
@@ -57,9 +57,10 @@ Shader "OdysseyOracle/LaneWeather"
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            output.positionWS=WeatherPosition(TransformObjectToWorld(input.positionOS.xyz),input.anchor);
-            output.positionCS=TransformWorldToHClip(output.positionWS);
+            output.positionWS=TransformObjectToWorld(input.positionOS.xyz);
             output.normalWS=TransformObjectToWorldNormal(input.normalOS);
+            WeatherPosition(output.positionWS,output.normalWS,input.anchor);
+            output.positionCS=TransformWorldToHClip(output.positionWS);
             output.uv=input.uv; output.color=input.color;
             VertexPositionInputs shadowInput=(VertexPositionInputs)0;
             shadowInput.positionWS=output.positionWS;shadowInput.positionCS=output.positionCS;
@@ -102,8 +103,9 @@ Shader "OdysseyOracle/LaneWeather"
         }
         float4 ShadowVert(Attributes input) : SV_POSITION
         {
-            float3 world=WeatherPosition(TransformObjectToWorld(input.positionOS.xyz),input.anchor);
+            float3 world=TransformObjectToWorld(input.positionOS.xyz);
             float3 normal=TransformObjectToWorldNormal(input.normalOS);
+            WeatherPosition(world,normal,input.anchor);
             #if _CASTING_PUNCTUAL_LIGHT_SHADOW
             float3 direction=normalize(_LightPosition-world);
             #else
@@ -180,3 +182,13 @@ Shader "OdysseyOracle/LaneWeather"
     }
     FallBack Off
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing supported Y-up refuge local/unit-yaw and arena-world/chunk anchor contract; no root/floor/actor/pivot change.
+// Array Formats: Existing immutable vertex/normal/UV streams and32B grass seeds; shared bounded shader wind,16original3x trees, unchanged counts/resources.
+// Dependencies/Pointers: Existing World owns cold materials/meshes; LaneVignetteRenderer publishes weather policy. No new Update/CPU spatial loop/compute dependency; root native/GPU/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing anchored presentation receives the same bounded passive world-XZ field; geometry/physics/accepted room fuel stay canonical.
+// Array Formats: existing fixed mesh/vertex/material owner and one shared float4; no hot collections, per-window objects or mutable gameplay alias.
+// Dependencies/Pointers: work-only shared-breeze adaptation; original shaders and fallback lifetimes remain. Root alone imports/tests actual native/WebGL visuals, culling, allocation and lifecycle.

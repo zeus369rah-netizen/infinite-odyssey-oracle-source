@@ -83,10 +83,10 @@ namespace OdysseyOracle.VisualDressing
                     float weight = ring==0?0f:ring==1?.35f:.75f;
                     float radius = s.Radius*(ring==1?1f:.35f), a = side*Mathf.PI/3f;
                     b.Add(s.WickLocal+new Vector3(Mathf.Cos(a)*radius,weight*s.Height,Mathf.Sin(a)*radius),
-                        new Vector4(weight,s.PhaseRadians,1f,s.Height),s.WickLocal,new Color32(255,255,255,255));
+                        new Vector4(weight,s.PhaseRadians,1f,s.Height),new Vector4(s.WickLocal.x,s.WickLocal.y,s.WickLocal.z,i),new Color32(255,255,255,255));
                 }
-                b.Add(s.WickLocal+Vector3.up*s.Height,new Vector4(1,s.PhaseRadians,1,s.Height),s.WickLocal,new Color32(255,255,255,255));
-                b.Add(s.WickLocal,new Vector4(0,s.PhaseRadians,1,s.Height),s.WickLocal,new Color32(255,255,255,255));
+                b.Add(s.WickLocal+Vector3.up*s.Height,new Vector4(1,s.PhaseRadians,1,s.Height),new Vector4(s.WickLocal.x,s.WickLocal.y,s.WickLocal.z,i),new Color32(255,255,255,255));
+                b.Add(s.WickLocal,new Vector4(0,s.PhaseRadians,1,s.Height),new Vector4(s.WickLocal.x,s.WickLocal.y,s.WickLocal.z,i),new Color32(255,255,255,255));
                 for (int side=0;side<6;side++)
                 {
                     int next=(side+1)%6;
@@ -167,3 +167,8 @@ namespace OdysseyOracle.VisualDressing
 // Coordinate Space: supported geometry-root local metres, Y-up; all baked roots/pivots are already accepted by World.
 // Array Formats:32B seed structs; grass<=512x10 vertices, candle<=256x20, crystal<=8x24x4; immutable mesh UV0/UV1.
 // Dependencies/Pointers: COLD Mesh/List work only, no Update/per-blade GameObject/material clone/light/collider; caller owns returned mesh.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.

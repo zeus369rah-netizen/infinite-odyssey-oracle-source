@@ -1,7 +1,1 @@
-SOURCE VIEW — RIGHTS RESERVED
-
-This selected-code snapshot is available for inspection. This notice grants no additional reuse, modification, redistribution or commercial-use permission beyond applicable law, platform terms or separate explicit permission from the relevant rights holder. Rights remain with their respective holders to the extent held. No MIT, CC0, public-domain dedication or other open-source license is supplied.
-
-Project-specific code was developed with substantial AI assistance under human direction. This does not warrant exclusive originality, authorship, non-infringement or legal clearance. Standard mathematics, game mechanics, Unity APIs and third-party dependencies are not claimed as exclusively owned. Existing explicit source notices and comments are retained unchanged and continue to apply to their own material.
-
-No rights to omitted media, internal documents, provider output, game assets or third-party package implementations are granted by this source view.
+This revision supersedes the former inspection-only notice for original material covered by LICENSE. Noncommercial reuse and adaptation require ZeusRa attribution and the conditions in LICENSE. Commercial use requires a separate written license from business@zeusra.com. Third-party terms, excluded game/media/branding rights and prior independent grants remain intact.

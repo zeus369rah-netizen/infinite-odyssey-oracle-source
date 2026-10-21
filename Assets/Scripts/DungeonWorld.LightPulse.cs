@@ -46,6 +46,7 @@ namespace OdysseyOracle
                 BaseIntensity = light.intensity, Kind = kind,
                 Phase = SpatialLightPulseRules.WarmPhase(Mathf.RoundToInt(localPosition.z * 100f))
             };
+            RegisterRoomReactionPulseSlot(slot,light);
         }
 
         private void TickSpatialLightPulse()
@@ -58,7 +59,7 @@ namespace OdysseyOracle
                 if (light == null || !light.isActiveAndEnabled) continue;
                 SpatialPulseDescriptor descriptor = spatialPulseDescriptors[i];
                 light.intensity = descriptor.BaseIntensity *
-                    SpatialLightPulseRules.Evaluate(descriptor.Kind, seconds, descriptor.Phase);
+                    SpatialLightPulseRules.Evaluate(descriptor.Kind, seconds, descriptor.Phase)*RoomReactionPulseGain(i);
             }
         }
     }
@@ -69,3 +70,8 @@ namespace OdysseyOracle
 // Array Formats: Fixed32 serialized Light references plus scalar descriptors; no hot allocations/new lights.
 // Dependencies/Pointers: World owns existing lights; pure pulse rules supply intensity only. URP owns spatial
 // attenuation/shadows; quality presets retain their existing shadow control. Pause/blur freezes the clock.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.

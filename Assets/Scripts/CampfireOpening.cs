@@ -83,6 +83,19 @@ namespace OdysseyOracle
             session.Player.ViewCamera.enabled = false;
         }
 
+        /// <summary>Commits an already accepted co-op spawn without an opening cinematic.</summary>
+        public void EnterGameplayDirect()
+        {
+            if (opening == null || session == null || session.Player == null || session.Player.ViewCamera == null) return;
+            phase = Phase.Playing;
+            skipRequested = false;
+            IntroTime = IntroDuration;
+            FadeAlpha = 0f;
+            transition = 1f;
+            opening.enabled = false;
+            session.Player.ViewCamera.enabled = true;
+        }
+
         public void ReturnToMenu()
         {
             if (opening == null || session == null || session.Player == null) return;

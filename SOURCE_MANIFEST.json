@@ -1,1 +1,3467 @@
-{"schemaVersion":1,"sourceCommit":"22c485eef3b2ac60682270c4f54226b22e2528a9","codeOnly":true,"sourceBytesModified":false,"selfHashExcluded":true,"committedCodeConfigFiles":298,"exportOnlyRecords":["EXPORT_SCOPE.json","README.md","RIGHTS_RESERVED.txt","THIRD_PARTY_NOTICES.txt"],"files":[{"path":"Assets/Editor/CampaignPropKit/CampaignPropGeometry.cs","bytes":30864,"sha256":"6ba972b0407d53edd50bdc6f61ecd5c1d8676932d2266e5f911b11e6b0445722"},{"path":"Assets/Editor/CampaignPropKit/CampaignPropKitBuilder.cs","bytes":26854,"sha256":"b3f5a0f4f9b6e54f085e032d42d9184dcd52bbabf5cbdb50c21cf2827a25e678"},{"path":"Assets/Editor/CampaignPropKit/CampaignPropKitManifest.cs","bytes":1060,"sha256":"120051dcacbd7430390dded53658fe60d62ee4ce6751559bc575db590af7d8f2"},{"path":"Assets/Editor/CampaignPropKit/CampaignPropPaintDiagnostic.cs","bytes":5011,"sha256":"4de812432e23ec3846c89dea7f538a1e144eb36e48575d6da8c7ea67312b76ea"},{"path":"Assets/Editor/CampaignPropKit/CampaignPropPreviewChecks.cs","bytes":4322,"sha256":"cf1b7afecfe420f4011ccec5727b886c701fe78551405e8d8df2ba043ad6a6d3"},{"path":"Assets/Editor/Checks/PeerCombatLedgerChecks007.cs","bytes":9167,"sha256":"9fde7546fe7ec7d8a5e619d10d824888a3e58828a1495179fcbe0c79dde30637"},{"path":"Assets/Editor/DenseTutorialEnvelopeAudit.cs","bytes":34456,"sha256":"df7f64ad2c58caf5541137fe232ffebdaaef8a174e47c69c46324e7997970714"},{"path":"Assets/Editor/Diagnostics/ConfirmedWandNativeChecks.cs","bytes":5966,"sha256":"20aa5537ea323c85d47a8c0e86b0bcd9055a065928681563674c7909318d7f7c"},{"path":"Assets/Editor/Diagnostics/DenseCoverageMath.cs","bytes":7416,"sha256":"9862412f89abe28c98a9b1a1ba47d5dd0790a9a1791113d19ea6f690a9788f76"},{"path":"Assets/Editor/Diagnostics/DenseRectangleUnion.cs","bytes":3605,"sha256":"cd413abeaa10db253866dfa3fa258898f2c6c9c21e5044632c18ce52f314dfd5"},{"path":"Assets/Editor/Diagnostics/OracleForgeAcceptanceDriver.cs","bytes":40738,"sha256":"292a19b899eaac2c84a7e9aafb139e78de5fac2ba89cfcb671f086e85191fc45"},{"path":"Assets/Editor/Diagnostics/OracleGuideBatchLauncher.cs","bytes":10188,"sha256":"42572fc0d5312cd8f89aa0ddd82ae564aae65a991441ab051aca6d3e0b6c21a9"},{"path":"Assets/Editor/Diagnostics/OracleGuideEndToEndDriver.cs","bytes":36261,"sha256":"d5090931792980ba7758527b43d4f48f8e1e2fc0ae6ab06195747bc7775e2f5c"},{"path":"Assets/Editor/Diagnostics/OracleNativeTour.cs","bytes":48962,"sha256":"3a42543001f299287bf7086af97a0ce513b8d09c86193974f1871dedb3bd3114"},{"path":"Assets/Editor/Diagnostics/OracleNativeTourMath.cs","bytes":2878,"sha256":"9e54afe8985c3efaa6ab78db8d3af30c0c9971853cf4f518f0673a2bafb26f64"},{"path":"Assets/Editor/Diagnostics/OracleNovaNativeAcceptance.cs","bytes":20993,"sha256":"e640aa5f962fd33ced213f037f18c57c1922bf010993a62f01c5959a8aba8e48"},{"path":"Assets/Editor/Diagnostics/OraclePassiveNativeAcceptance.cs","bytes":22751,"sha256":"f16335380f25810894eccfd011a83c4196a671c78839758728d9baa096d47711"},{"path":"Assets/Editor/Diagnostics/OracleRapid150TutorialNativeAcceptance.cs","bytes":16209,"sha256":"45e32903367618754cbe025ff2a2d24baa4a1e24c554665a3cd52eac6ad2919e"},{"path":"Assets/Editor/Diagnostics/OracleRelease003Acceptance.cs","bytes":29664,"sha256":"962afc82346d8526f89ea0b7862173ffcdabe2b2acccfbc394401159b8d9c73e"},{"path":"Assets/Editor/Diagnostics/OracleUiAcceptanceFixture.cs","bytes":44108,"sha256":"df4a25eda27ead1a89d858de080f9b0aa4d442cb96ef5daa19edd96ec90a26a9"},{"path":"Assets/Editor/Diagnostics/Release003GroundingCapture.cs","bytes":2749,"sha256":"b9544005e7c807d9c5d46d9c7016ee8b3ca3dd2fd3d973e6268de476f2017e76"},{"path":"Assets/Editor/Diagnostics/Release003PerformanceCapture.cs","bytes":16972,"sha256":"d510c16ce8e382b10ceb7c7e1c86b5fdc561646d3f86579a8cd994ab74c603a1"},{"path":"Assets/Editor/Diagnostics/Release005PlatformChecks.cs","bytes":3949,"sha256":"02920f11eaa6e534d5a9d9b4c232729ddb1446b32be47267550a8febb41eecb1"},{"path":"Assets/Editor/Diagnostics/Release006ArenaChecks.cs","bytes":27899,"sha256":"f1e3db00e372afcc5224e0c6e21f4e8c55993365ee6d537e8f0e5612bf32133e"},{"path":"Assets/Editor/Diagnostics/Release006VisualCapture.cs","bytes":26494,"sha256":"c32a7bb2fee7056b69ace35586827c96d65a8eeb9492c75a585daf824c6942be"},{"path":"Assets/Editor/Diagnostics/TourPhysicsApiChecks.cs","bytes":5003,"sha256":"9e944fb8f08fa2e7278f96a96387563633fe14652dac49a2e8c17eb5eb9b0e96"},{"path":"Assets/Editor/GeneratedPropChecks.cs","bytes":34844,"sha256":"2f4bad75c1fe2b102d60190bab7cb4706953c7b4016fdb6dacc8745411b82030"},{"path":"Assets/Editor/MonsterLibrary/OracleMonsterAssetLibraryV1.cs","bytes":37404,"sha256":"aa9b581403309866efb4631a9a4d1066726a537b0e2c385ecbf1895c03829d24"},{"path":"Assets/Editor/MonsterLibrary/OracleMonsterAssetLibraryV2.cs","bytes":37940,"sha256":"1883a9a7e25d189e9479f09010586e6cc161838d5d6c77d8c411d25b0819fb98"},{"path":"Assets/Editor/MonsterLibrary/OracleMonsterLibraryNativeChecksV1.cs","bytes":6509,"sha256":"872dccb91f53649971adbd423a45aa0fe6810d24b44c54786aef173086ceb8ee"},{"path":"Assets/Editor/MonsterLibrary/OracleMonsterLibraryPreviewV1.cs","bytes":8804,"sha256":"55448e7f39484c0b3126e1a88b4c9ab1b8001dbc3d22249d5d89453bacaf4df0"},{"path":"Assets/Editor/MonsterLibrary/OracleMonsterLibraryPreviewV2.cs","bytes":8908,"sha256":"d564ace908143fe8df6e1e1b7bada509a3bb10b7fb5ff61876e2b968ea729a73"},{"path":"Assets/Editor/OdysseyProjectSetup.cs","bytes":15168,"sha256":"80fa4c93a261eba661eb436bd095cec662d736f810346663f68d41badc9eaccd"},{"path":"Assets/Editor/OracleAnvilReferenceFixture.cs","bytes":14106,"sha256":"59cebc56175e5f633575c13615b69a0ab68483d44e7c28f16611be1bd2550a3b"},{"path":"Assets/Editor/OracleAssetOriginPreflight.cs","bytes":1915,"sha256":"891ed76154d602915f2c1600efdc44b80a403655b23a7d0d1480a7cd795cd064"},{"path":"Assets/Editor/OracleConfirmedCastingNativeFixture.cs","bytes":26650,"sha256":"600fdfa08f28fe5e35caeb984b2efb10a2aa6aeb97ebb785a15bc81c4a9a2aa8"},{"path":"Assets/Editor/OracleFourSecondNativeFixture.cs","bytes":22723,"sha256":"df168b96927f11cda3aaa4008779cc33ef55861cf14e108eedfb708928eeef7f"},{"path":"Assets/Editor/OracleMeshQuotePreflight.cs","bytes":25149,"sha256":"ad5751bf7e794697e55c58d50fc0dfa5cef403467a3b65f4fe077d9d7a2858e3"},{"path":"Assets/Editor/OraclePlayModeLifecycleFixture.cs","bytes":13157,"sha256":"b9df863238e743bf975727e663119fa2501fec898693f5a3c92978344dd75e78"},{"path":"Assets/Editor/OraclePlayModeSafety.cs","bytes":1705,"sha256":"e821384ecca0d50657217fed382e8f561d6131cc813da6840cbb96a4ce184f35"},{"path":"Assets/Editor/OraclePresentationChecks.cs","bytes":24921,"sha256":"d822c23fb848ac2fcad6ccc7c5570174cca8e35c6c78b1c1aa201512ad4c64d3"},{"path":"Assets/Editor/OracleReleaseBatchBuild.cs","bytes":871,"sha256":"44aea4ab6b56e0aeaea22bd87533aada9ac025ddd1ed648c973178789967aa26"},{"path":"Assets/Editor/OracleReleaseChecks.cs","bytes":34862,"sha256":"de1bc8b65819f80ea113eb4d6ec296f1dd6bc8d1b2f6acc98e942419dccae861"},{"path":"Assets/Editor/OracleWebBuildQueue.cs","bytes":3094,"sha256":"e3532594fbe2fbd6a50cd9e565e6534340dcfe71245d9d37b464ee29a71d4708"},{"path":"Assets/Editor/OracleWebInferenceShaderStripper.cs","bytes":12870,"sha256":"006e6be320eff8289b0c8e95e8006abd34850b716d50a8f4f57d357535341d81"},{"path":"Assets/Editor/PassiveNodeIcons/PassiveNodeIconBaker.cs","bytes":18488,"sha256":"4a143950a68159ac31ac207a62f89688b76ea3ad64c67a486856465bab5171df"},{"path":"Assets/Editor/PassiveNodeIcons/PassiveNodeIconRecipes.cs","bytes":11248,"sha256":"3fc36b1aa82b12a4f66a091d82adf93e9428d98ff90cf38f538a9d907f98a170"},{"path":"Assets/Editor/PausedFireBudgetChecks.cs","bytes":7864,"sha256":"549b5836a028871c959c96d27317d834b090f4f1367f7cbdf2d54b74c3a8e031"},{"path":"Assets/Editor/PermanentFireLightChecks.cs","bytes":6589,"sha256":"b0ddd0b0c77a7e594e02506c1a198f13ac2cb860f0ef577052106afdff102d8d"},{"path":"Assets/Editor/PlayModeLightPoolChecks.cs","bytes":6669,"sha256":"5f8597ed56fbaae376e57ea14696de493ca0e3829e0b4de9f683377dc40a02b0"},{"path":"Assets/Editor/RefugeNpcLibrary/OracleRefugeNpcAssetLibraryV1.cs","bytes":37291,"sha256":"328c25dc7e61ea18f4b3b401ec7e701233a3eac2abb8205e2a4d512420b72231"},{"path":"Assets/Editor/RefugeNpcLibrary/OracleRefugeNpcBindingV1.cs","bytes":6187,"sha256":"c23947b6ef9e9cd8a83cbb90b607f2d55b245b9b25804e91997bcb3c84fcd903"},{"path":"Assets/Editor/RefugeNpcLibrary/OracleRefugeNpcLibraryPreviewV1.cs","bytes":8431,"sha256":"bdbb5a7d725ff878e173e7f064b5306cc207a47fc8fb989b299ad0ae50c0ef7a"},{"path":"Assets/Editor/ShrineMenuFramingChecks.cs","bytes":6775,"sha256":"d5b2ac152a4e1aea70b09fae56735c3ded66b91e478c56880addfc5467ab98cf"},{"path":"Assets/Editor/SpatialTargetGridChecks.cs","bytes":9525,"sha256":"576dddbba5c85c5b68c6bc34954eb263ca0df576e20a05af97a8d3742ed534bb"},{"path":"Assets/Editor/TowerLibrary/OracleSavedTowerCatalogBake.cs","bytes":12725,"sha256":"16f23c5579258fc32e806aa0c4dcc6d4049850344a1becb817c539d70ddbe7b1"},{"path":"Assets/Editor/TowerLibrary/OracleSavedTowerCatalogChecks.cs","bytes":5062,"sha256":"c97e502cd30a6fc986239e85698d6cdedf19d0512205a5123d99860fb477ea82"},{"path":"Assets/Editor/TowerLibrary/OracleTowerAssetLibraryV2.cs","bytes":51257,"sha256":"507a60d6765d0fd9ce6495cef066ded70aeeaa4770d2a3a3ed3ee333994f93f3"},{"path":"Assets/Editor/TowerLibrary/OracleTowerLibraryPreviewV2.cs","bytes":11616,"sha256":"50d61d2badaa9bfa6d84e78392def786352f49bec4f53d1e55836d926dfd5ac8"},{"path":"Assets/Editor/TutorialLightContributionChecks.cs","bytes":18341,"sha256":"1e7d6ee3847d48290a122c445d8d623129c9c2fab47defd85b98a04261818d26"},{"path":"Assets/Editor/TutorialNativeCostSnapshot.cs","bytes":15739,"sha256":"5d211495fa597ee7ab8ea0da1d9fe223f25a82b1383025a39a4bf79d049646c0"},{"path":"Assets/Editor/TutorialPartitionChecks.cs","bytes":4943,"sha256":"62847dd66dd4e3a3ee5c3ee5c5c8f423cb5ffc9b15cfd599d5f44812297978c0"},{"path":"Assets/Editor/TutorialPartitionLocalPrecisionChecks.cs","bytes":1720,"sha256":"403c6267d442d43f4281fb65d1c46e61b12bb17d0e5a28c3c33c4102bda8763e"},{"path":"Assets/Editor/TutorialPartitionPrecisionProbe.cs","bytes":2470,"sha256":"8e2eee3d70d7ed8c6503c51a2f6b85ee5447c9480a3f97b8431a24b82dff2537"},{"path":"Assets/Editor/TutorialSeamGeometryChecks.cs","bytes":9803,"sha256":"ee58cd455beb1f57776373d11f70b2d15fd004b383ae664f518902aff59c0e4c"},{"path":"Assets/Editor/TutorialTorchMountChecks.cs","bytes":9144,"sha256":"d4a5bd5b34b67f90cd9c0ac1cc5dc276259b6564b04d19581384fc87f8718789"},{"path":"Assets/Editor/VoxelChunkChecks.cs","bytes":6193,"sha256":"d6bf30055187dcc47d4e5dfe03c42544b0d4559c08b3cc1da1c1dd71e6d86c89"},{"path":"Assets/Editor/WandPresentationChecks.cs","bytes":6187,"sha256":"fecd9e61d66d95e6cee7799c6ca96f24af79468b55a013e30259a92293e2c66c"},{"path":"Assets/Oracle/Ecosystem/Data/OracleEcosystemData.cs","bytes":17378,"sha256":"683ce4c48c18b778f660927de3696ffda2e18c85cb2d8f4a1ef1b3709d4a2316"},{"path":"Assets/Oracle/Foundation/Combat/CombatGridComponents.cs","bytes":1872,"sha256":"2cd686181630a8f9f58651f31cf87d299d196a9111a098c5c141ab9e8fb20d10"},{"path":"Assets/Oracle/Foundation/Combat/TowerGridTargetingJob.cs","bytes":8632,"sha256":"5006e345a3b7d4576a761668111914e448b3ab71c739c5da6ca4a7e7c39dd758"},{"path":"Assets/Oracle/Foundation/CombatConfig.cs","bytes":1099,"sha256":"8a0353b5d8d4c4511ccabf5e487a489f181acdff71dfd489078e5aa6938c6b75"},{"path":"Assets/Oracle/Foundation/Editor/CombatBalanceProbeSystem.cs","bytes":1467,"sha256":"3696639b8dcac562547f5b2138d407f5fe40846ed3f24780862505401bccf30e"},{"path":"Assets/Oracle/Foundation/Editor/Oracle.Foundation.EditorChecks.asmdef","bytes":361,"sha256":"ccde9580037193b26830b84044a63fe83bbcc2ece250730169ee5863e5da46f9"},{"path":"Assets/Oracle/Foundation/Editor/VerifyCombatBalanceCandidate.cs","bytes":20335,"sha256":"dfd96c9317d12fa6a9a4a6e1c42334e51c75a4d012ed94b9c772f753e7e7cca4"},{"path":"Assets/Oracle/Foundation/Oracle.Foundation.asmdef","bytes":304,"sha256":"4ad6cfdd78aedf319a2eff5a869bc65fd5da9a6b4f4cceee113dd0cc45587f68"},{"path":"Assets/Oracle/Foundation/OracleSystemInitialization.cs","bytes":10832,"sha256":"f4ac41ecf7df141ee0c2a7bba147707573e3761b6a44672bca321202e2233d25"},{"path":"Assets/Oracle/Foundation/Presentation/RigidAnimationData.cs","bytes":3452,"sha256":"7189d175ab4512efc8457b9245e872a7b52bc4586f431556d971d3ea008ba5a5"},{"path":"Assets/Oracle/Foundation/Presentation/RigidAnimationMath.cs","bytes":15907,"sha256":"fec65d7b4b775be46b90ee5e05c25de8dd7f935b94f295685755ee555e175ddc"},{"path":"Assets/Oracle/Foundation/Shaders/RigidAnimation.hlsl","bytes":5937,"sha256":"9d1bcfd688fa88d4a05a3d73a37582c88e43dac1b445589077567c1d1ab9c6de"},{"path":"Assets/Oracle/Foundation/Shaders/RigidAnimationCandidate.shader","bytes":15056,"sha256":"16f25af3711d71557a1583839b05c198775be6e423634a15490057eb465524cc"},{"path":"Assets/Oracle/Foundation/World/ColdCrossPrism.cs","bytes":8669,"sha256":"540c5e2a0c23f34dda57d517449c1358ce2ea1f07a3298f9d924541526bd1865"},{"path":"Assets/Oracle/Foundation/World/RefugeFloorSupportJobs.cs","bytes":8712,"sha256":"e36f0e7480f3a7631f224e8ca837256cb47b619a4998ec0b95293eaedfb6c150"},{"path":"Assets/Oracle/Foundation/World/RefugeFloorSupportMath.cs","bytes":9028,"sha256":"08c14bbb37177a879046248f8f4834b661322bd143e70ae43e8630f6a3523388"},{"path":"Assets/Oracle/Presentation/Shaders/CrystalMotes.shader","bytes":2076,"sha256":"a1bda32b4f201a4e0930cffbefcbbf88d5ccbb51e3ff5a0aa28d2bdd16f4750e"},{"path":"Assets/Oracle/Presentation/Shaders/RaykonRigid.shader","bytes":7710,"sha256":"72d7571fe9598995dfb7b99e418fd25538e1bbc95e98d69f5e43bf548e98ecd3"},{"path":"Assets/Oracle/Presentation/Shaders/SoftDressing.shader","bytes":3788,"sha256":"44979461e7585f94735ff5f02740e7f166da4e8ea3df2aa1369116dc20aa5931"},{"path":"Assets/Resources/OracleVoxelDistanceLit.shader","bytes":8537,"sha256":"a2a81bec2bf1380d6ebfa6a314876b4146dff1510e6f68ae0352a14eebdbeb3c"},{"path":"Assets/Resources/Shaders/LaneGateGrid.shader","bytes":2395,"sha256":"daa711485e81a89bf8eef342908a18d00d7edfdbc4f38830801d1dca850c9b5f"},{"path":"Assets/Resources/Shaders/OracleLaneWeather.shader","bytes":8016,"sha256":"2a8cbd8a61345743c3b049db8821c7421e19e379627b7f869ed9d40a30188874"},{"path":"Assets/Resources/Shaders/OracleNightSky.shader","bytes":4964,"sha256":"6f264d08dc6fc0c3057411e2c5a167676571beef1fd067c9fae39fcf8fa489e0"},{"path":"Assets/Resources/Shaders/PortalAnomaly.shader","bytes":7437,"sha256":"25a4622bc7333ece086d1b89e307a8d40e370fcdbec9fed7280c169cd283451c"},{"path":"Assets/Scripts/AbilityBindings.cs","bytes":1505,"sha256":"3fb6e9836877e9fb3ed23b39f5b688ab32b0c005ccc0f2b3bca92bc375bbcfde"},{"path":"Assets/Scripts/ArenaPreloader.cs","bytes":10136,"sha256":"5eb9f0c9d7d1a00d1fa034267409852e9405173ff9f2d0c139f852fdee7fc8ff"},{"path":"Assets/Scripts/BlacksmithShopPanel.cs","bytes":30241,"sha256":"6b6fbce9501c2fb1d4434d1df3b97f0dff31e32b7053164c7549cb44b5ed55b4"},{"path":"Assets/Scripts/BreakableVoxelWall.cs","bytes":6317,"sha256":"799fceaff5acb9de0e04d66e981d498e8b102210920b7ee1590325adeb1cab9a"},{"path":"Assets/Scripts/CampaignBootstrap.cs","bytes":2348,"sha256":"aa1c0ea2e28fa74101f346d9eca50a1dd1d7b74289a77100350f9becef101a17"},{"path":"Assets/Scripts/CampaignNpcPresentation.cs","bytes":14325,"sha256":"78bb627b40a1645eb94c75aea5ba90ec7f10335dc555f5faa528bac2bd288130"},{"path":"Assets/Scripts/CampaignNpcQuestBridge010.cs","bytes":1320,"sha256":"3bbd9d998b67ff2cc00a0ee1d87bbfd9317780bdc020de2401ed5c831e3f7e1b"},{"path":"Assets/Scripts/CampaignNpcRecipes.cs","bytes":7606,"sha256":"99ba4d9d5da5e86ae0a287f01a1eedb7745a2e17262abf800043ff3d47eebbc5"},{"path":"Assets/Scripts/CampaignPeacePoseRules.cs","bytes":2307,"sha256":"742f4895999823933a7d643505b7b82dc9afa65e567355310d80bce67582afa7"},{"path":"Assets/Scripts/CampaignProgressSnapshot.cs","bytes":1558,"sha256":"ad4d2d21607edf49cc64d9bf0a463d3d3f4f11c654d2a3867d006be67fac74f7"},{"path":"Assets/Scripts/CampaignQuestState.cs","bytes":11605,"sha256":"6bd07f94df101310a26bec8d01958a30dcd70e29a89baa03d3b9b1c5b99c9d4d"},{"path":"Assets/Scripts/CampaignRefugeSpawns.cs","bytes":1195,"sha256":"5d4b7cd08d3dc504b6d2d69ee2e25fff982597a3da61c83453df08676ac3accd"},{"path":"Assets/Scripts/CampaignSessionFlow.cs","bytes":4035,"sha256":"5c56881066338f07c8bfd56ee7fb76d71214bba3ccb9b59dde03dbcdfd8a1065"},{"path":"Assets/Scripts/CampaignStagePacing.cs","bytes":6639,"sha256":"90c044acff7c03357cb8f891fa85207a30bd377beb9cb5ef0c5f43bb24769667"},{"path":"Assets/Scripts/CampaignViewFence.cs","bytes":1946,"sha256":"e01119fc1326a4376865a86c848ec4342da3e72f90612ab100ecd9896f4ffc33"},{"path":"Assets/Scripts/CampfireAtmosphere.cs","bytes":3786,"sha256":"91ad8d67fc3585e02252fb5fc55eb67d14f830537dfb8f88d000951e2ed71dbb"},{"path":"Assets/Scripts/CampfireOpening.cs","bytes":11065,"sha256":"f6e928f6c251e6b6c68343b43eddf3181ac74b960869270367a113e5f7ad44ad"},{"path":"Assets/Scripts/CircularMapLayout.cs","bytes":9149,"sha256":"67c89297badeb7b2eff6fb1d2ae57a949896a79b1d0a0010ecbcde54613caa6a"},{"path":"Assets/Scripts/ConfirmedSelection.cs","bytes":5337,"sha256":"dcde731ffdf75287bccf4ac91a763951f9c85328eb5b3155bb172b11f21d7048"},{"path":"Assets/Scripts/ConfirmedWandAppearanceState.cs","bytes":2466,"sha256":"2ad090632c7b568296d80c143a03ffc13b03ffd34e78c0e3d2fdc30fe1c5bbc5"},{"path":"Assets/Scripts/CoopCampaignDirector.cs","bytes":23821,"sha256":"0d2bc48e6c8afbb1b1ebefe7203b72a1129272af56f8fc5392367e0f8bde0cf2"},{"path":"Assets/Scripts/CoopDefenseDirector.Campaign.cs","bytes":8694,"sha256":"862bb7a7dbca09bcc2b38440891cbf4fb6e99d36f719b99df8fe7461ae347497"},{"path":"Assets/Scripts/CoopDefenseDirector.CampaignChecks.cs","bytes":7148,"sha256":"ab34e2b30a653b9cd6101f3346faac32f364023da593f76a5513084a6739c44c"},{"path":"Assets/Scripts/CoopDefenseDirector.DangerChecks.cs","bytes":29207,"sha256":"11e04cf0d50c00345b029a6d105bbf4c613d1c56b6eec0852de84f970a752a88"},{"path":"Assets/Scripts/CoopDefenseDirector.cs","bytes":97039,"sha256":"26a5fa8407da27412d75b97e2a01a33bf16992dfff7dfac1072643855162e669"},{"path":"Assets/Scripts/CoopPartyCapacity.cs","bytes":5163,"sha256":"59ac078bf675df71bb7a15225dd034dcbd7754ca52299fcd36780ee1e9160b6d"},{"path":"Assets/Scripts/CosmicNovaChain.cs","bytes":2107,"sha256":"d96f1b5db160fa5a57b099dd95def1cd06e52dfb551c9d8caa5258a2bb0d2fa9"},{"path":"Assets/Scripts/CosmicNovaGeometry.cs","bytes":13585,"sha256":"65dc66bd2770fddaf8944df43f3d7dd7d04835836c3f7e5b2ab518688593354b"},{"path":"Assets/Scripts/CosmicNovaPoolClock.cs","bytes":1774,"sha256":"5997b0902b747a92883fef50a991767f1441760a469ff9731a322576d171a271"},{"path":"Assets/Scripts/CosmicNovaVfx.cs","bytes":9812,"sha256":"99ccc19bf731307324af90a19baadd830f3ce9194554163b74d7c190f184c2f2"},{"path":"Assets/Scripts/CrowdSpacingSolver.cs","bytes":6780,"sha256":"1fe01b6d94e4fefba25d6915a5b90fbdad430ddf81550b8249cf3d8c3b4708c3"},{"path":"Assets/Scripts/CurrentDefensePacing.cs","bytes":3998,"sha256":"13157b66457cbb033238f9d2acf03e1f72e010c5e4b5ddd05183d25cdfcac5e3"},{"path":"Assets/Scripts/Diagnostics/OracleMonsterV2CoexistChecks.cs","bytes":29001,"sha256":"d6348013fbe3f56f218a1f76bf671c526ac15533023f2011fd20369837b5afde"},{"path":"Assets/Scripts/DressingMeshBuilder.cs","bytes":9781,"sha256":"322549372251faa9c4c713364600054bb5ff3b4ee495b47bdc19a9ea6ffbcb82"},{"path":"Assets/Scripts/DressingPlacementKernel.cs","bytes":3157,"sha256":"2ab18f28c76249ce9fabe5801f4b9253b2dca5fb180409301fdcc457fa907317"},{"path":"Assets/Scripts/DungeonWorld.ArenaEnvironment.cs","bytes":15715,"sha256":"6b08e2466811d7f0f2449f90eb5054311223049c8ec79a6cb00c75e113f70eab"},{"path":"Assets/Scripts/DungeonWorld.BarrelUnion.cs","bytes":6710,"sha256":"6ccbdc94d2a6c3d6a57a37a26419f14c1819a410ebeaf8082cc70956f15ca9c3"},{"path":"Assets/Scripts/DungeonWorld.Lanes.cs","bytes":8046,"sha256":"8d91a8918e5fb584d2413856763a4301a07a5e403997596b450fe770d78c96fc"},{"path":"Assets/Scripts/DungeonWorld.LightPulse.cs","bytes":3622,"sha256":"c27c5a4bdfdcd2095f0dda0c0edb79ba6c84381abc4cbac0d49afd10313efa84"},{"path":"Assets/Scripts/DungeonWorld.MentorVisibility.cs","bytes":900,"sha256":"396d1fa7588e5f14f5e9ddb6faa02813ec622256ca85e62e83a19e7df874f723"},{"path":"Assets/Scripts/DungeonWorld.RaykonAlchemy.cs","bytes":4800,"sha256":"9f6cc85d806f6ee1f76f364c0645150f91dc0474f1d25f7fe01c42daeaaf0537"},{"path":"Assets/Scripts/DungeonWorld.RaykonInteraction.cs","bytes":971,"sha256":"460646ff0537b977958c69a46503633581c525768cdbfbc4f6d3cc77171fc82e"},{"path":"Assets/Scripts/DungeonWorld.RefugeActivities.cs","bytes":3474,"sha256":"be4e3f692fa2f720da7413164a374391cffb1d6f12278f5016f3bb3d229f5741"},{"path":"Assets/Scripts/DungeonWorld.RefugeDressing.cs","bytes":15555,"sha256":"6a4f59b87aa4e88d1cbe3f0c39c697ab638537ebd613d933a4037ca6a3c71556"},{"path":"Assets/Scripts/DungeonWorld.TrainingLab.cs","bytes":1377,"sha256":"ff8763233d99e0b9c050f5f26835f1774c8f2e6902b36a9762bc0f1d2bf042ff"},{"path":"Assets/Scripts/DungeonWorld.TutorialRefuge.cs","bytes":6922,"sha256":"05d8dbe005b50ca44b1096ea1549e6415633b02ea5c663a84c16e4ce348dabd4"},{"path":"Assets/Scripts/DungeonWorld.cs","bytes":108852,"sha256":"4424ae6c9c6f08960a53db93c55dedb723e2b84083a6a311a98c444ee96c2bb6"},{"path":"Assets/Scripts/Editor/OracleAvatarMenuRenderProbe.cs","bytes":3451,"sha256":"122692ef19da548bed6f352aee26c8f6aa772f260a11c11b9d2bc39e1259747c"},{"path":"Assets/Scripts/ElementProgression.cs","bytes":37800,"sha256":"d63e8c3ab14bc750a5d24d94ba1e0159fcec04ef157ba2417c6a8dd35143f427"},{"path":"Assets/Scripts/ElementalTowerPlatforms.cs","bytes":5554,"sha256":"2d117ce2264c0609a26b7e75f65582b0f2006cfc81bce081477475168342a80b"},{"path":"Assets/Scripts/EnemyRouteTowerPolicy.cs","bytes":3862,"sha256":"a8523b0d693d81b708001b7d3c1410b23217cdb400da6fe0cb7ef752ab67ce38"},{"path":"Assets/Scripts/FireLightSelector.cs","bytes":3574,"sha256":"2855dfb7127d55d44cc615a19428f3947014c45382833425c9b61ff71f3b862e"},{"path":"Assets/Scripts/FrameTimeWindow.cs","bytes":2343,"sha256":"f996370f155ff2a40e8ce252d14e1fc5846a309840c5d30b8296f8db0b95e7c8"},{"path":"Assets/Scripts/GameActionBindings.cs","bytes":6697,"sha256":"f60ba5ca51b7dd035d12ae5e154eb02e02e2206c346547b8e028c1d987efae62"},{"path":"Assets/Scripts/GameAudioDirector.cs","bytes":38393,"sha256":"c26a27c9a683e0f2cd6ef9cde64a682910c1b9683d6a1e3acb936a45215de1b0"},{"path":"Assets/Scripts/GameSession.cs","bytes":31600,"sha256":"f4cd8fef9d56f2771eedd8ca172893f246b591c700a3881195d61e51fd855e90"},{"path":"Assets/Scripts/GraphicsPreferences.cs","bytes":29461,"sha256":"8c6dfb86f1f08e96c22bd4badc646cb8dae38c86d3374f73845a3da32ed18b07"},{"path":"Assets/Scripts/GraphicsPresetCatalog.cs","bytes":3233,"sha256":"a70bd0951a86567d7f4788365ca3c33d261938179c3ad726269641c33269e0dd"},{"path":"Assets/Scripts/GroundedFloorSample.cs","bytes":1609,"sha256":"ab8272c1690eb30e832260781642c97eb5442b8183186dbc20ea2c4062f0aed7"},{"path":"Assets/Scripts/GroundedGolemMotion.cs","bytes":8877,"sha256":"df905e0780cebc7fa4ea6f6ef9ca4d5ee7ca718842448253909f69da4cfddea5"},{"path":"Assets/Scripts/HeartcrystalPickup.cs","bytes":17709,"sha256":"39314b2a8c854c60022baa17c730a98b498be5b7814e41ff67182a6f2f1ba536"},{"path":"Assets/Scripts/HeartstoneProgressionModel.cs","bytes":6508,"sha256":"2ec3957af70bf2d15ca6858231651625b70f7419b5bc022142a0337a6b897c53"},{"path":"Assets/Scripts/LaneGateVolume.cs","bytes":3034,"sha256":"946d434a3b3474adf272b75d6fe20138d51af45e803dc7b09b10f17f661297b2"},{"path":"Assets/Scripts/LaneVignetteLayout.cs","bytes":8235,"sha256":"3dd025905e779200f0549a0b0a24836cfb14d8f3b2635c9045aa24da9fe5761e"},{"path":"Assets/Scripts/LaneVignetteRecipes.cs","bytes":20094,"sha256":"82a9459d2a3292c2b6d9ff9892409dce0ee31bfed33563e0dbee52999660179f"},{"path":"Assets/Scripts/LaneVignetteRenderer.cs","bytes":10072,"sha256":"4bd12d9afa162472bde01ddad05acf5f253279272025b7c5ef6088f3eaebed2e"},{"path":"Assets/Scripts/LightPoolLifecycle.cs","bytes":3671,"sha256":"ad2c99f9351dc8e17e3c05897259e21446f2734c1654c28b0476c7a589c8a437"},{"path":"Assets/Scripts/LoreLibrary.cs","bytes":9873,"sha256":"52792172578bb097905364e237f414bc64f8b76ec34c2eef528d40fc67066fca"},{"path":"Assets/Scripts/MaskedDefensePacing.cs","bytes":837,"sha256":"8e53ff54a85ec0580cbec5d2a14b9ef2438542a69d127efe0a5d06de97e6f2c9"},{"path":"Assets/Scripts/MatchTowerForgeState.cs","bytes":10409,"sha256":"12eacc5757992bd19b44f176c838cf67932746eae27b8b193f3f465a4c62fb5a"},{"path":"Assets/Scripts/MonsterDetailAdapterV2.cs","bytes":4200,"sha256":"d8d203f0c3b279dd082e72707d0ed9fb975c16ae2d9cea5a23cb576747069a91"},{"path":"Assets/Scripts/MonsterDetailRecipesV2.cs","bytes":6809,"sha256":"e33a39a3aa2f51377146f3265b2ac623a63cc6ea29eb6cae0749024ae6388b9a"},{"path":"Assets/Scripts/MonsterDetailSourceV2.cs","bytes":27016,"sha256":"8ebc21283bead1ef2c6fe14c3c8a3e6c70795c6aefdabe18435a286caefd0d9a"},{"path":"Assets/Scripts/MonsterElementPalette.cs","bytes":2446,"sha256":"20c5f989c35083b8c7cd63dd2e65cd5d96a3722896706be3bbfa4cd6ceab5415"},{"path":"Assets/Scripts/MonsterElementPresentation.cs","bytes":2653,"sha256":"a049068cf50b51ee1bcaaf592e67aa6ecbfe4b0809c93dfebb03ed6cf69e63cc"},{"path":"Assets/Scripts/MonsterNeutralModelAuthoring.cs","bytes":4049,"sha256":"c04679f4e35e8cdf27af99d2dc573e2a56e54810e451aa49c7f60f18d41f3a39"},{"path":"Assets/Scripts/MonsterNeutralModelAuthoringV2.cs","bytes":4150,"sha256":"e6d128f24c61e0afa16b420a43285178846cf1561d17b9fc27e74125d66690b4"},{"path":"Assets/Scripts/MonsterVisualFactory.cs","bytes":2668,"sha256":"4d76b4f5228e27043bcfe65ef47a7d1023107792d02729ec3d2c5b1aabc2f95c"},{"path":"Assets/Scripts/MonsterVoxelCosmetics.cs","bytes":35809,"sha256":"8bea5505e39c2dd9451cc4d20f5b65838b7fae9bfbbe2e0ac38e0777510fd54a"},{"path":"Assets/Scripts/MonsterVoxelCosmeticsV2.cs","bytes":5720,"sha256":"ae854f2e421291c389bdf993aa32bbe79b4b90dad6890a7df622d707910c00ea"},{"path":"Assets/Scripts/NpcBlacksmith.Anvil.cs","bytes":1010,"sha256":"93e16fd6de7e3584af2094c9acb544f690115667b5c2505d0851bf6cf4f6ecb0"},{"path":"Assets/Scripts/NpcBlacksmith.cs","bytes":29249,"sha256":"ee14687cee43ea5f93a8315aeabe2f7374515a8cb8273aaa7a67066d838d77a3"},{"path":"Assets/Scripts/NpcModelBuilder.cs","bytes":8009,"sha256":"cbefa20bc1cb32885e8368a5f5cc9f3efb52c73f258cfe46bc4b4cb099efd241"},{"path":"Assets/Scripts/OdysseyHud.RaykonMentor.cs","bytes":5330,"sha256":"5a5b939f7333d1699e116165717e250672a1769f4b89cd9e4e7b0dbb9d1ab4a7"},{"path":"Assets/Scripts/OdysseyHud.cs","bytes":57318,"sha256":"9a6368774f56924c41fb40ba1fc61bfc0ee7dec51ac23e8a7b27a9974a383606"},{"path":"Assets/Scripts/OdysseyHudAchievements.cs","bytes":801,"sha256":"3800dea5f2daab6c8d4d9d5d5c554b9dd1e0d31f62e9875552d526ee36b3cbe7"},{"path":"Assets/Scripts/OdysseyHudBranding.cs","bytes":938,"sha256":"21bbbc85b7252f69d9a1a764385728e5fed921d9d236f862c1c57c70c54e37d8"},{"path":"Assets/Scripts/OdysseyHudCampaignJourney.cs","bytes":8385,"sha256":"02f358c7f3b43ec12e005d34b7adb67f4c98e9b3702a04dfc42e4c27bcbfbc9a"},{"path":"Assets/Scripts/OdysseyHudCustomization.cs","bytes":4410,"sha256":"fd2ba8f51fb20d7df7db1404beec4a894f59b944ea3d9ac37bee45ca52b357cf"},{"path":"Assets/Scripts/OdysseyHudPanels.cs","bytes":139171,"sha256":"9d3fac555cae65d9f4c2c6bdc81e9d72c1d9d25415ddf36460b193942c6328dd"},{"path":"Assets/Scripts/OdysseyHudPartyHealth.cs","bytes":11137,"sha256":"10b7f9acb0a69f3e82b33ba9e8815f5e41a8e0c1022f06db84460cdb438587fa"},{"path":"Assets/Scripts/OdysseyHudPartyUi.cs","bytes":1469,"sha256":"c75cda9c59eea6184ff9109ea1a8b1e18285ea96fbff708ee796262ab97ba06a"},{"path":"Assets/Scripts/OdysseyHudPassiveArt.cs","bytes":2667,"sha256":"506edeb329bc052dcc2762382696f099949e36047f45e971e901ac78e3e8b1c1"},{"path":"Assets/Scripts/OdysseyHudRefugeConversation.cs","bytes":2085,"sha256":"c31594fe99724a28cc72d9d1e9a13baaf0227a283d89beb5042e2b415618c63f"},{"path":"Assets/Scripts/OdysseyHudTowerForge.cs","bytes":15704,"sha256":"b59c83f337e097e1494a856e1ca1cce615ac3a8daa314cbf3fae7e20813ad2aa"},{"path":"Assets/Scripts/OdysseyHudTrainingLab.cs","bytes":9101,"sha256":"a853503f6f0dfe22664eaecbc14aea359deb890d27cfe5c23444b891b075adab"},{"path":"Assets/Scripts/OdysseyHudTutorialAccess.cs","bytes":6017,"sha256":"d38b93e23178f273de705fb22044f584f33dd00095447a3736f54aa79bca9fd9"},{"path":"Assets/Scripts/OdysseyHudTutorialFlow.cs","bytes":5456,"sha256":"40fa31934685ab2798964294e5afbfb0c21306d93a95958e917900f2be677592"},{"path":"Assets/Scripts/OracleAvatarAppearance.cs","bytes":3785,"sha256":"4974e8cb95ff0ed121ede8e2ead229c022231ac0cfbaf61b54cd24b6b0310f5e"},{"path":"Assets/Scripts/OracleAvatarCustomizationPanel.cs","bytes":7882,"sha256":"f3a5b7c84fc0d780eb757a1c86c0e01adadab4fe407e79797d00fb3a6b41d53b"},{"path":"Assets/Scripts/OracleAvatarMeshData.cs","bytes":3455,"sha256":"e9a4afc16c232f013d7eadfaeec45ceb2c99f4ef6c67540d96a300f0871854b4"},{"path":"Assets/Scripts/OracleAvatarModel.cs","bytes":6634,"sha256":"eb200e320bc9c3a2ba057514e8e5658e2af4ce77126d87c75612f4748e4d3715"},{"path":"Assets/Scripts/OracleAvatarPreviewLease.cs","bytes":4147,"sha256":"4d6d4e647b7d3b6fad7b221fe776eea12c6c99fb04f1a17e24c8ba60bb5cb762"},{"path":"Assets/Scripts/OracleAvatarRecipe.cs","bytes":8567,"sha256":"99c38c79800cd555a86fe5e83760332b8d884f6a5b4e1db4380ef5bcdd2a48c0"},{"path":"Assets/Scripts/OracleBrowserPointerCapture.cs","bytes":911,"sha256":"5a408a9718d469d51a1eafa2530d6fe39e67c45165234cba69e8122f27deb46b"},{"path":"Assets/Scripts/OracleCombat.TowerPractice.cs","bytes":3060,"sha256":"15ed8d5bd9833f3d21d7b95ed812918953281b9549d8a4a2785c01c5832fce31"},{"path":"Assets/Scripts/OracleCombat.TrainingLab.cs","bytes":4278,"sha256":"883a4fcf25c373d52b1dc25ad838a1e310b8a9853bc2d692c92e4dc31b25f5c6"},{"path":"Assets/Scripts/OracleCombat.cs","bytes":74054,"sha256":"f212a705a3a8db1ef4cf2fd4175e787149d99571ad1e6c48cc0da220194b3ccd"},{"path":"Assets/Scripts/OracleElementEmblems.cs","bytes":1330,"sha256":"018839487d5067d73092b7a1368c6d51f1dcd82230cc59d6512935a5b7d9b473"},{"path":"Assets/Scripts/OracleEnemy.TrainingLab.cs","bytes":2318,"sha256":"25f5df72884e3fc88c039f2d0882dd55af474cb45b0ed3b4cdb9dbbd7211bc8b"},{"path":"Assets/Scripts/OracleEnemy.cs","bytes":55741,"sha256":"57a844c39e0829b5025b2fbd1f4aae5bf6f38ac913aee5306381abf6ac0b9ca2"},{"path":"Assets/Scripts/OracleFieldSmith.Anvil.cs","bytes":3933,"sha256":"02b2836dd50fe02bb30822c1e0743a3b6151731600e04c78cce08689b08354d3"},{"path":"Assets/Scripts/OracleFieldSmith.Refuge.cs","bytes":4605,"sha256":"b0d8cb68afbdfb51e8975edec0b5f99f50fda917920d5764f874068cd191ce1b"},{"path":"Assets/Scripts/OracleFieldSmith.cs","bytes":12035,"sha256":"5ca81ad3d35704eb1f1da53b5a74abd4af3d35fc17f9b28a7db6a434756c72ff"},{"path":"Assets/Scripts/OracleFoley.cs","bytes":3626,"sha256":"0a3f63370d9af86ce978897d83c2c4bfa02c7d4595beb71abd7988d62157fc87"},{"path":"Assets/Scripts/OracleInkRevealText.cs","bytes":5335,"sha256":"8addcb2ca6de929bdbbffee4018c13e363ee12565a2b2fd7822b744d16750a1e"},{"path":"Assets/Scripts/OracleInterfacePreferences.cs","bytes":4363,"sha256":"2f246854257430415de262bf29eec4a62461ae4b458f430c670d09f799432ca8"},{"path":"Assets/Scripts/OracleMapSharing.cs","bytes":16531,"sha256":"6f9027845618243fd8187b333f56232e37aec033ce7a0ebc0e27b924d4dc2a38"},{"path":"Assets/Scripts/OraclePerformanceTelemetry.cs","bytes":12916,"sha256":"c1aeac33f3db01f62160025930a55ab449c1b979862e570c8a84712957402e5f"},{"path":"Assets/Scripts/OraclePlayer.cs","bytes":22844,"sha256":"3e2c63ab2db30cca0b82b56006bc6c14d5855999823f5e32c5f91fd491b8f0aa"},{"path":"Assets/Scripts/OracleProjectile.cs","bytes":10657,"sha256":"d9e0f913078f75d25d3bdc457f37d3e2a4c9058b08399056ef9fb9b57777019c"},{"path":"Assets/Scripts/OracleRevival.cs","bytes":27931,"sha256":"d60642061189cf86f8badd3332805c506a5acb2ba43cfbce890eb061b41cc602"},{"path":"Assets/Scripts/OracleShrine.cs","bytes":22010,"sha256":"fc432d7de61c25802a01b8bf9fc1cc62555d568cff384a0cf97ae70e7455718d"},{"path":"Assets/Scripts/OracleTownShop.cs","bytes":19687,"sha256":"b761e43c3dfc72dd52342f41f407b5d83ac62fc442f48a2c2a2e29182122b7df"},{"path":"Assets/Scripts/OracleViewmodel.cs","bytes":50901,"sha256":"05a182faf8fa30a963fc625bfd3aa7ff2c3796f94be2c3ad1a1a41cbbee2a71d"},{"path":"Assets/Scripts/OrbitalWeaponSystem.cs","bytes":20792,"sha256":"f8b9f3675de111a14fef932ec330c2411aa64cf10c446783fd20efaadd77a439"},{"path":"Assets/Scripts/PassiveNodeIconLibrary.cs","bytes":563,"sha256":"ba241228092c4827e3c3d8c022f5fd94fa1767d1fb07a95017a37f52cd4d8194"},{"path":"Assets/Scripts/PassiveStatusRules.cs","bytes":1047,"sha256":"6b30acc257d9fe1e6f75b56cdaf2e6b8cc0da5de14786541018b6031134dfc9b"},{"path":"Assets/Scripts/PeerCapsuleSweep.cs","bytes":2990,"sha256":"349a80848766c5277858f0a0bf56a1932c08c296543b2ce78f1db3336d91892d"},{"path":"Assets/Scripts/PeerCombatAuthority.cs","bytes":17090,"sha256":"42396dd3163af4307c047edc343ac6b50cdf3d43c7f0552dd234f1118e38d030"},{"path":"Assets/Scripts/PeerCombatLedger.cs","bytes":10711,"sha256":"b759d322c59d08599a79862211ece46749f6dcc784bb83c8e2e050772ee1e4b2"},{"path":"Assets/Scripts/PerformanceTelemetryReadout.cs","bytes":2554,"sha256":"ef2f5606ea9b8bebeec1d41b807cfc9dc70a33f5375254c3c5996613970a5cf2"},{"path":"Assets/Scripts/PickupReachRules.cs","bytes":1611,"sha256":"180d8ac906a05d8039909a82ac66da7f14cd5b01858a909eaede7bfab056b10d"},{"path":"Assets/Scripts/PickupVisibilityQuery.cs","bytes":2135,"sha256":"72cb418ea2cf2918d028225e800193250de922d23a9e700afbe0be9cadca9211"},{"path":"Assets/Scripts/PlacedElementShrine.EnemyRoute.cs","bytes":2733,"sha256":"94d61660e37de704ecff55c9a2ff8deb9286ccf27c2e81edb68b4758be398c29"},{"path":"Assets/Scripts/PlacedElementShrine.TowerPractice.cs","bytes":1768,"sha256":"c584a34134eba37342ad2960165cd1be667c497a8980535cd2d1f92c3850d950"},{"path":"Assets/Scripts/PlacedElementShrine.TrainingLab.cs","bytes":1542,"sha256":"12375e37ed181707a12e4d2ae7f7c78cea1c02798f3bb5943485d32e44bd4d2b"},{"path":"Assets/Scripts/PlacedElementShrine.cs","bytes":36806,"sha256":"7c1884333ba1d17da7574d537d3189eaab11f8a3c6573322b15c9358b4dd7e84"},{"path":"Assets/Scripts/PortalAnomaly.cs","bytes":8800,"sha256":"39a59c8cc1b28d4927a15491d308d78f200c7e8d00a3c11d3e9ee2f8f0045e76"},{"path":"Assets/Scripts/PresentationFootprint.cs","bytes":7263,"sha256":"585589ab499cb4d191b060af509f351275054d8c82fb7b6518d623e48fe384b2"},{"path":"Assets/Scripts/ProductionSoundBank.cs","bytes":4002,"sha256":"ac065944c5e82be1679846c2f95de82b18dc406249773e317c868affb3f32f47"},{"path":"Assets/Scripts/RaykonAlchemyTableBuilder.cs","bytes":8408,"sha256":"1cd4e4400fc2f338743d82f11f81507962ab3fc2e97e8b464ebb1368f834974d"},{"path":"Assets/Scripts/RaykonModelBuilder.cs","bytes":10415,"sha256":"dff73a8d7ff66f87303599bb5c325a3b2bba6fddd2e48a9988df4849b6b72541"},{"path":"Assets/Scripts/RaykonPresentation.cs","bytes":4345,"sha256":"c58420412acf9213586888e55ed936273186acfd6dae597b1fd9c46d3d35c7c7"},{"path":"Assets/Scripts/RefugeActivityDirector.Raykon.cs","bytes":3001,"sha256":"dde4a01fe54935528ff0d27393a552aeeadb0e67fc334e23449f8f6fc10d6b14"},{"path":"Assets/Scripts/RefugeActivityDirector.cs","bytes":6718,"sha256":"38c64f952d9d093472d82795bee8953967e089afeff10ead331d05b0a62429a4"},{"path":"Assets/Scripts/RefugeNpcAssetCatalog.cs","bytes":6573,"sha256":"801efd402fa8c5aef108de3e79cffb1a4adfd8eee7f745d2c7211389299da7dc"},{"path":"Assets/Scripts/RefugeNpcNeutralModelAuthoring.cs","bytes":3972,"sha256":"7c4e9ba222221fd3fa8de4df3d51085cb80f949ab191b5ff8272727b79da962f"},{"path":"Assets/Scripts/RefugeNpcQuestBridge.cs","bytes":1008,"sha256":"19c2f4c539128e6b7b8e7820241a02cdc9eca4a1fea72119a2fb11fe14e2a78d"},{"path":"Assets/Scripts/RefugeNpcRuntimeOwner.cs","bytes":16308,"sha256":"5c6ab7839e9083d09756d5d22e91e88d66bee2a38c24ee756c8c36f25884f230"},{"path":"Assets/Scripts/RefugePlacementPolicy.cs","bytes":3946,"sha256":"24a715568af79073eead14d9ada362e5111c34e25c12c75d97ad9931461ce07f"},{"path":"Assets/Scripts/RefugePropPlacement.cs","bytes":4478,"sha256":"591b8acbdd362de72c80ddea7877c0dd1a1b26565708942668ec18f8a5c28c74"},{"path":"Assets/Scripts/RemoteDangerState.cs","bytes":7592,"sha256":"964a7f74668b4e07f38f6766c546c21af6c68326a22ad0b14adb819f31377bd6"},{"path":"Assets/Scripts/RemoteHostileBoltVisuals.cs","bytes":4100,"sha256":"07b51383d668c9b965e11dc76b32828909ed44ca02802f05d93721bd8d6dc5e5"},{"path":"Assets/Scripts/RemoteOracleAvatar.cs","bytes":6173,"sha256":"656e2799cc7236548c4640948b4284388694472c8e12fd0dfbc641900057b85e"},{"path":"Assets/Scripts/RoomConnection.cs","bytes":70938,"sha256":"602b958d16466805e75eda2e23981a1c1df5a045c564cbae61f259383a358bd7"},{"path":"Assets/Scripts/RoomConnectionAttempt.cs","bytes":2435,"sha256":"352ddbd7007cff9934eac7a60f1fd96bf7ba41eea18b2623530cdf273f905c0e"},{"path":"Assets/Scripts/SavedTowerModelLibrary.cs","bytes":2170,"sha256":"fcc3ce8e5f0cf653af29c7e092a195ab0a44fc22528d1c0cdb11cf27d9c16850"},{"path":"Assets/Scripts/SavedTowerModelPresentation.cs","bytes":6531,"sha256":"867f1914b4a2f48785b06d266e4ffc98c87f05c438a770bb2787ddea99f4d1f3"},{"path":"Assets/Scripts/SavedTowerModelPreview.cs","bytes":2038,"sha256":"a9c1f08a148afff24e7289d000cd431e97c14169724f5c5ccb430da564c47db3"},{"path":"Assets/Scripts/ShrinePlacementBuilder.TowerPractice.cs","bytes":2713,"sha256":"30ac47aa4440d0ced5962d95862d8533d7f77308397d8f1c63e1fb70b719deb6"},{"path":"Assets/Scripts/ShrinePlacementBuilder.TrainingLab.cs","bytes":1756,"sha256":"5970a3e20a0ef1bdc9ebd591222d3ee7a6b81e912a32310f4c6f521644290486"},{"path":"Assets/Scripts/ShrinePlacementBuilder.cs","bytes":21562,"sha256":"931f19feb08e884936d1c45ed5b751173b7b9feb3ebcd377c289147d339109e8"},{"path":"Assets/Scripts/SpatialLightPulseRules.cs","bytes":2662,"sha256":"a4e32a72c8844164c43b50e407394b2c6c2bd0515a9a7f36e3c541a7e9316c57"},{"path":"Assets/Scripts/SpatialTargetGrid.cs","bytes":12873,"sha256":"9a2dbd27ccb09f14bcc066f833d5669aa7a490f9b20c09a625852ad258a8427f"},{"path":"Assets/Scripts/SpellImpactLighting.cs","bytes":3698,"sha256":"59b271a682691e7584c70b4f9f896617514cf8f3b426bab4a369820dd42fbc5c"},{"path":"Assets/Scripts/SpellIngredientRules.cs","bytes":2210,"sha256":"471b919b37edecb449c4529710bd80b92094c86241f263d467c938523aef928d"},{"path":"Assets/Scripts/TowerAttackSlots.cs","bytes":10534,"sha256":"7e820500b0bd4325368d040d3033f34a87d706be6a2babf063c4a64a5be8b87e"},{"path":"Assets/Scripts/TowerForgeDefinitions.cs","bytes":4223,"sha256":"611ec759b70f26e8af709fbb770baca5b75a533b784ad8e1d54d475f1dbcf074"},{"path":"Assets/Scripts/TowerForgeModeAdapters.cs","bytes":3593,"sha256":"04a583665829113a8f1e12e0211f27333e3786cc97749d7bbeaff255608c32a5"},{"path":"Assets/Scripts/TowerForgePhaseRules.cs","bytes":887,"sha256":"bc466d37b53f7377b603088a5ac8ebee3a1680dc7df032f7a790b9938b6a0316"},{"path":"Assets/Scripts/TowerModelAssetCatalog.cs","bytes":4182,"sha256":"464f045d7976de11a49cd06303ed17961276dc1ceec8c63dcbcf9e4231334b7d"},{"path":"Assets/Scripts/TowerModelClearanceProfiles.cs","bytes":1527,"sha256":"0b1939cd7aea072055d968295ad4111beeb4012230d03c5395c16bf5888f7763"},{"path":"Assets/Scripts/TowerModelLibrary.cs","bytes":7947,"sha256":"e36be3cdfcd410e73c4669b71e552890f558aa5d9fa08a424adb0bfa51e545b7"},{"path":"Assets/Scripts/TowerModelNavigationProfile.cs","bytes":5727,"sha256":"27623b7a5f6c4701611db168b819d0a9300ffbaa895261443da5aa30aa6ee13b"},{"path":"Assets/Scripts/TowerModelPresentation.cs","bytes":6380,"sha256":"87e865840a690cbd8c427c06749e26f0ef4c75fa942124b795543c7465019093"},{"path":"Assets/Scripts/TowerModelPreview.cs","bytes":1981,"sha256":"23cdd4b2ee80a8b9c430bd0688ab2d0c2862393df35165b6cab58006c784a4b1"},{"path":"Assets/Scripts/TowerModelPulseState.cs","bytes":3584,"sha256":"4feccf68fa75f016cd388b9d1891da986a2b2d6f4f855ede69db43267b6646b6"},{"path":"Assets/Scripts/TowerModelRecipes.cs","bytes":15548,"sha256":"ec2b0ba7211c8d58844efd177559d875426ee0fbe1f28bbe9003af626ae65653"},{"path":"Assets/Scripts/TowerPadHighlightBatch.cs","bytes":5501,"sha256":"efe9867beabb81a2727228a1b7f34401f44b158f1300a15ee5761b33fba07c7f"},{"path":"Assets/Scripts/TowerPadPolicy.cs","bytes":2880,"sha256":"71bc88c83f5c2809defd7fbe627365498a7163e8f7e148548843c443752059c8"},{"path":"Assets/Scripts/TowerPlatformGeometry.cs","bytes":8960,"sha256":"e3ed959577b0f753c06a05b3b3e9536115905d82be66765f53f802c872d176a2"},{"path":"Assets/Scripts/TrainingLabDirector.cs","bytes":9286,"sha256":"3f29a1a8bce376aa35d67e93f7a220c5d468ffc5dcb594e75a4b5269597ca0ec"},{"path":"Assets/Scripts/TrainingLabRules.cs","bytes":2081,"sha256":"e5660dc7ac0ae25abdb22e4213f47b7d856094e079339a6b6fa348d909672bb9"},{"path":"Assets/Scripts/TutorialDirector.CosmicNova.cs","bytes":10767,"sha256":"2ed3d143f08bb3fb49f60971bea3309c8d4cbba690ad0e603dc5084563d03fa9"},{"path":"Assets/Scripts/TutorialDirector.InstructionFlow.cs","bytes":5079,"sha256":"5be3ec7b3dcf72f00dbd6d683026515a175c75b98b5f075d29c77f1b898f34cf"},{"path":"Assets/Scripts/TutorialDirector.Rapid150Readback.cs","bytes":1774,"sha256":"31ca4bb12402b9926613b559b416e436d8e400c03a18530ce415b4bac5585845"},{"path":"Assets/Scripts/TutorialDirector.TowerPractice.cs","bytes":8976,"sha256":"c9cef096178498ef0449e4bb9d885e56f23a2c7070bc5fde92c813f43e432eb7"},{"path":"Assets/Scripts/TutorialDirector.cs","bytes":26432,"sha256":"c186a5bed1aee6b6ff5750e7cc26436495002bddb9c6fde1986e606fb047e442"},{"path":"Assets/Scripts/TutorialFireLightPool.cs","bytes":19630,"sha256":"86dee13c3f55c457f11e5d4307e9544f6283b643ccccfce8de5938e98a930dfa"},{"path":"Assets/Scripts/TutorialInstructionCards.cs","bytes":6805,"sha256":"8ead31f467d9b891d7ead2ffa94097d77b09b784bd304655011fa07000e7faa3"},{"path":"Assets/Scripts/TutorialInstructionState.cs","bytes":1620,"sha256":"0a74051a4275213f49ed106d84e4b014fcfafc00bb2b7a08edb0be6d7ccf3bd2"},{"path":"Assets/Scripts/TutorialRenderPartition.cs","bytes":8339,"sha256":"34a6e568b959f44983d6d3ab207005b80b047d6a9f71724158f8c8797b454c11"},{"path":"Assets/Scripts/TutorialRoomV2Catalog.cs","bytes":3649,"sha256":"181a222126a65c76d2b7815a83d41dae68f726914097216a43c8b613e56bd3ea"},{"path":"Assets/Scripts/TutorialRoomV2Geometry.cs","bytes":18105,"sha256":"67a27f724df7501ff833ba5f7e29d9af5a7ba0820f4846915f27a4ad12ac3c59"},{"path":"Assets/Scripts/TutorialRoomV2Layout.cs","bytes":9373,"sha256":"f2d61ebad449db27f3285bbe264b422a13c4255bc16e4d1be36f7a62db3bfa38"},{"path":"Assets/Scripts/TutorialTowerPracticeRules.cs","bytes":1276,"sha256":"7936a0effd44eddb5eddefebb33b1a5035aec19d74fc9c0e1e8e8f5ca3261396"},{"path":"Assets/Scripts/VoxelChunkData.cs","bytes":3820,"sha256":"dde799d8c6581553613ce89dd4d8f95f9e0623f96ee592629e59497cfc0cc49b"},{"path":"Assets/Scripts/VoxelDistanceDetailController.cs","bytes":11839,"sha256":"3e1ff5c439afd7ef4df7f91d5b04fdafe0cea7feadc8820fba4232dacce418ca"},{"path":"Assets/Scripts/VoxelDistanceMath.cs","bytes":3224,"sha256":"4537f4e102e1a4b58a914eb35b0393b7bb4b1c81fa1ac0d0877a26a0a8ff191f"},{"path":"Assets/Scripts/VoxelFireEffect.cs","bytes":8745,"sha256":"4dc75c738b3a50a213b07832c41f02445dd7fb03ab70112df24fb1abf07c2088"},{"path":"Assets/Scripts/VoxelGreedyMesher.cs","bytes":8276,"sha256":"4b15dc01186b71b3cabeb63fae7bfc6740c338ce1f6c6518e2929fb73fc14728"},{"path":"Assets/Scripts/VoxelSkullRecipe.cs","bytes":2360,"sha256":"eb767240b2a3e0112d9699d50ddd767219ed989328a5998cb227f4e579a52f7a"},{"path":"Assets/Scripts/XpPickup.cs","bytes":3598,"sha256":"3926fb48ff86a0f334984b6ecc3f7e1cfdeb6f31242d4d4ad16e7c2ab75d63b0"},{"path":"EXPORT_SCOPE.json","bytes":1054,"sha256":"b68b19b5be5aba637a28bc06ef60a34f229f70fdfcc85f253188daee80d3bd09"},{"path":"Packages/manifest.json","bytes":2520,"sha256":"1075ae62ceccdbb69102606c8660ba7152d867b8a5ca5f70cf2250c204b0cf36"},{"path":"Packages/packages-lock.json","bytes":19724,"sha256":"fbe949324716c57119a045331a0bdbe92da314bb98e3b1b5876e66bd44c5f7f1"},{"path":"README.md","bytes":2269,"sha256":"8e77db8e7ac13dca65f7a6739f5fd704b8da20776bbaea99dc919828a2cbedb2"},{"path":"RIGHTS_RESERVED.txt","bytes":1000,"sha256":"7fedde4cc6167aa7368e17e14fb3a643075eec93d69afa92b3f5ac40539982e4"},{"path":"THIRD_PARTY_NOTICES.txt","bytes":999,"sha256":"9af598a00b772ab07d9a329af828922b2120534c668840447d1f560c41f815ae"}]}
+{
+  "sourceCommit": "91c30d1910696faccbf3c7a542c683d30e38a4cf",
+  "algorithm": "SHA-256",
+  "selectionCount": 623,
+  "files": [
+    {
+      "path": ".gitattributes",
+      "bytes": 68,
+      "sha256": "42200f7c74d52b216af19f300135df0a72898c586c2b790b10655691a738dd54"
+    },
+    {
+      "path": "Assets/Oracle/Ecosystem/Data/OracleEcosystemData.cs",
+      "bytes": 17378,
+      "sha256": "683ce4c48c18b778f660927de3696ffda2e18c85cb2d8f4a1ef1b3709d4a2316"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Audio/AudioAcousticMath015.cs",
+      "bytes": 9879,
+      "sha256": "dcd20d0439575f2100023aeab6201b43e2929c666458b3f56749efd8088b4b86"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Collision015/MonsterContactJobs015.cs",
+      "bytes": 4765,
+      "sha256": "094ac71308bdb9d1d7948af62307be2fb1c10c774da72e72910353cdc8e79e63"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Collision015/MonsterContactMath015.cs",
+      "bytes": 15385,
+      "sha256": "317322e89a7692802be6d00d048ef52a78d607fbdf3cb2c70b43befebf55a140"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Combat/CombatGridComponents.cs",
+      "bytes": 1872,
+      "sha256": "2cd686181630a8f9f58651f31cf87d299d196a9111a098c5c141ab9e8fb20d10"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Combat/TowerGridTargetingJob.cs",
+      "bytes": 8632,
+      "sha256": "5006e345a3b7d4576a761668111914e448b3ab71c739c5da6ca4a7e7c39dd758"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/CombatConfig.cs",
+      "bytes": 1099,
+      "sha256": "8a0353b5d8d4c4511ccabf5e487a489f181acdff71dfd489078e5aa6938c6b75"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Oracle.Foundation.asmdef",
+      "bytes": 304,
+      "sha256": "4ad6cfdd78aedf319a2eff5a869bc65fd5da9a6b4f4cceee113dd0cc45587f68"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/OracleSystemInitialization.cs",
+      "bytes": 10832,
+      "sha256": "f4ac41ecf7df141ee0c2a7bba147707573e3761b6a44672bca321202e2233d25"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Pools015/PoolXpJobs015.cs",
+      "bytes": 16944,
+      "sha256": "859ebf801ea66df024e938eb2aaee1973a157dfb928abd1cbfd530372329cbcd"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Pools015/PoolXpMath015.cs",
+      "bytes": 11992,
+      "sha256": "524962f177569d8f11e469a75cb0fe3f75b4e085cae9d66542d4bf4adf1427fb"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/MinimapLandmarkLayout.cs",
+      "bytes": 3556,
+      "sha256": "05fcc5813be0fb6827c3802e5ad81c949d434db0fd59dcfcb139c6bb929ffcfa"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/ObjectiveCompassMath.cs",
+      "bytes": 5535,
+      "sha256": "0300055d82188bf36cce90bdb167ad026ade6cad715dc1303c61c3b546ff332f"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/RefugeTrailJobs.cs",
+      "bytes": 5438,
+      "sha256": "23f54d23bcdeb4663f2416c190ccefa882d63e3c434654663edda624ebf45869"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/RigidAnimationData.cs",
+      "bytes": 3452,
+      "sha256": "7189d175ab4512efc8457b9245e872a7b52bc4586f431556d971d3ea008ba5a5"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/RigidAnimationMath.cs",
+      "bytes": 15907,
+      "sha256": "fec65d7b4b775be46b90ee5e05c25de8dd7f935b94f295685755ee555e175ddc"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Presentation/TowerAnvilPreviewMath.cs",
+      "bytes": 4420,
+      "sha256": "13cc5eb45e8d12bfd343debdc8da4e455f339a7adb403a5aa6bb5e1af27279f3"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Shaders/RigidAnimation.hlsl",
+      "bytes": 5937,
+      "sha256": "9d1bcfd688fa88d4a05a3d73a37582c88e43dac1b445589077567c1d1ab9c6de"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/Shaders/RigidAnimationCandidate.shader",
+      "bytes": 15056,
+      "sha256": "16f25af3711d71557a1583839b05c198775be6e423634a15490057eb465524cc"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/BlossomTreeMath.cs",
+      "bytes": 14645,
+      "sha256": "35263c566a4dd91e406839a3c369823ca2a7ae5b76a2e2e36a95692deaf493c4"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/ColdCrossPrism.cs",
+      "bytes": 8669,
+      "sha256": "540c5e2a0c23f34dda57d517449c1358ce2ea1f07a3298f9d924541526bd1865"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/LaneBuildJobs015.cs",
+      "bytes": 4974,
+      "sha256": "1efb98d7afd3b6ac7321b50b5dbf4b67eb14f2a2b50adc644f9ef839e5554661"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/LaneBuildMath015.cs",
+      "bytes": 11254,
+      "sha256": "b9efb3204030dcc9e2bb45ca74bcdc551f637c9481e5fcdc886d5f5a555b0458"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/PassiveWindMath015.cs",
+      "bytes": 4657,
+      "sha256": "6988eb95d6bb61bacaaf0f1cb678e9d8c40693accf2b8f138273473d5deb2d50"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/RefugeFloorSupportJobs.cs",
+      "bytes": 8712,
+      "sha256": "e36f0e7480f3a7631f224e8ca837256cb47b619a4998ec0b95293eaedfb6c150"
+    },
+    {
+      "path": "Assets/Oracle/Foundation/World/RefugeFloorSupportMath.cs",
+      "bytes": 9028,
+      "sha256": "08c14bbb37177a879046248f8f4834b661322bd143e70ae43e8630f6a3523388"
+    },
+    {
+      "path": "Assets/Oracle/NatureBoundary020/Oracle.NatureBoundary020.asmdef",
+      "bytes": 307,
+      "sha256": "5d983b94a6059267aa88e2ac13b0999dd6af3535dc67268e09b8474c34bf5725"
+    },
+    {
+      "path": "Assets/Oracle/NatureBoundary020/WindBoundaryJobs020.cs",
+      "bytes": 3489,
+      "sha256": "274a275572db5a8e8906a5321a0c23bb5cefe143492d88da50a61c017aecff6f"
+    },
+    {
+      "path": "Assets/Oracle/NatureBoundary020/WindBoundaryMath020.cs",
+      "bytes": 22741,
+      "sha256": "870be0262c55f940e7ea142e9275ab259ae3512593cdc71e6efd339bed77d32d"
+    },
+    {
+      "path": "Assets/Oracle/Presentation/Shaders/CrystalMotes.shader",
+      "bytes": 2299,
+      "sha256": "c2f50b82c52ebb2a5128ead06dd405ea83777609440cdccf13e59deb56a7c754"
+    },
+    {
+      "path": "Assets/Oracle/Presentation/Shaders/RaykonRigid.shader",
+      "bytes": 10767,
+      "sha256": "626a27f2954cbab6735d1f94a8fd511ad9522c5461c9df05a9627133be22752a"
+    },
+    {
+      "path": "Assets/Oracle/Presentation/Shaders/SoftDressing.shader",
+      "bytes": 6521,
+      "sha256": "a034e5054a1f9de704aac5b752afb8584bbfdf311fb80973752628b3d17445ab"
+    },
+    {
+      "path": "Assets/Oracle/Presentation/Shaders/WorldWind015.hlsl",
+      "bytes": 2872,
+      "sha256": "42dd1312a5b900f5fce101e5101bd538d884cbecbe53ca3c62c2ed4b64d5cff3"
+    },
+    {
+      "path": "Assets/Resources/OracleLifetimeMote.shader",
+      "bytes": 1664,
+      "sha256": "2bd6611d783480412dc3c1702219b324ad4df9d5c5bea84026b7bf5bafe41857"
+    },
+    {
+      "path": "Assets/Resources/OracleVoxelDistanceLit.shader",
+      "bytes": 8537,
+      "sha256": "a2a81bec2bf1380d6ebfa6a314876b4146dff1510e6f68ae0352a14eebdbeb3c"
+    },
+    {
+      "path": "Assets/Resources/Shaders/CampaignGardenFoliage020.shader",
+      "bytes": 5240,
+      "sha256": "e64a4dd30d3e9f74e6f8a75fc341037d833040ad7f21286dc27ed766056e8792"
+    },
+    {
+      "path": "Assets/Resources/Shaders/LaneGateGrid.shader",
+      "bytes": 5146,
+      "sha256": "41154497dea8810534ad018f1c3de4f7aa72e9a833bf64f9f4d7457175dbee3f"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleAnvilLockedSilhouette.shader",
+      "bytes": 1510,
+      "sha256": "b601448fb0caf23addb87ea040308ab798283d8ffeffaf0b60611997c71bb4be"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleBannerFlutter.shader",
+      "bytes": 6687,
+      "sha256": "edadeb31e1aabd18b1db3fb84c9804e0466a36d0273057d4511b149833278d96"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleCampaignBook020.shader",
+      "bytes": 7934,
+      "sha256": "0837f02720991671c91b5960a2aaff5f96c1372e543e112c2bfffbba4223eb6f"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleEnemyStatusIcons009.shader",
+      "bytes": 1944,
+      "sha256": "447611d8d6f496031887f0d5edb897224bef9dac6937babe675668458380106a"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleLaneBuild015.shader",
+      "bytes": 2461,
+      "sha256": "d1dfc286ba76ceb6c0c6263661e499ef37cbb5238020e8230f6a74cb0ec8fef5"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleLaneWeather.shader",
+      "bytes": 9110,
+      "sha256": "0de42680519292a572b9e32228ffbb58944c8bb3dadb51164281a3da8b785222"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleLivingCampfire.shader",
+      "bytes": 6693,
+      "sha256": "8cf63948a5efbae36e65e3efc2998d029521b7f43569465cb1568a8ec0dacf56"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleMenuHubMotesPreview.shader",
+      "bytes": 2820,
+      "sha256": "8e1a74963f8423962a9444eb82893bfb16263b8685f33f6ba6312671dff8f39a"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleMenuIsland015.shader",
+      "bytes": 3571,
+      "sha256": "8779bd5d6602db1e50965c25836e8814474cfa7357cbe1c693ccc920659cc757"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleMenuLaneWeatherPreview.shader",
+      "bytes": 6539,
+      "sha256": "46db161863ae7bc1c1a1f44adc83077384be19d0e1369905e96fc830d9c4a916"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleNightSky.shader",
+      "bytes": 7315,
+      "sha256": "9d864489bf30fc32d183df986fe32cb064bc3342ea631cf1e2f0a396af1e6bf7"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OraclePlayerStaffSpiral.shader",
+      "bytes": 5959,
+      "sha256": "d5f8da45ed44a9194eb443d1d2dfbf21fe07ee5207decf13dd550055d5a92897"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleRaykonPurpleWisps.shader",
+      "bytes": 2686,
+      "sha256": "9e277f65028c8d527d03bbf84e8e9022517996ec79b42be6e9a9c1788c67f347"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleTowerElements009.shader",
+      "bytes": 9319,
+      "sha256": "b88c98a9645b143f8486c3cd9bec94c912edaf346f2f115d2b5aa04a62734215"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleTreeLife020.shader",
+      "bytes": 6719,
+      "sha256": "7eb215689e0563da806104003207328d6b54861b01c1f49f91d6dfabf7341dc0"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleWindowBreeze015.shader",
+      "bytes": 2764,
+      "sha256": "2842760da23cc0f19540485cc13fa7bc855791da743d0ff4a90c8d5c3bbd41c3"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleWindowShaft020.shader",
+      "bytes": 3877,
+      "sha256": "f53bedb6adb12b5621f355f87ea5879eacb8ad9b6234ac05b87fa342c62d2f73"
+    },
+    {
+      "path": "Assets/Resources/Shaders/OracleWorkshopBuild015.shader",
+      "bytes": 4582,
+      "sha256": "627d7b82e454846a6b9539d69d4e02d617b0653014b9686d3b7ed474d71e8d53"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalAnomaly.shader",
+      "bytes": 7437,
+      "sha256": "25a4622bc7333ece086d1b89e307a8d40e370fcdbec9fed7280c169cd283451c"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalArrivalOverlay020.shader",
+      "bytes": 2677,
+      "sha256": "3b7ba319784db6eac79f468e3d03476f47a2e9b45425ef85eecf58628259ef91"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalLandingGravity020.shader",
+      "bytes": 6539,
+      "sha256": "f3ca5eea23aeddf7f98800eefcf1a2469831637888a22db2b08f93e39ffa85f2"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalLandingRain020.shader",
+      "bytes": 5785,
+      "sha256": "abe49ae8c29fcfd4c89bbf38a7e015200d707ddbdc29f5acc4e2378c3a6780fb"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalLandingSky020.shader",
+      "bytes": 25870,
+      "sha256": "d1e47d2ed3455deca72ff91154e1e5943d5daa36884a131bab498c696d024956"
+    },
+    {
+      "path": "Assets/Resources/Shaders/PortalLandingSurface020.shader",
+      "bytes": 26858,
+      "sha256": "8d3fc96c3764f6f9f715c2abbf0db8e00e1bd885579b78bc56e7aad3d0eae675"
+    },
+    {
+      "path": "Assets/Resources/Shaders/RefugeReactionFlower.shader",
+      "bytes": 2513,
+      "sha256": "b0dee67611a245fe7008807112893f189b871c97feef663062d969bdc0aed3ad"
+    },
+    {
+      "path": "Assets/Resources/Shaders/StageAVoxelWet020.shader",
+      "bytes": 14962,
+      "sha256": "01dfc6f1afd6bf8af74861ab4d5ed5ce27c4a327b9d01cacec00f4ce69a9122c"
+    },
+    {
+      "path": "Assets/Scripts/AbilityBindings.cs",
+      "bytes": 1505,
+      "sha256": "3fb6e9836877e9fb3ed23b39f5b688ab32b0c005ccc0f2b3bca92bc375bbcfde"
+    },
+    {
+      "path": "Assets/Scripts/AcceptedImpactRules.cs",
+      "bytes": 1162,
+      "sha256": "a8c7e94fab62c86ad912e348ccd8fb4a97b8b0991edea387d4c2441ea18b7512"
+    },
+    {
+      "path": "Assets/Scripts/AchievementBadgeRules020.cs",
+      "bytes": 2750,
+      "sha256": "6151380674862d85aba2053985d79ef6e9ff757ddcb9b727695fb6cb3f5987cd"
+    },
+    {
+      "path": "Assets/Scripts/ArenaImpactFrame64.cs",
+      "bytes": 1809,
+      "sha256": "817f2001f2f046ba20215050e8ce0c1c1f94ee4980a676706f8dc35cda211170"
+    },
+    {
+      "path": "Assets/Scripts/ArenaPreloader.cs",
+      "bytes": 10136,
+      "sha256": "5eb9f0c9d7d1a00d1fa034267409852e9405173ff9f2d0c139f852fdee7fc8ff"
+    },
+    {
+      "path": "Assets/Scripts/ArtBibleStageA020/StageAStreetlampDemoController020.cs",
+      "bytes": 23125,
+      "sha256": "7a54cab0678e8810121094db798a5bdd2b3c30795dcd49b176d963aeb62c8bc9"
+    },
+    {
+      "path": "Assets/Scripts/BlacksmithShopPanel.cs",
+      "bytes": 33341,
+      "sha256": "4a8e932b08134a064542ca184bbb4a739017e6c328db79bf7de1683ac850edc5"
+    },
+    {
+      "path": "Assets/Scripts/BreakableVoxelWall.cs",
+      "bytes": 7416,
+      "sha256": "2fe87b8080017a5c92bcc504ca77f8a1d492200bcce9bd5994eda34f83509025"
+    },
+    {
+      "path": "Assets/Scripts/CampaignArrivalPresentation020.cs",
+      "bytes": 6110,
+      "sha256": "9c3ed3b4697435597fb3a545e214032dd31255fd63f36485e359b6a8cb96500a"
+    },
+    {
+      "path": "Assets/Scripts/CampaignArrivalReceipt020.cs",
+      "bytes": 946,
+      "sha256": "88dd636b0bd5897ab1ab70634a17609eea51e56053de17c490d0ded455f74ddb"
+    },
+    {
+      "path": "Assets/Scripts/CampaignAssetCatalog020.cs",
+      "bytes": 4835,
+      "sha256": "7d8563d3be7346200c0511f6592952174d64b9f81e506d73a6afa2744dda819d"
+    },
+    {
+      "path": "Assets/Scripts/CampaignAssetJobs020.cs",
+      "bytes": 8603,
+      "sha256": "d2602021a352ba88a02c2a20a27e3167f8ec836dacc8d9c11904b1adfca0e70c"
+    },
+    {
+      "path": "Assets/Scripts/CampaignAssetLease020.cs",
+      "bytes": 22983,
+      "sha256": "14c55619aa173e57dcc1dff336a3da06a09419686b24a9fefcadc15e9b0c0019"
+    },
+    {
+      "path": "Assets/Scripts/CampaignBalance015.cs",
+      "bytes": 5938,
+      "sha256": "cf850521127a963b31b49627eb5050540493807cf9d7c118201e34d14838d6e2"
+    },
+    {
+      "path": "Assets/Scripts/CampaignBookState020.cs",
+      "bytes": 3410,
+      "sha256": "e54d09c6e30c723cfc3b428bb603019007b3281fc2a2eea311aa71db0954fbff"
+    },
+    {
+      "path": "Assets/Scripts/CampaignBootstrap.cs",
+      "bytes": 2348,
+      "sha256": "aa1c0ea2e28fa74101f346d9eca50a1dd1d7b74289a77100350f9becef101a17"
+    },
+    {
+      "path": "Assets/Scripts/CampaignCliffRecipe020.cs",
+      "bytes": 10686,
+      "sha256": "bb862b2431055bef23e9e99c547399164b95b9bcddd29f1af0b552c409042fce"
+    },
+    {
+      "path": "Assets/Scripts/CampaignCycleClockGraphic020.cs",
+      "bytes": 6217,
+      "sha256": "a052fc052cd710ab14b54348851f43b4a12821c880dad8cabdc197d87a3576a5"
+    },
+    {
+      "path": "Assets/Scripts/CampaignCycleRules020.cs",
+      "bytes": 6243,
+      "sha256": "f37141fa7ddc8742d225ddbb16b9f4a20390033ed251d04f51fabd00bab662a8"
+    },
+    {
+      "path": "Assets/Scripts/CampaignDressingRecipe020.cs",
+      "bytes": 19413,
+      "sha256": "574ac2b6445191d215b8e30597906fa2d86e577c3d122aaa6ffde4aaf8a44fb7"
+    },
+    {
+      "path": "Assets/Scripts/CampaignFoliageSupport020.cs",
+      "bytes": 8168,
+      "sha256": "1fd9787450827aa3c11867b455bd238ba00937191c1142d28d14e319cd65fdd2"
+    },
+    {
+      "path": "Assets/Scripts/CampaignGardenContact020.cs",
+      "bytes": 23641,
+      "sha256": "6caa3cc04a6e158bf4af68e3033fe71ea7616824c1a37d86432f3e9a39d5dd78"
+    },
+    {
+      "path": "Assets/Scripts/CampaignGardenFoliageLease020.cs",
+      "bytes": 20146,
+      "sha256": "84301c0b25afb089dedc78c4e07f19bab46bc20acaa8f6475d410ba3c824b4dd"
+    },
+    {
+      "path": "Assets/Scripts/CampaignGardenFoliageRecipe020.cs",
+      "bytes": 32635,
+      "sha256": "61ede710ab9d0a76a1794b296be308744cacd6ab855c58b2f8d3608c9727e77f"
+    },
+    {
+      "path": "Assets/Scripts/CampaignHubBuildingRecipe020.cs",
+      "bytes": 25135,
+      "sha256": "351bc99574a49fa155c8710234eb3736f401c7641c516ad462e8cc43a148a61a"
+    },
+    {
+      "path": "Assets/Scripts/CampaignHubMinimapInk020.cs",
+      "bytes": 16852,
+      "sha256": "8d248aa920dd4cbecc8a05abe6a6595bd0bfd59bffe52971bf562dce746da08d"
+    },
+    {
+      "path": "Assets/Scripts/CampaignLandingObstacleSet020.cs",
+      "bytes": 20266,
+      "sha256": "3ab61f2f8e5c86f9b537a3cc626df0fa0c4633168f66680e6e693f73bfcae764"
+    },
+    {
+      "path": "Assets/Scripts/CampaignNatureBindingLease020.cs",
+      "bytes": 16789,
+      "sha256": "68b4de6cce58a951274b59226d090e2ff5d228243e084fac0fc4c31feed04212"
+    },
+    {
+      "path": "Assets/Scripts/CampaignNpcPresentation.cs",
+      "bytes": 14325,
+      "sha256": "78bb627b40a1645eb94c75aea5ba90ec7f10335dc555f5faa528bac2bd288130"
+    },
+    {
+      "path": "Assets/Scripts/CampaignNpcQuestBridge010.cs",
+      "bytes": 1320,
+      "sha256": "3bbd9d998b67ff2cc00a0ee1d87bbfd9317780bdc020de2401ed5c831e3f7e1b"
+    },
+    {
+      "path": "Assets/Scripts/CampaignNpcRecipes.cs",
+      "bytes": 7606,
+      "sha256": "99ba4d9d5da5e86ae0a287f01a1eedb7745a2e17262abf800043ff3d47eebbc5"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPeacePoseRules.cs",
+      "bytes": 2307,
+      "sha256": "742f4895999823933a7d643505b7b82dc9afa65e567355310d80bce67582afa7"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPlantNativeSupport020.cs",
+      "bytes": 6634,
+      "sha256": "a1cecccd1740b653524a61c24310e2d16b13871b9c79054c1574d6210ac3604b"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPlantedForecourtRecipe020.cs",
+      "bytes": 25334,
+      "sha256": "492afa95139acdc89d68fdb6caf51ef502be19a4a71dd0cf43b4694206b2f6ae"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPortalMath.cs",
+      "bytes": 3090,
+      "sha256": "9f9090e3fb43b28eeca9903be375163cd8f86c4cffa17555ca85189d999bf6f8"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPortalReachJob.cs",
+      "bytes": 967,
+      "sha256": "3ff12d57db3c317e3fcbce12aa1ebdf7e9ceba5c8a6c4bc79fae4f781e900aa7"
+    },
+    {
+      "path": "Assets/Scripts/CampaignPortalRecipe020.cs",
+      "bytes": 9422,
+      "sha256": "a04b33eaf6efc383fbd66946c88e5349019e822bc9dd9122563a266a0eaea697"
+    },
+    {
+      "path": "Assets/Scripts/CampaignProgressSnapshot.cs",
+      "bytes": 2033,
+      "sha256": "c4e3e5105a76234c5cb363eeab32f270a0a441e89bb160f900d1994902c247a2"
+    },
+    {
+      "path": "Assets/Scripts/CampaignQuestState.SoloRecovery.cs",
+      "bytes": 1082,
+      "sha256": "23c42536921606e96039bdc8af91a2398c3bcc8301361d79225c2424111928b3"
+    },
+    {
+      "path": "Assets/Scripts/CampaignQuestState.cs",
+      "bytes": 13952,
+      "sha256": "ecfa4d43e2903e0310e20fa359421bc00c2077b86e229dd7f766737dde597128"
+    },
+    {
+      "path": "Assets/Scripts/CampaignRearFarmRecipe020.cs",
+      "bytes": 13075,
+      "sha256": "bbe29e39c80dad468cebb8f1fdd4fc49bf1569922043127562975e085fc743d8"
+    },
+    {
+      "path": "Assets/Scripts/CampaignRefugeSpawns.cs",
+      "bytes": 1195,
+      "sha256": "5d4b7cd08d3dc504b6d2d69ee2e25fff982597a3da61c83453df08676ac3accd"
+    },
+    {
+      "path": "Assets/Scripts/CampaignSessionFlow.cs",
+      "bytes": 4035,
+      "sha256": "5c56881066338f07c8bfd56ee7fb76d71214bba3ccb9b59dde03dbcdfd8a1065"
+    },
+    {
+      "path": "Assets/Scripts/CampaignShrineRecipe020.cs",
+      "bytes": 9445,
+      "sha256": "315d7859057698b6d2d8386e184c5b8df122bac3ded47e5b9da75640e1013bd1"
+    },
+    {
+      "path": "Assets/Scripts/CampaignStagePacing.cs",
+      "bytes": 12992,
+      "sha256": "12e4184eb89d09a6fad8ede6b641f4e10a85884a0ae8b36fc4cf522fedfd8206"
+    },
+    {
+      "path": "Assets/Scripts/CampaignTavernLayout020.cs",
+      "bytes": 7006,
+      "sha256": "b6b5cbf11dc524ca9fcb30b1a1095c04ebc95cc6782285b96e5cb2202e3aeabb"
+    },
+    {
+      "path": "Assets/Scripts/CampaignTavernRecipe020.cs",
+      "bytes": 6048,
+      "sha256": "f535ed70729e378559ea18e87d75216867a26591f09ecc739cdbcaf435ab3d14"
+    },
+    {
+      "path": "Assets/Scripts/CampaignTravel015.cs",
+      "bytes": 3741,
+      "sha256": "a27ddfe50e1aa6609c9437187622250237e7d69bebc7f7d8fb641de625af86e2"
+    },
+    {
+      "path": "Assets/Scripts/CampaignViewFence.cs",
+      "bytes": 1946,
+      "sha256": "e01119fc1326a4376865a86c848ec4342da3e72f90612ab100ecd9896f4ffc33"
+    },
+    {
+      "path": "Assets/Scripts/CampaignWaveDeadline015.cs",
+      "bytes": 2572,
+      "sha256": "eeb42a2f87300122d188acbcb2b8b4ec2a012ea3e3774f8593a5728c70c03781"
+    },
+    {
+      "path": "Assets/Scripts/CampaignWaveLabel015.cs",
+      "bytes": 2051,
+      "sha256": "a42123cb4aa70c7e49aff367cf2d3202b66bc648f715eec3b76d0a18a0c47d7f"
+    },
+    {
+      "path": "Assets/Scripts/CampfireAtmosphere.cs",
+      "bytes": 5521,
+      "sha256": "fdfc952e3726c4d1bbee9a5eefa3f5842518aa638442599f5279011a3f2ebd5e"
+    },
+    {
+      "path": "Assets/Scripts/CampfireOpening.cs",
+      "bytes": 11389,
+      "sha256": "c2ae1602a66cc0c3c3276b336ce2e6b11feb793c52ef7d8adbe3f733ebddd377"
+    },
+    {
+      "path": "Assets/Scripts/CauldronAudioMath009.cs",
+      "bytes": 2157,
+      "sha256": "e6b9f3ee8c53ebbc149fc13b3a2ad9a93208840804f8b5e5cc4a92e5565ba68a"
+    },
+    {
+      "path": "Assets/Scripts/CircularMapLayout.cs",
+      "bytes": 9149,
+      "sha256": "67c89297badeb7b2eff6fb1d2ae57a949896a79b1d0a0010ecbcde54613caa6a"
+    },
+    {
+      "path": "Assets/Scripts/CombatDamageNumberGlyph022.cs",
+      "bytes": 8482,
+      "sha256": "d4f9269dbf9ecfcc9cd9bcf2c2d3bebbdab7f94a98846110477b27cc6077afad"
+    },
+    {
+      "path": "Assets/Scripts/CombatDamageNumberLayer022.cs",
+      "bytes": 7114,
+      "sha256": "f073398a56cb3a06b117bcae7c95c9946d9177fbb966158bc8bff6df485feeb1"
+    },
+    {
+      "path": "Assets/Scripts/ConfirmedSelection.cs",
+      "bytes": 5609,
+      "sha256": "ee8d1a05e35f6cbe7336dbeac4a65cce9b1d592f8faeaea5b81e7d72f893d48b"
+    },
+    {
+      "path": "Assets/Scripts/ConfirmedWandAppearanceState.cs",
+      "bytes": 2891,
+      "sha256": "d1edf224576be92a38e2067e63b8edcdeb81b3ac36d81be4ff54d338836c99b8"
+    },
+    {
+      "path": "Assets/Scripts/CoopCampaignDirector.Interstage.cs",
+      "bytes": 5672,
+      "sha256": "9dad479171c2ae7dbb07b441d8a9c6240eff48a4e1f69acd37db0810044525b6"
+    },
+    {
+      "path": "Assets/Scripts/CoopCampaignDirector.SoloRecovery.cs",
+      "bytes": 11654,
+      "sha256": "be8de2ec4f7f47a621d3cfb075603e141da034f038d5efb2ded64d270935e8d5"
+    },
+    {
+      "path": "Assets/Scripts/CoopCampaignDirector.cs",
+      "bytes": 25916,
+      "sha256": "ce660bdfa33743829375eca66802bffbf4987cf55f1b59514313c924f642e847"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.AcceptedImpact.cs",
+      "bytes": 4143,
+      "sha256": "b214e66c2ffa48a3db603f054912138014b422837534fd3402a4b658d2655657"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.Campaign.cs",
+      "bytes": 9065,
+      "sha256": "7634bd90488d5f09b03e3d40d6ad70af684986fe5bea7215bd647c9673c8f0b8"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.Campaign015.cs",
+      "bytes": 3567,
+      "sha256": "8dc3b1defe879b609d275ec69c93214f64f58d034a8c1c0c75be2dfd413048c4"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.CampaignChecks.cs",
+      "bytes": 8412,
+      "sha256": "6ac7bfa888c6a59fece44222db8cf01bb1e5fc8cae8082e0795900997356ae1d"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.DangerChecks.cs",
+      "bytes": 29207,
+      "sha256": "11e04cf0d50c00345b029a6d105bbf4c613d1c56b6eec0852de84f970a752a88"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.LaneBuild015.cs",
+      "bytes": 16308,
+      "sha256": "8c59eefc3feb2d7525dd8e5a8d4692b8ad120edf66512ea19d3f35376be6922b"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.RapidCasting015.cs",
+      "bytes": 6090,
+      "sha256": "0a741aa25335f199a3f4e1cfb5517c860df20954fd09dc88a85e4e7ebf9e55af"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.SoloRecovery.cs",
+      "bytes": 3990,
+      "sha256": "4443188751219a0ea83ea5e0403dcb8ace921203fba17a7bdd391bbe7623ab58"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.Xp015.cs",
+      "bytes": 22310,
+      "sha256": "549a6433680b6ecf744228f2440991dccacd526649ae795cc41d0b721405be1c"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.XpCatchup015.cs",
+      "bytes": 12614,
+      "sha256": "536f7c2203c578f05862f924d21b087e3eaa54ad980aef7d7be9afe74c0816e3"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.XpPresentation015.cs",
+      "bytes": 12146,
+      "sha256": "80733a9234e675ccacf6f06f48f0bb980e113a56fb0ede810696cdb466d13835"
+    },
+    {
+      "path": "Assets/Scripts/CoopDefenseDirector.cs",
+      "bytes": 105158,
+      "sha256": "37f327d20125fd59b3aeefa448b361027bb205662a120c93bc8dc6e7651934a0"
+    },
+    {
+      "path": "Assets/Scripts/CoopHubSpawnGeometry.cs",
+      "bytes": 2584,
+      "sha256": "4763f1d91d4fbc285d70d61530a264790f854447fba7780cc6f82a95dc570d88"
+    },
+    {
+      "path": "Assets/Scripts/CoopHubSpawnLayout.cs",
+      "bytes": 4456,
+      "sha256": "987d21c1f78398398f2d4b2d7f56191f85e3b6b995a34a1a0819e15cc89592aa"
+    },
+    {
+      "path": "Assets/Scripts/CoopPartyCapacity.cs",
+      "bytes": 8046,
+      "sha256": "f4410ef48f034f9649ce50df123abd1ae2e1a4bd34b9caf268de0f5a9388a4d5"
+    },
+    {
+      "path": "Assets/Scripts/CoopRoomMode020.cs",
+      "bytes": 4106,
+      "sha256": "329716a655ce2d0d816a9f066172aad95ba586ea5fb9cd112734109adee68379"
+    },
+    {
+      "path": "Assets/Scripts/CoopTrainingLabDirector.AcceptedImpact.cs",
+      "bytes": 4470,
+      "sha256": "14297921887bebed0c021fd1ab34d8aa10d8f9f2d5314a2d29f02da95aea9cd5"
+    },
+    {
+      "path": "Assets/Scripts/CoopTrainingLabDirector.RapidCasting015.cs",
+      "bytes": 4997,
+      "sha256": "bc9612fc6dc6df519edb342d14813457990a8ca325ecd8b8ec04051248c44726"
+    },
+    {
+      "path": "Assets/Scripts/CoopTrainingLabDirector.cs",
+      "bytes": 26992,
+      "sha256": "9ff3717c9786b88cbe892f545d93c1cf0191a27c179aab5775e1fd74f295a7c5"
+    },
+    {
+      "path": "Assets/Scripts/CosmicNovaChain.cs",
+      "bytes": 2107,
+      "sha256": "d96f1b5db160fa5a57b099dd95def1cd06e52dfb551c9d8caa5258a2bb0d2fa9"
+    },
+    {
+      "path": "Assets/Scripts/CosmicNovaGeometry.cs",
+      "bytes": 13585,
+      "sha256": "65dc66bd2770fddaf8944df43f3d7dd7d04835836c3f7e5b2ab518688593354b"
+    },
+    {
+      "path": "Assets/Scripts/CosmicNovaPoolClock.cs",
+      "bytes": 1774,
+      "sha256": "5997b0902b747a92883fef50a991767f1441760a469ff9731a322576d171a271"
+    },
+    {
+      "path": "Assets/Scripts/CosmicNovaVfx.cs",
+      "bytes": 10201,
+      "sha256": "fb9a3933e9455fb1c22760132e743f2896edbc020cb548687402f4e46ece44c0"
+    },
+    {
+      "path": "Assets/Scripts/CrowdSpacingSolver.cs",
+      "bytes": 7396,
+      "sha256": "4bc310464ed6ffee3544aa467cf6e7997774542ff2ad382d10d695c7edd65c5e"
+    },
+    {
+      "path": "Assets/Scripts/CurrentDefensePacing.cs",
+      "bytes": 3998,
+      "sha256": "13157b66457cbb033238f9d2acf03e1f72e010c5e4b5ddd05183d25cdfcac5e3"
+    },
+    {
+      "path": "Assets/Scripts/CursorMenuState015.cs",
+      "bytes": 1120,
+      "sha256": "436b7b48fd69553c5bad5be8438d269698dc916125543274a5f21ce341329370"
+    },
+    {
+      "path": "Assets/Scripts/Diagnostics/OracleMonsterV2CoexistChecks.cs",
+      "bytes": 29001,
+      "sha256": "d6348013fbe3f56f218a1f76bf671c526ac15533023f2011fd20369837b5afde"
+    },
+    {
+      "path": "Assets/Scripts/Diagnostics/OracleRoomPlayerAcceptance.cs",
+      "bytes": 26036,
+      "sha256": "35753aa806b8b265a03932ff1c0a3f3a1e655f8b2d51fc7ff387ee2d323c052d"
+    },
+    {
+      "path": "Assets/Scripts/DiscoveryFocusJobs.cs",
+      "bytes": 3569,
+      "sha256": "1b39e3c360746fca7fb7b3c3c4a3065342819f4201a2a01256be03cc94c6e7c8"
+    },
+    {
+      "path": "Assets/Scripts/DiscoveryProgress.cs",
+      "bytes": 8355,
+      "sha256": "eb6ade8646ef05cb016d537ab2a7e68b3b69b4bf47e63b665ec1f9701f4d0a97"
+    },
+    {
+      "path": "Assets/Scripts/DressingMeshBuilder.cs",
+      "bytes": 10417,
+      "sha256": "cedebce90a89eca39d5ef7ce7b0f7b297f527ede06c6fb9f678c2d1fea9adadf"
+    },
+    {
+      "path": "Assets/Scripts/DressingPlacementKernel.cs",
+      "bytes": 3157,
+      "sha256": "2ab18f28c76249ce9fabe5801f4b9253b2dca5fb180409301fdcc457fa907317"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.ArenaEnvironment.cs",
+      "bytes": 19601,
+      "sha256": "5a729c6bda54085401acee2c9e5a294b5199cf7c246b65418168711d3e882cc2"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.BarrelUnion.cs",
+      "bytes": 6710,
+      "sha256": "6ccbdc94d2a6c3d6a57a37a26419f14c1819a410ebeaf8082cc70956f15ca9c3"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.BlossomTrees.cs",
+      "bytes": 3507,
+      "sha256": "5d292d622b213a65de4847f9b9b5de588075ef6587d1b4182a01831c43fd1a9d"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.BuildPockets015.cs",
+      "bytes": 12319,
+      "sha256": "f9d807e85c6e15e4bd70d34de9db7c0e46b633ab43132713ba0e99bb1dd6734d"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.CampaignAssets020.cs",
+      "bytes": 4734,
+      "sha256": "e63d1ca844eb8dc47762f7cc97fbbb2986d317debb88667fdc0703de9d423d2e"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.CauldronAudio009.cs",
+      "bytes": 2012,
+      "sha256": "a42eac5b8fa0d4be711100f5cc8eb2e7ef07f7c602204ab55e3fbd1123891de7"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.CryptBarrier015.cs",
+      "bytes": 5614,
+      "sha256": "04d86382b8f3ed5fab818543e79a0b69d17fe03e789b0d267f9b6f7aa4da5cb5"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.Discovery.cs",
+      "bytes": 4179,
+      "sha256": "7e0c1ff4df4905a1fcc634521362e2960ff7410f193656bbb8bc058c6b214693"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.ElementalRoom.cs",
+      "bytes": 14489,
+      "sha256": "0026789b42df8369676ab9cf4a98e2860a03b4d3b225ea83ae83307e2a7477b0"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.ElementalRoomPresentation.cs",
+      "bytes": 10477,
+      "sha256": "3221049367f8d53328ad6316e115f0d318754fd9cb3de088a17df352e212b1ba"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.InteriorFlora020.cs",
+      "bytes": 3732,
+      "sha256": "380931775e49e22023eaa21914bd09524617bcd2027ee0da387c955c6b8ca682"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.InvasionPortalTargets.cs",
+      "bytes": 1059,
+      "sha256": "5ecda7d3bc97eb5b7d12959bbab129dbad85795d4d5ff07015fd13bd432c83a5"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.LaneBuild015.cs",
+      "bytes": 16701,
+      "sha256": "66d781af87dde3f8359263a14255457f3cb4d80e728367e3fc8f22384bd159e3"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.Lanes.cs",
+      "bytes": 8046,
+      "sha256": "8d91a8918e5fb584d2413856763a4301a07a5e403997596b450fe770d78c96fc"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.LanternSwing.cs",
+      "bytes": 851,
+      "sha256": "429e9e91ea5cb40afd9fc721f1e27d381ebb76f24149fb39519840637bc59051"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.LightPulse.cs",
+      "bytes": 4209,
+      "sha256": "7e0971bf91c6d5ada1a7bc5b295649c1d4760264aedf0aad3dab81c45e1af637"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.MentorVisibility.cs",
+      "bytes": 900,
+      "sha256": "396d1fa7588e5f14f5e9ddb6faa02813ec622256ca85e62e83a19e7df874f723"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.MenuShowcaseCapture.cs",
+      "bytes": 765,
+      "sha256": "f83b1f42bac0655deb7202f5bbc524f3924788536b8efb4366a3cd00e31dc386"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.Mode020.cs",
+      "bytes": 5604,
+      "sha256": "dbebb6265709af074914fb397ad1685535cc3092b3d4a8a43eea4a8807ef9cf6"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.NpcAttention009.cs",
+      "bytes": 1195,
+      "sha256": "edd8580ca87862e8c2a9c966a76f065515bc82abcdd9a772563cb4e931cd49b7"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.OuterIslands020.cs",
+      "bytes": 4206,
+      "sha256": "dfda2300dbeb75b1dcd06973adfb67a608716cb61840b8da6a28342d8cbddf8c"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.PassiveWind015.cs",
+      "bytes": 9303,
+      "sha256": "57fbb24ccb679502a46dc2d7168ce068023721298e3bb3bbc0bc4d2341915279"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.PortalLandingPrototype020.cs",
+      "bytes": 18882,
+      "sha256": "e641f7d0bbd78cb4b84a719339e4ced1fc1bcac923d7a49805221a91b7b5ddb9"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RaykonAlchemy.cs",
+      "bytes": 4800,
+      "sha256": "9f6cc85d806f6ee1f76f364c0645150f91dc0474f1d25f7fe01c42daeaaf0537"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RaykonAlcove.cs",
+      "bytes": 9386,
+      "sha256": "08dea5d606a013f6a69082024c87d7f17b3f71178bb59f2ca5833349041aa6e3"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RaykonInteraction.cs",
+      "bytes": 1250,
+      "sha256": "29875f38626e830299c81c0174a8fcc71547fafbeb5f434c1c7ebb990ada5910"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RefugeActivities.cs",
+      "bytes": 3895,
+      "sha256": "b54128d86468b6bc867a8bf8925c047f77de41f34ad3774c7159e03b7aeb5eb6"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RefugeDressing.cs",
+      "bytes": 17430,
+      "sha256": "5b8fddd2c8aad649500b190fcb9a373a88fef06f721286eaa5975469da54c3d6"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RefugeFlames020.cs",
+      "bytes": 6998,
+      "sha256": "b5f2bf143d98f4fe6756e0ee67727ad71c1031977cc79f4057ac56cc8682f10b"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.RefugeNavigation.cs",
+      "bytes": 7721,
+      "sha256": "b37cd1b1e18b35518ce6128877393366cccbc00e56494f99ff74fb5c283e570d"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.SmithFurnace015.cs",
+      "bytes": 2343,
+      "sha256": "af1801c54457b04c1c175feb7ded7a6e5035e2567ee502efa7db35a89c63fecf"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.SupportedBanners.cs",
+      "bytes": 7509,
+      "sha256": "e829837dfb98c3d2c93e774e9682e07f3b1cf0532f3e0328129b8bcf03ad0782"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.SupportedFootsteps020.cs",
+      "bytes": 4378,
+      "sha256": "02e81e229338954cf3fafd85ab5139cab790155363c9a396ddb6f57aa10898ec"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.TrainingLab.cs",
+      "bytes": 1377,
+      "sha256": "ff8763233d99e0b9c050f5f26835f1774c8f2e6902b36a9762bc0f1d2bf042ff"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.TutorialRefuge.cs",
+      "bytes": 10210,
+      "sha256": "1faf6212e16760b5782ad1b7b5fb3554b9e1df515657b3144b555e41749922aa"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.XpClearance015.cs",
+      "bytes": 16828,
+      "sha256": "3d444ac0dcd76d1a488ff73550ba77df60cfe207dcc9f75e615d8d2177191318"
+    },
+    {
+      "path": "Assets/Scripts/DungeonWorld.cs",
+      "bytes": 115471,
+      "sha256": "60f4cda520b322ddccc86e706ecb4b8aa0372b91f1f705bd821741908239f356"
+    },
+    {
+      "path": "Assets/Scripts/ElementProgression.cs",
+      "bytes": 39297,
+      "sha256": "6f23e8ab0014c0579c06704bc939a107e5dbc7df82f19902be83107e5da33bbb"
+    },
+    {
+      "path": "Assets/Scripts/ElementalRoomReactionJobs.cs",
+      "bytes": 7530,
+      "sha256": "4491040517bc1affe76b908b24c51232e02d1cd1f4391a3b5c99bfe009a183d0"
+    },
+    {
+      "path": "Assets/Scripts/ElementalRoomReactionState.cs",
+      "bytes": 13799,
+      "sha256": "14da22235bfc6a5be6da712b36cb17f66c2a54ef1512ad66c3cad4c8ba009c24"
+    },
+    {
+      "path": "Assets/Scripts/ElementalTowerPlatforms.cs",
+      "bytes": 5554,
+      "sha256": "2d117ce2264c0609a26b7e75f65582b0f2006cfc81bce081477475168342a80b"
+    },
+    {
+      "path": "Assets/Scripts/EnemyFeedbackData022.cs",
+      "bytes": 1379,
+      "sha256": "24c9a268c4a58d017a7d7210357a936840dcbec471cda219f2ece8400417a7af"
+    },
+    {
+      "path": "Assets/Scripts/EnemyFeedbackMath022.cs",
+      "bytes": 9296,
+      "sha256": "8cda10e65dea2d3ddee64be7b54b0a90e08a5e1aab2b87bccb5dc3443598679d"
+    },
+    {
+      "path": "Assets/Scripts/EnemyRouteTowerPolicy.cs",
+      "bytes": 3862,
+      "sha256": "a8523b0d693d81b708001b7d3c1410b23217cdb400da6fe0cb7ef752ab67ce38"
+    },
+    {
+      "path": "Assets/Scripts/EnemyStatusHud009.cs",
+      "bytes": 11610,
+      "sha256": "485b69238f2a9e7ebaa7c2c52b88d494b1da60ae1f43dd0fddd429395c075f62"
+    },
+    {
+      "path": "Assets/Scripts/EnemyStatusLayout009.cs",
+      "bytes": 5360,
+      "sha256": "31ba6a9758b6f234e9567f7a7f67e92b9421a9d216a7d7a6830b6e10953a5680"
+    },
+    {
+      "path": "Assets/Scripts/FireLightSelector.cs",
+      "bytes": 3623,
+      "sha256": "3a7b2a9ce082e09214134c1f23f09b6f03b408993a26c4668715dcee6a20d67b"
+    },
+    {
+      "path": "Assets/Scripts/FrameTimeWindow.cs",
+      "bytes": 2343,
+      "sha256": "f996370f155ff2a40e8ce252d14e1fc5846a309840c5d30b8296f8db0b95e7c8"
+    },
+    {
+      "path": "Assets/Scripts/GameActionBindings.cs",
+      "bytes": 7214,
+      "sha256": "fef920c460eb8a8c1c722da1071628d26129409ecb03a176ec821f99a760ba19"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.Acoustics015.cs",
+      "bytes": 26555,
+      "sha256": "65becbdad8ce63fb6768ac05de82686e5e6347e42d05ae8a76f8f21514ec3a73"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.CampaignArrival020.cs",
+      "bytes": 1807,
+      "sha256": "2f0495dc2806bdec9ebae39bd1e8f91c7e30182d8517be95414d1c1e5ca8ffcd"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.CampaignIntro020.cs",
+      "bytes": 9913,
+      "sha256": "de8dba7606338fe8f10bfacae8e5e73c29b46da071e24654bdaa55e406e85268"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.CampaignNature020.cs",
+      "bytes": 12089,
+      "sha256": "2d8858d534a1e5eef342fe0761c995e1352f35dd9d7be0f229e0bcbbb6049d0d"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.CampaignNatureWindRead020.cs",
+      "bytes": 906,
+      "sha256": "3464c98596f2e535aa839c2318cf1f0b7310e73d388602c63c58add725c59884"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.CauldronAmbience009.cs",
+      "bytes": 7651,
+      "sha256": "435f288c630e467c2048eb7191643ad6fe5809c3b5d28703bdfcbc24ab450441"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.Crossfade009.cs",
+      "bytes": 4019,
+      "sha256": "52afe286d74cb7ba04b40488fb9a399b9aa90a1b6fb4464a68970f32c1fedbca"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.ElementImpacts.cs",
+      "bytes": 2589,
+      "sha256": "4d54d3fa6bfd653fca215ef4a09fa08b3f76c04525ef17ceebee42838c171fab"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.ElementUpgrade011.cs",
+      "bytes": 2813,
+      "sha256": "4d3e90b44145dcf2493e201833626b48b49d4e24b7acc1713c21afed541124f2"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.Flames020.cs",
+      "bytes": 2048,
+      "sha256": "9ad4405526fc436be80c09c127e7325c6111ab679b4c44f0e3b0c480a9859290"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.GuideAdmission015.cs",
+      "bytes": 599,
+      "sha256": "ecb91eeb7476e368ea9f4ff209e6425654d424a1f3a37d3a17cd2b47856b0a7c"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.PairCues020.cs",
+      "bytes": 3164,
+      "sha256": "22f6411a9776a55cf1d268c68e84149149a23825ce31f88ba704f903c6ac8c9b"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.PlayerEffort020.cs",
+      "bytes": 1621,
+      "sha256": "72a047ec634ea08f488b35b4fd27cc8e1fb6060d1e5a12a9883f0f7fc0b0f75a"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.Playlist009.cs",
+      "bytes": 12502,
+      "sha256": "0cfbe6675355c6181e131bf0d169693a2158e7fbe98272aac03bc157c8e39a3e"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.PlaylistTransport015.cs",
+      "bytes": 3852,
+      "sha256": "371e4b95e9117db226005b0691f6a191c1a35337cbc5fe51b93625ddd4d21498"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.RefugeSounds015.cs",
+      "bytes": 4495,
+      "sha256": "812abba6e3b1193e35ab76b924aae5f4adb64c3b0b272fb855874998142e2b55"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.SmithFurnace015.cs",
+      "bytes": 1266,
+      "sha256": "40d75813ac4b7caf7b8a1b3436320ff5981ba4e861b6f10aee90d71a6e12ce5d"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.StaffSpiral.cs",
+      "bytes": 1444,
+      "sha256": "82fe3f4b4ea46babcff2763e9e4a3a58df9de3f23ae9e41994ead06159105ca0"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.SupportedFootsteps020.cs",
+      "bytes": 16132,
+      "sha256": "54b0d3b45dea3844d0a2c5cf7de1c3b1f1c2e39bc7a01144bb890d823c847f92"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.WeatherAmbience020.cs",
+      "bytes": 23138,
+      "sha256": "1884324527ea37fb88d772c1fd0c71b13ccd2965a30c1314dd060032f227c021"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.WebAudio015.cs",
+      "bytes": 1259,
+      "sha256": "47334eea94d272cef9eac43d6b15ac65bd7c2c75bba7b27639eefa732c3b1622"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.WindowBreeze015.cs",
+      "bytes": 15937,
+      "sha256": "fe3571b6a64252e5866b246557bbe26babb51b0f813c176c614488e7a2af2ab2"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.Workshop015.cs",
+      "bytes": 2933,
+      "sha256": "aba03816f3598850b3286b4a4e346ffa0454465e006be0a4c11b1d320fe32cc3"
+    },
+    {
+      "path": "Assets/Scripts/GameAudioDirector.cs",
+      "bytes": 46711,
+      "sha256": "ac01d6acc2458dfd9ab24734f3680549db37cd8a89dc5482e3a5297cc67f4a7d"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignArrival020.cs",
+      "bytes": 2146,
+      "sha256": "4e09b6eaf117328bd2b36e65ab5556e2c8d3e870be8619552a429e7084adce41"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignAtmosphere020.cs",
+      "bytes": 2015,
+      "sha256": "8d36c791cebec9d7b28c006f0b5ddf54a787f1c595e3d8b53e1099f0925a4dcc"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignCycleLighting020.cs",
+      "bytes": 1187,
+      "sha256": "c7855dd889128995e6fd793fd0022b4d6d730f062d5f54e9480f40b85fb1074e"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignFoliage020.cs",
+      "bytes": 7161,
+      "sha256": "ef303ae67377d84a38ae3b880fd484f714cf7d8c17746526ca0eb7f6fb1ec181"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignHub020.cs",
+      "bytes": 6103,
+      "sha256": "698d3ce1b88a5b2556db15093bb67e6dfa27324b9f92fc81f450c1d359800a85"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignNatureBinding020.cs",
+      "bytes": 19055,
+      "sha256": "65a2b8134b35292ffe721e66e0ace271a2b29dafcbe5f1d7168fd74d910c8127"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignNatureDispatch020.cs",
+      "bytes": 4738,
+      "sha256": "e22cc9e481861a0ed0a24f97a94da51909ef4c4fd1241ebda20b409c224997cd"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.CampaignTree020.cs",
+      "bytes": 4978,
+      "sha256": "7b58e5c83f8a336e14da1a1a2bbed529a725a1ef5d194e45df19cd0b38003d7f"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.Inactivity.cs",
+      "bytes": 7953,
+      "sha256": "e5ce0b27fab10cddb77c3a255146f824e83dd5e81c96e66fab0c3c001b568314"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.InputExit020.cs",
+      "bytes": 6189,
+      "sha256": "99951142ecf700f86b88cbaf44e8521c6beb8401efbbda26d880d9721dda35a4"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.Nibwick020.cs",
+      "bytes": 1010,
+      "sha256": "267d75f6a8190dd6c784409c99a958f956d3f3af4f8c992e1a55220f19005ddf"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.SoloDefense.cs",
+      "bytes": 848,
+      "sha256": "899d9465f46dbb93c244346ce7d1107b24a8deda7b29fb60d9ed8a8793b9c57b"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.SoloRecovery.cs",
+      "bytes": 2098,
+      "sha256": "080874fc98bc57308cb0f684d5730422d6d90894eaf9bcb4449a95f570a33ca5"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.TutorialRestart015.cs",
+      "bytes": 1298,
+      "sha256": "875b6b8ddbada81ee20fad6e1b7e4a2adf03a279475fe967346112404d4f6e2e"
+    },
+    {
+      "path": "Assets/Scripts/GameSession.cs",
+      "bytes": 36650,
+      "sha256": "a5e199850fc1d2e93ed79070df8933d81bb827cbd03da9820e6d2179be1d0b19"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsPreferences.Reflections020.cs",
+      "bytes": 3038,
+      "sha256": "6a58427905ce8b88d4a2daddac9c2ab37f1b7f99e30bd3001ddd3aafd0a1e614"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsPreferences.Shadows020.cs",
+      "bytes": 3163,
+      "sha256": "301ee41ef3d652f15cedfb208d5cfb59ce0b9024e37e8ce1d09671fe73ff33c3"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsPreferences.UltraBeta022.cs",
+      "bytes": 14067,
+      "sha256": "a421912e85a487562d913d42f4a5912f53f30adfe2a220a2ee587e93e3d01984"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsPreferences.cs",
+      "bytes": 39538,
+      "sha256": "936b72113e147b275b2779f48ffa16e5b7aeea81461a37b643fff1c1cb710f7a"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsPresetCatalog.cs",
+      "bytes": 3366,
+      "sha256": "03f016d3a7412a6952fe78b96cb34b375fc8951453a98f3d719738f4fe6f64c7"
+    },
+    {
+      "path": "Assets/Scripts/GraphicsShadowQuality020.cs",
+      "bytes": 2122,
+      "sha256": "043026bbdccda781ca60ec5fdf642740e3b62d5021b59adce6c08bd5bab9170e"
+    },
+    {
+      "path": "Assets/Scripts/GroundedFloorSample.cs",
+      "bytes": 1609,
+      "sha256": "ab8272c1690eb30e832260781642c97eb5442b8183186dbc20ea2c4062f0aed7"
+    },
+    {
+      "path": "Assets/Scripts/GroundedGolemMotion.cs",
+      "bytes": 12604,
+      "sha256": "856c6432b9ce94a91d9c2f8ed91a754aeb3316c1990d893499bfcb6ce8d70e9e"
+    },
+    {
+      "path": "Assets/Scripts/GuardFloorTap009.cs",
+      "bytes": 5348,
+      "sha256": "5368e946eced150a227e6f7174a03de383d340f0279fc2a8ef1e3e1b71ce20a9"
+    },
+    {
+      "path": "Assets/Scripts/GuardianPoseRecipe015.cs",
+      "bytes": 6696,
+      "sha256": "52856771854cfc27f7c969a8cb0870a31c96964c606546a49f7db62c6f6c054a"
+    },
+    {
+      "path": "Assets/Scripts/GuideAudioAdmission015.cs",
+      "bytes": 1013,
+      "sha256": "0b23365c042e7f8b61b73b8ed9cbc62dc49a2f6acb6f4815e3c2ffd3924c6f25"
+    },
+    {
+      "path": "Assets/Scripts/GuidePlaybackState015.cs",
+      "bytes": 4403,
+      "sha256": "ff8c8dc137dbc2493fe8a4b9a0737aa5c825fc92ab844ed9264c0f9f0b1d834f"
+    },
+    {
+      "path": "Assets/Scripts/HeartcrystalPickup.cs",
+      "bytes": 17709,
+      "sha256": "39314b2a8c854c60022baa17c730a98b498be5b7814e41ff67182a6f2f1ba536"
+    },
+    {
+      "path": "Assets/Scripts/HeartstoneProgressionModel.cs",
+      "bytes": 6508,
+      "sha256": "2ec3957af70bf2d15ca6858231651625b70f7419b5bc022142a0337a6b897c53"
+    },
+    {
+      "path": "Assets/Scripts/InteriorFloraRecipe020.cs",
+      "bytes": 4271,
+      "sha256": "81e9c546f9dc0cfb565f52544e472ee448c893bc29dfb8ed9de82cc6bca27517"
+    },
+    {
+      "path": "Assets/Scripts/LaneBlossomTreeBuild.cs",
+      "bytes": 8445,
+      "sha256": "3a2c8ddbfdd347433a0b99054fc260a7d0e8e9d2cd2754dee5e5e85e233b356c"
+    },
+    {
+      "path": "Assets/Scripts/LaneBuildHighlightBatch015.cs",
+      "bytes": 7647,
+      "sha256": "29c0e0c898f284e032ccd880c764dbdd26c7f05e74b54ce18cf4465ad1be8177"
+    },
+    {
+      "path": "Assets/Scripts/LaneBuildPreviewRules020.cs",
+      "bytes": 3474,
+      "sha256": "4f2f5a0991df62b7d96c72e00f057aebdb7ababad8166c72e4911212bc3ed579"
+    },
+    {
+      "path": "Assets/Scripts/LaneFloraRecipe020.cs",
+      "bytes": 5715,
+      "sha256": "aa8bb9fb679e596dfd3b818e14ab42427ac788f90a617f2cf036a9cec4a3512b"
+    },
+    {
+      "path": "Assets/Scripts/LaneGateVolume.cs",
+      "bytes": 3034,
+      "sha256": "946d434a3b3474adf272b75d6fe20138d51af45e803dc7b09b10f17f661297b2"
+    },
+    {
+      "path": "Assets/Scripts/LaneVignetteLayout.cs",
+      "bytes": 8235,
+      "sha256": "3dd025905e779200f0549a0b0a24836cfb14d8f3b2635c9045aa24da9fe5761e"
+    },
+    {
+      "path": "Assets/Scripts/LaneVignetteRecipes.cs",
+      "bytes": 24961,
+      "sha256": "f98e1c1592484567286e3c1811ae2f6b9352e22b19932531932fe4641e6bfdea"
+    },
+    {
+      "path": "Assets/Scripts/LaneVignetteRenderer.cs",
+      "bytes": 14091,
+      "sha256": "14e2a80324d46e15d6dff213582178383db6f3ed2a29edbab60805902f909c51"
+    },
+    {
+      "path": "Assets/Scripts/LanternSwingCatalog.cs",
+      "bytes": 1027,
+      "sha256": "f84f94fc9d19536eb07be5f721f26727c224b7730645664e2332a4eb2198ff07"
+    },
+    {
+      "path": "Assets/Scripts/LanternSwingMath.cs",
+      "bytes": 3543,
+      "sha256": "014cc46ae97b88ee54f5f3b2445c8d22cd4c5523225876aa91c53c7a5ef3886c"
+    },
+    {
+      "path": "Assets/Scripts/LanternSwingOwner.cs",
+      "bytes": 11397,
+      "sha256": "2d5f03402203cd060d45b3a0c11bbc2b070f2467c6cd35524f2cead82f6923f7"
+    },
+    {
+      "path": "Assets/Scripts/LightPoolLifecycle.cs",
+      "bytes": 3671,
+      "sha256": "ad2c99f9351dc8e17e3c05897259e21446f2734c1654c28b0476c7a589c8a437"
+    },
+    {
+      "path": "Assets/Scripts/LivingCampfirePresentation.cs",
+      "bytes": 10028,
+      "sha256": "7a8b16c566c9b63044deb9901774e3b97d81a6aee6570d3ac7b194fc7f593ddc"
+    },
+    {
+      "path": "Assets/Scripts/LoreLibrary.Discovery.cs",
+      "bytes": 9480,
+      "sha256": "98ab247b4374350da9522f7f898a601427b9cf31a0ffb2715dd59713ff721f30"
+    },
+    {
+      "path": "Assets/Scripts/LoreLibrary.cs",
+      "bytes": 8535,
+      "sha256": "274354c3e01dd1e2ebc284f26291fa1ec7ae21e02ffa08745bcc3497795f5287"
+    },
+    {
+      "path": "Assets/Scripts/MaskedDefensePacing.cs",
+      "bytes": 837,
+      "sha256": "8e53ff54a85ec0580cbec5d2a14b9ef2438542a69d127efe0a5d06de97e6f2c9"
+    },
+    {
+      "path": "Assets/Scripts/MatchTowerForgeState.SoloRecovery.cs",
+      "bytes": 2148,
+      "sha256": "1bb9c767967756adab1ab04ef7666d51878a1d4d68b321393fa4449c77ac6b05"
+    },
+    {
+      "path": "Assets/Scripts/MatchTowerForgeState.cs",
+      "bytes": 10472,
+      "sha256": "2d4b68c9a7ff4db134f6121539c84fd43e95afa8253379bdf2faa60ebcacec01"
+    },
+    {
+      "path": "Assets/Scripts/MenuIslandGeometry015.cs",
+      "bytes": 9787,
+      "sha256": "b10e0fee1963ad863ba52e9aa20aeb9c4cacd4b8cc5207e7b371e3f1caa8ff05"
+    },
+    {
+      "path": "Assets/Scripts/MenuIslandMath015.cs",
+      "bytes": 8853,
+      "sha256": "7f41f1def8d28f67a6785628d4fe0133c418b794249692b192651facebc6bbd4"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseCameraMath.cs",
+      "bytes": 3365,
+      "sha256": "e482657de3788e0ef012ea87aca448cefff217656148e907460aea6f13a3a35f"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseCatalog.cs",
+      "bytes": 4306,
+      "sha256": "93f9078c6f17870a15c2188fa57b1c499c9df0802ffb781be81a2d59ebe69023"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseHubSupport.cs",
+      "bytes": 2020,
+      "sha256": "2a03a1febc3fbb9d69c9b7041f8883de7fe5a89efe176b1316e6278e9950bbb2"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseLease.Island015.cs",
+      "bytes": 9924,
+      "sha256": "1e1eda02bfc7a3716b75fd6ba30dbe49c6b217dbaa18562bc59aea15a2d2e4b6"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseLease.OuterIslands020.cs",
+      "bytes": 2351,
+      "sha256": "cf610fb6d9b7f41032827830f1a90f6098fd0bc2838a545243d74f5a58ac7b5d"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseLease.cs",
+      "bytes": 23394,
+      "sha256": "6294b6e1b76bef3637d0dcecab384a9e19e13e5efb0d1bf0fa68b9d78f680d09"
+    },
+    {
+      "path": "Assets/Scripts/MenuShowcaseMath.cs",
+      "bytes": 11313,
+      "sha256": "051b7ca2b59e3df306eb8ee30950fc0e86024735c694406fef37fe16b71cbf6c"
+    },
+    {
+      "path": "Assets/Scripts/MonsterDetailAdapterV2.cs",
+      "bytes": 4200,
+      "sha256": "d8d203f0c3b279dd082e72707d0ed9fb975c16ae2d9cea5a23cb576747069a91"
+    },
+    {
+      "path": "Assets/Scripts/MonsterDetailRecipesV2.cs",
+      "bytes": 6809,
+      "sha256": "e33a39a3aa2f51377146f3265b2ac623a63cc6ea29eb6cae0749024ae6388b9a"
+    },
+    {
+      "path": "Assets/Scripts/MonsterDetailSourceV2.cs",
+      "bytes": 27016,
+      "sha256": "8ebc21283bead1ef2c6fe14c3c8a3e6c70795c6aefdabe18435a286caefd0d9a"
+    },
+    {
+      "path": "Assets/Scripts/MonsterElementPalette.cs",
+      "bytes": 2446,
+      "sha256": "20c5f989c35083b8c7cd63dd2e65cd5d96a3722896706be3bbfa4cd6ceab5415"
+    },
+    {
+      "path": "Assets/Scripts/MonsterElementPresentation.cs",
+      "bytes": 2653,
+      "sha256": "a049068cf50b51ee1bcaaf592e67aa6ecbfe4b0809c93dfebb03ed6cf69e63cc"
+    },
+    {
+      "path": "Assets/Scripts/MonsterNeutralModelAuthoring.cs",
+      "bytes": 4049,
+      "sha256": "c04679f4e35e8cdf27af99d2dc573e2a56e54810e451aa49c7f60f18d41f3a39"
+    },
+    {
+      "path": "Assets/Scripts/MonsterNeutralModelAuthoringV2.cs",
+      "bytes": 4150,
+      "sha256": "e6d128f24c61e0afa16b420a43285178846cf1561d17b9fc27e74125d66690b4"
+    },
+    {
+      "path": "Assets/Scripts/MonsterPooledView015.cs",
+      "bytes": 11295,
+      "sha256": "dff5a9d876bdceae0d4f2ffb9c68d2b425c7b07934eed66b1aa134fd1a8ddcb1"
+    },
+    {
+      "path": "Assets/Scripts/MonsterVisualFactory.cs",
+      "bytes": 3171,
+      "sha256": "ca4123a5a1dd5c5344551a5e34502f7e3b1fb82d33afb4057f2b797a6c75ee1f"
+    },
+    {
+      "path": "Assets/Scripts/MonsterVoxelCosmetics.cs",
+      "bytes": 36970,
+      "sha256": "1e3994d47c9b56db26c004a6066ca2d245e82dacc81c6c5cb6e4a615d6c46b51"
+    },
+    {
+      "path": "Assets/Scripts/MonsterVoxelCosmeticsV2.cs",
+      "bytes": 5720,
+      "sha256": "ae854f2e421291c389bdf993aa32bbe79b4b90dad6890a7df622d707910c00ea"
+    },
+    {
+      "path": "Assets/Scripts/MoteEnvelopeMath.cs",
+      "bytes": 1534,
+      "sha256": "4ed0431ea6d6532de248d94944da1841b297fd3386d169a51a6c48f06414c89f"
+    },
+    {
+      "path": "Assets/Scripts/MovementStepMath.cs",
+      "bytes": 1331,
+      "sha256": "c3a25b2f9b38e1d8adcfef73e8b255d7536c5de1e3e63cefbed16cd98e94ba8a"
+    },
+    {
+      "path": "Assets/Scripts/MusicCrossfadeMath009.cs",
+      "bytes": 2860,
+      "sha256": "4eee8b95c1ae30e5dc12c47a9b77eaab58acf97da72b6c5a0f0afc733b865716"
+    },
+    {
+      "path": "Assets/Scripts/MusicPlaylistQueue009.cs",
+      "bytes": 8134,
+      "sha256": "08c673e692d4a6b639027eeefe559c28d21e7881161d23445bd99325c7c350a1"
+    },
+    {
+      "path": "Assets/Scripts/NibwickActorLease020.cs",
+      "bytes": 4919,
+      "sha256": "201ae33b5171a574edab154cfa7c6cc11aabc68f2cc3b51ecb2e7359d7cdbd8f"
+    },
+    {
+      "path": "Assets/Scripts/NibwickLines020.cs",
+      "bytes": 4197,
+      "sha256": "a02bf55d76a974805fae8631611fdf98f970fc31125e62c9e20af9e2f1edae55"
+    },
+    {
+      "path": "Assets/Scripts/NibwickMotion020.cs",
+      "bytes": 7577,
+      "sha256": "7fa1f8e5427ed7615cb829c607910949200148499086407925ecf74a0eb41589"
+    },
+    {
+      "path": "Assets/Scripts/NibwickRecipe020.cs",
+      "bytes": 8387,
+      "sha256": "ca3a6842a0379a0674d8d056349ee795dd1469eb7eb63da0e54cb6f58851fb6e"
+    },
+    {
+      "path": "Assets/Scripts/NibwickRigidLeg020.cs",
+      "bytes": 3207,
+      "sha256": "6c695d007a0a0dddc1b58e5fe7fcc8be990e0daec784c665d9f96e638f3b3d3a"
+    },
+    {
+      "path": "Assets/Scripts/NibwickRuntime020.cs",
+      "bytes": 10234,
+      "sha256": "b847f86700b76978e911f9c5265c7e664c8ce2e1a2ce42cffe148df6619365f0"
+    },
+    {
+      "path": "Assets/Scripts/NibwickRuntimeRecipe020.cs",
+      "bytes": 3188,
+      "sha256": "ec8f4c6152d462215c8c90e09668f6e550d62f8b5c9d3f70a355001f0941fdae"
+    },
+    {
+      "path": "Assets/Scripts/NibwickTourMath020.cs",
+      "bytes": 20281,
+      "sha256": "8afa1d83ac2018461787ec83bf671550ce85f2aea274173572d29487b769a0d9"
+    },
+    {
+      "path": "Assets/Scripts/NpcAttention009.cs",
+      "bytes": 7113,
+      "sha256": "57b7e9de4de538281cb8101d9425361a0d133cbe7d18d2f93022cdc4ec4cf1fb"
+    },
+    {
+      "path": "Assets/Scripts/NpcBlacksmith.Anvil.cs",
+      "bytes": 1010,
+      "sha256": "93e16fd6de7e3584af2094c9acb544f690115667b5c2505d0851bf6cf4f6ecb0"
+    },
+    {
+      "path": "Assets/Scripts/NpcBlacksmith.Fluid009.cs",
+      "bytes": 2615,
+      "sha256": "323833639bf665ce30de076add51b52aa2277b9ad654264c60da5d4a848dd08b"
+    },
+    {
+      "path": "Assets/Scripts/NpcBlacksmith.Furnace.cs",
+      "bytes": 5237,
+      "sha256": "af368723af672fe6457d1ca46e3732bcdb5ca2afe47e8b86c1b25eb56ed6ca1a"
+    },
+    {
+      "path": "Assets/Scripts/NpcBlacksmith.cs",
+      "bytes": 28345,
+      "sha256": "7ff0ee5425a7f0e2c12907b1a5c4628ebd03f2d21e22c8091ab6eaa368f6a9ee"
+    },
+    {
+      "path": "Assets/Scripts/NpcModelBuilder.cs",
+      "bytes": 8009,
+      "sha256": "cbefa20bc1cb32885e8368a5f5cc9f3efb52c73f258cfe46bc4b4cb099efd241"
+    },
+    {
+      "path": "Assets/Scripts/ObjectiveCompassArrowGraphic.cs",
+      "bytes": 1425,
+      "sha256": "c887f889911a40373a2c5598f3df9a5cd94f6e87cf9409d223237a422b8238ce"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.AchievementBadges020.cs",
+      "bytes": 13971,
+      "sha256": "8897458f9e5feda6ba045d851fd48acc1f502db100c778269145db2fb15909db"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Acoustics015.cs",
+      "bytes": 5137,
+      "sha256": "d3a9332f08316bcf1625353d0c7d3bdb4c047e9e0c94b0f99808230a652fcb00"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.AnvilPreview.cs",
+      "bytes": 7363,
+      "sha256": "1f9cd4febee3cbd7d3f2fb87cc5cf4fbfd2a0dd1dbe95159209e2c0a8e8d59d5"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignCycle020.cs",
+      "bytes": 3460,
+      "sha256": "33c2299fdefc6b7aee52b56522a2a179729549fa36e4ad5af1d40fa4f5ed96f3"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignHub020.cs",
+      "bytes": 5358,
+      "sha256": "47b7506ed9669534556135da7796a75834d802b937fbc3202dd58361e2c0fa5b"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignHubMinimap020.cs",
+      "bytes": 21049,
+      "sha256": "24f993108ce345cee02f7c601a7c8f754b3a7c5594c996468387843a5a6875cb"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignHubMinimapInk020.cs",
+      "bytes": 2989,
+      "sha256": "37a7f9bfa13ce575c07b9ee00864a42553920c00ca480feb7dbf814f02c12943"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignIntro020.cs",
+      "bytes": 20634,
+      "sha256": "cf4bcd9222c18facb057c0a97726a2c02485ce5495e12bad643707aede3f12cc"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignStyle020.cs",
+      "bytes": 8252,
+      "sha256": "302cf344309b10f6371c47aa424529346af896b42c34fdee9ab149c250ee1328"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CampaignWave015.cs",
+      "bytes": 987,
+      "sha256": "d18cc7a3f109e87f8abc6bf6452e43eb26a7b91869f60411ee7be19b1de4653a"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CombatFeedback022.cs",
+      "bytes": 1658,
+      "sha256": "2b66e64bef30f1454567616fb0b82b458818da4cf92cd0da4216902cd7aa4607"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.CompactBuild015.cs",
+      "bytes": 8960,
+      "sha256": "b5c25f18fa877e19e805b4817285703f4ccc1364f436e6936bfc86e39cf82568"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Discovery.cs",
+      "bytes": 856,
+      "sha256": "7ebe426b19ca07ea4a95c93f90ed83fec5999d7f84dcccdcb4b0ef9dd6f143e7"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Exit020.cs",
+      "bytes": 2445,
+      "sha256": "0e6da4142b7b934459e055339027c13276de29eceb57b3589912e30e2f912f22"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.GuideMenu015.cs",
+      "bytes": 11647,
+      "sha256": "8963d0fbd452dc23482f923f65cb6a4a3d59f8fbcaf3bd83f1f8905cabd943e5"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.GuideNavigation.cs",
+      "bytes": 7440,
+      "sha256": "dfa6446cd91c732cb1f66e8f48a429dd6aa96dfbc8f6fbb24c19038f3c563190"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.GuideUi020.cs",
+      "bytes": 1615,
+      "sha256": "b585f7b6eaed2e8f467122bc5af40a6a3bb6186efcbcb94981179ee32f445999"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.MechanicsGuide009.cs",
+      "bytes": 5425,
+      "sha256": "cbbf4a89b078077472582ed635181c3388d9ba4b1285ea82896219a56bdbb092"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.MechanicsPlayback015.cs",
+      "bytes": 1602,
+      "sha256": "69edb8361862f31e77d0226aa0d4d3283412815d21f84f5307639b3e5526fdb8"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Menu020.cs",
+      "bytes": 2914,
+      "sha256": "dfd788ada59af8ad4eb33b3d43ef32e9330655528387e00f1959bad5069de105"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.MenuShowcase.cs",
+      "bytes": 7520,
+      "sha256": "ed7a66cfef9679a1d094e400106775c35a1cf3057cc5d0ad06550defb82cd618"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.MenuShowcaseFit.cs",
+      "bytes": 3676,
+      "sha256": "2e35a142c14fcacbae3b01d6fcf1893a037efa24af87ab270e0069810bcbf1fc"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.MusicLibrary009.cs",
+      "bytes": 9643,
+      "sha256": "805938ac1b4a915df23718a9b8c1930e21c86e58fcda190a4d7a83f71b76c805"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Nibwick020.cs",
+      "bytes": 5787,
+      "sha256": "11555831aaeaa0a3c2ce46f4f4cb369925890f65f1fbb2f4f7a75f40ed145898"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.NpcSubtitles020.cs",
+      "bytes": 3572,
+      "sha256": "32265b8ee16d93a0e1a3a6becd20066c5de45bef71f1e37919e1922082fb7255"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.ObjectiveCompass.cs",
+      "bytes": 17004,
+      "sha256": "1d9096ad6f8b44533e93fc33d86e3b02110c35f97cc16cc3bcdf3520b4e8736c"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.PauseGuide020.cs",
+      "bytes": 6307,
+      "sha256": "5c65bb279b8aa92a186c7ef3471b8091dff0147e2e5dc9278f8b7c0ada8c276c"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.PlayMenu020.cs",
+      "bytes": 10411,
+      "sha256": "4c0158c5ad793a36eb8b7e2769a9bdbb88a392258d2bf65e3467d89956cb856c"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.QuickPortal.cs",
+      "bytes": 5099,
+      "sha256": "1cbade65e1ecbd31ee6c4d4802b18b8c078b5252cb2b59798b8922836fdcad7b"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.RaykonMentor.cs",
+      "bytes": 6893,
+      "sha256": "c53273f093803d650610b2c370459b9ad3e0a4c1ed05ab3a7ea35fea7f447931"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Readiness.cs",
+      "bytes": 4809,
+      "sha256": "35ae936b9daf984098dd059d2fe821dce0bfe2ad0e43828c5713d02463cb5d8f"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.RefugeStationMap.cs",
+      "bytes": 8673,
+      "sha256": "78e0c6d2a0bec0cf36768053d851989336762e1846cb098b7edbe1ad74303594"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.ShadowQuality020.cs",
+      "bytes": 5035,
+      "sha256": "ee39e4cf98e8f478c605b09046d043d50197fc4828b0f82fd22362dabfbf4c61"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.Stamina020.cs",
+      "bytes": 2795,
+      "sha256": "bccd5160fef128cecb681fc547e0b8709c19372d25c32452d552dcbc57f39a67"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.WeatherAmbience020.cs",
+      "bytes": 4595,
+      "sha256": "609604d2c950d234a4e1350abb27546fc439fcb6c6ae49a28a06dca7594df0ae"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHud.cs",
+      "bytes": 61658,
+      "sha256": "5970a31ec10a81b9c283dc062344b11b1fca97283d1244a17d5335538c0b72d8"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudAchievements.cs",
+      "bytes": 568,
+      "sha256": "d68a3d3f0bc6f2bf0c88b6e20a9ee16e8a5d59d24da322b10e39dae04ac3b85d"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudBranding.cs",
+      "bytes": 938,
+      "sha256": "21bbbc85b7252f69d9a1a764385728e5fed921d9d236f862c1c57c70c54e37d8"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudCampaignJourney.cs",
+      "bytes": 10911,
+      "sha256": "7fdff64784d8c6aae7330a8c1bc92677ab0fe4b6dcf9f90c6eb115792569b91a"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudCustomization.cs",
+      "bytes": 4357,
+      "sha256": "039cd1283974d96650e7f898b020591822c41bb6e23e23a8cab510eb9beff1c7"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudPanels.cs",
+      "bytes": 148898,
+      "sha256": "adaa6be337ddd88decc689e6dc1a18a2bafff5e678893f4d21bee16a2c8848b7"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudPartyHealth.cs",
+      "bytes": 11508,
+      "sha256": "275545f481bc03546f752420cfb51bd6af068d6bf7580bba0025505c85c14c9c"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudPartyUi.cs",
+      "bytes": 1501,
+      "sha256": "a95c8532e0e28d63ce96da5d2a60e53cb34777065eaf537a1d6145f491fc27ee"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudPassiveArt.cs",
+      "bytes": 2667,
+      "sha256": "506edeb329bc052dcc2762382696f099949e36047f45e971e901ac78e3e8b1c1"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudRefugeConversation.cs",
+      "bytes": 2085,
+      "sha256": "c31594fe99724a28cc72d9d1e9a13baaf0227a283d89beb5042e2b415618c63f"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudTowerForge.cs",
+      "bytes": 21487,
+      "sha256": "06f0310f27bd7511b58513c3245039e21b2aa5170594e22053aa86d06555a7c2"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudTrainingLab.cs",
+      "bytes": 14338,
+      "sha256": "914bda0fbda2403d0c4d38b92cdb36f8f191455c6cdb4896c107e5870b71e057"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudTutorialAccess.cs",
+      "bytes": 7058,
+      "sha256": "2fdb9ee96a4e866fa9d21f04fa57fb408c0a346cad60a15b035645d11fe5acdf"
+    },
+    {
+      "path": "Assets/Scripts/OdysseyHudTutorialFlow.cs",
+      "bytes": 7397,
+      "sha256": "78dbc9d9f55312f6cfbd2d070224de187c7a866feee325f7cd55b26b0e67b213"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarAppearance.cs",
+      "bytes": 3785,
+      "sha256": "4974e8cb95ff0ed121ede8e2ead229c022231ac0cfbaf61b54cd24b6b0310f5e"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarCustomizationPanel.cs",
+      "bytes": 7882,
+      "sha256": "f3a5b7c84fc0d780eb757a1c86c0e01adadab4fe407e79797d00fb3a6b41d53b"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarMeshData.cs",
+      "bytes": 3455,
+      "sha256": "e9a4afc16c232f013d7eadfaeec45ceb2c99f4ef6c67540d96a300f0871854b4"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarModel.cs",
+      "bytes": 7490,
+      "sha256": "9ff99673d62ab7cf99dddc18a427369e321c8346d259743f43dde0a68e8785b4"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarPreviewLease.cs",
+      "bytes": 4147,
+      "sha256": "4d6d4e647b7d3b6fad7b221fe776eea12c6c99fb04f1a17e24c8ba60bb5cb762"
+    },
+    {
+      "path": "Assets/Scripts/OracleAvatarRecipe.cs",
+      "bytes": 9184,
+      "sha256": "7a8a74a2e9a2cf19ee55d460a8011ec249dc78fd633c22550b90465f4eb8dc6e"
+    },
+    {
+      "path": "Assets/Scripts/OracleBrowserPointerCapture.cs",
+      "bytes": 911,
+      "sha256": "5a408a9718d469d51a1eafa2530d6fe39e67c45165234cba69e8122f27deb46b"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.AcceptedImpact.cs",
+      "bytes": 3219,
+      "sha256": "631e0c068ef51a452bd622e6eba2e9d9f7c006354a2fd9049f3803f522927861"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.Collision015.cs",
+      "bytes": 11374,
+      "sha256": "a4384eb7d02798daaf42306e6891860b5a6ec7e0e507afdf91b8d12befb8ca17"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.EnemyFeedback022.cs",
+      "bytes": 18170,
+      "sha256": "d375f5f2083c4cb81501c0365b6431dbeb71667889d6cd11c116965412a292bc"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.EnvironmentReactions.cs",
+      "bytes": 2619,
+      "sha256": "f68bd398ad61a27e2aa2354a46b2a2228c228fdc8d0b4e5dd0721b7f6fe728e4"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.Mode020.cs",
+      "bytes": 829,
+      "sha256": "e16555d831a6ae27d4ca396152be589e92347900010350da237cc8989cf30c33"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.PairPresentation020.cs",
+      "bytes": 2779,
+      "sha256": "e8db80e5950a5b556aa15b8e3dbe14b8c1b4c2e8d503a6d286225dd8d380e921"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.Pool015.cs",
+      "bytes": 6499,
+      "sha256": "06566f06dc77e1a53a84c788c4ea69c98c9a32c93e42043b68a26aa12ac868bb"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.PracticeRepeat020.cs",
+      "bytes": 5007,
+      "sha256": "d1b74388aadcc54ba1a0ca0be484e2d66b8e094d6495f09d0224ed38f00f3960"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.RapidCasting015.cs",
+      "bytes": 6766,
+      "sha256": "ddf4f8baa1acde0a1d5af0769bdc1967498030230ffddb94fad16f3182a928ef"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.SharedTrainingLab.cs",
+      "bytes": 3547,
+      "sha256": "1b7edb04a82705d25c2f42bd4f518916768ec3ed4fbf87ec30f65571834023ab"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.TowerPractice.cs",
+      "bytes": 3410,
+      "sha256": "5b3ffbf417a76748d0a79a61c0f400ada1c84296d3f7aebb07b4af124691dafb"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.TrainingLab.cs",
+      "bytes": 6844,
+      "sha256": "a3ca05c0bf1deb558bb8ad09124eafec8086ce285e3b01122e1da4fb9b9eba9d"
+    },
+    {
+      "path": "Assets/Scripts/OracleCombat.cs",
+      "bytes": 80309,
+      "sha256": "f543e9bc41816d71a699ddde13ab4ab9bcdb3a9a0b13ec707f3c0173916022e6"
+    },
+    {
+      "path": "Assets/Scripts/OracleElementEmblems.cs",
+      "bytes": 1330,
+      "sha256": "018839487d5067d73092b7a1368c6d51f1dcd82230cc59d6512935a5b7d9b473"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.Animator015.cs",
+      "bytes": 6421,
+      "sha256": "f409753c8c7a8c86fdf5e19ccec09594a4089666b84e3a5405d9055382509e54"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.Collision015.cs",
+      "bytes": 1471,
+      "sha256": "8f87c3109f5ac06202e8852e17c6d511d0fe1951c3645f4291f497453e390f28"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.Feedback022.cs",
+      "bytes": 2091,
+      "sha256": "fb291532889f844317ceb52686dba1577348024610abd18dd9df7dc8319d61f8"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.LiveStatus009.cs",
+      "bytes": 2007,
+      "sha256": "fa950b42f7339272343ec7f0d833f826f5543f58ef5d8495070ba90181c12a54"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.Pool015.cs",
+      "bytes": 12880,
+      "sha256": "22326afbc54ce3c063bbda4ed446a271497174b6877ffada20730ec301949287"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.Reward015.cs",
+      "bytes": 1100,
+      "sha256": "b383b084114af6b4f5a20bdc53320ae6caec2e10077be89be1bcde6562976a2b"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.TowerPolicy011.cs",
+      "bytes": 3154,
+      "sha256": "872996ad971acf8cbc1da124f613971daaccf9876a347a806407069dd788aae0"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.TrainingLab.cs",
+      "bytes": 2318,
+      "sha256": "25f5df72884e3fc88c039f2d0882dd55af474cb45b0ed3b4cdb9dbbd7211bc8b"
+    },
+    {
+      "path": "Assets/Scripts/OracleEnemy.cs",
+      "bytes": 60108,
+      "sha256": "61325ab5999286c104dea9ecac14b19a783bbc93dada1e6aea4dea0f77dd543d"
+    },
+    {
+      "path": "Assets/Scripts/OracleFieldSmith.Anvil.cs",
+      "bytes": 4830,
+      "sha256": "c03ba770689ae7025cc86c1ff513d03c1fdb525cb7633f3de30949f70125fdb0"
+    },
+    {
+      "path": "Assets/Scripts/OracleFieldSmith.NpcFluid009.cs",
+      "bytes": 558,
+      "sha256": "d10f924d1c16cc6491769447dc5487d54227950b0ab4144428540c5b0a8f6025"
+    },
+    {
+      "path": "Assets/Scripts/OracleFieldSmith.Refuge.cs",
+      "bytes": 5047,
+      "sha256": "d621b295c1563646c0baddf17f9d1e33c3f6e64910cdbb4026f8b728ac922f6d"
+    },
+    {
+      "path": "Assets/Scripts/OracleFieldSmith.cs",
+      "bytes": 10869,
+      "sha256": "d3b315a24e9d0e50957791bd9d5fd90b6f2c396e9391d307095c2f5adb6e6946"
+    },
+    {
+      "path": "Assets/Scripts/OracleFoley.cs",
+      "bytes": 5347,
+      "sha256": "498477da5a0a0a8cc263d5c6068d10f3830cdc8e3b83947c46bf2db7e1d33c02"
+    },
+    {
+      "path": "Assets/Scripts/OracleInkRevealText.cs",
+      "bytes": 5335,
+      "sha256": "8addcb2ca6de929bdbbffee4018c13e363ee12565a2b2fd7822b744d16750a1e"
+    },
+    {
+      "path": "Assets/Scripts/OracleInterfacePreferences.cs",
+      "bytes": 7000,
+      "sha256": "84c55c226ce82851a88dc8effccb246af5b8c9ad9dcb28c0437a7338b394502f"
+    },
+    {
+      "path": "Assets/Scripts/OracleMapSharing.cs",
+      "bytes": 16531,
+      "sha256": "6f9027845618243fd8187b333f56232e37aec033ce7a0ebc0e27b924d4dc2a38"
+    },
+    {
+      "path": "Assets/Scripts/OracleMinimapGlyph020.cs",
+      "bytes": 3513,
+      "sha256": "1bcf86f9089ee383da47f38d8ab925198379803d66ca27d3847ad9f2021fb751"
+    },
+    {
+      "path": "Assets/Scripts/OraclePerformanceTelemetry.cs",
+      "bytes": 12916,
+      "sha256": "c1aeac33f3db01f62160025930a55ab449c1b979862e570c8a84712957402e5f"
+    },
+    {
+      "path": "Assets/Scripts/OraclePlayer.Sprint020.cs",
+      "bytes": 2112,
+      "sha256": "912e893e3e0d05493f214839f1cd96bb1c1d30da315c84acf7777f4dd04208a0"
+    },
+    {
+      "path": "Assets/Scripts/OraclePlayer.cs",
+      "bytes": 24007,
+      "sha256": "1e1cdf97a315ce421c2051b50d7e4f5c36da1c651529b268d8aa2cb03430e414"
+    },
+    {
+      "path": "Assets/Scripts/OraclePlayerPoseAnimation015.cs",
+      "bytes": 6136,
+      "sha256": "0044773da6542d8dc0d73d832e40607c229008ffbea37ea580bd23de975093f8"
+    },
+    {
+      "path": "Assets/Scripts/OraclePlayerPoseRecipe015.cs",
+      "bytes": 3579,
+      "sha256": "882fe32ff9328ad547607cc2cd6343bb4dfa5361e59e0b9d16d2115cecc47935"
+    },
+    {
+      "path": "Assets/Scripts/OracleProgressPrefs015.cs",
+      "bytes": 14839,
+      "sha256": "a96a5b3f17c49ad27bf486e33fccfd918f76f76245a0151f746a69e3ceacdfca"
+    },
+    {
+      "path": "Assets/Scripts/OracleProjectile.cs",
+      "bytes": 13648,
+      "sha256": "f6b31b75fbc248019e8d02c6e856117b807f886909962b114c44e37a9c2fafc6"
+    },
+    {
+      "path": "Assets/Scripts/OracleRevival.cs",
+      "bytes": 27963,
+      "sha256": "28f723a8b4825a9db04f92a9fb5937f9c0fe2ccf17e0537c5fac20406b3db6ce"
+    },
+    {
+      "path": "Assets/Scripts/OracleShrine.cs",
+      "bytes": 25884,
+      "sha256": "29f5586c0d79a4ec0eb43b40e5e1fd978aac314620e516d3f1eec807b997d681"
+    },
+    {
+      "path": "Assets/Scripts/OracleTownShop.cs",
+      "bytes": 20721,
+      "sha256": "a29531d6b56586de8ad1436f114a6cc62e415c9cfd0b353859051594a533693d"
+    },
+    {
+      "path": "Assets/Scripts/OracleViewmodel.Animation015.cs",
+      "bytes": 3137,
+      "sha256": "bc14189ac3806062e7e516da195256397c9f5d9da0a660a19903edb0ee8ad8a1"
+    },
+    {
+      "path": "Assets/Scripts/OracleViewmodel.Pickup020.cs",
+      "bytes": 1927,
+      "sha256": "1ce0fd9210db08b182463d0dfc0e6a075a77cd11b615780118b99c61acb12125"
+    },
+    {
+      "path": "Assets/Scripts/OracleViewmodel.StaffSpiral.cs",
+      "bytes": 10542,
+      "sha256": "5a25739d5880a3235a573932a262be170da222c044b1659a94c9eb0aacb06e21"
+    },
+    {
+      "path": "Assets/Scripts/OracleViewmodel.cs",
+      "bytes": 55247,
+      "sha256": "3ab2255287edd955b24a72f63217dc3f6492088f4a3120c4aa8fd7891d8c621d"
+    },
+    {
+      "path": "Assets/Scripts/OracleViewmodelGrip020.cs",
+      "bytes": 4538,
+      "sha256": "2d1c5c06b54bd0eeee3a89b42b39a3608675b546b3c4d9d7fe1eaa7457f0a41d"
+    },
+    {
+      "path": "Assets/Scripts/OracleWebAudioBridge015.cs",
+      "bytes": 10245,
+      "sha256": "1bcabec05e21d51bb6c2043820cfc97ea9e6d67cfebc612969220d179773c08a"
+    },
+    {
+      "path": "Assets/Scripts/OracleWebAudioCatalog015.cs",
+      "bytes": 7718,
+      "sha256": "831dac1cbe70922385c5f0d42f2fb59f7e7cf68e394dd664bc3bed4e6837bdc0"
+    },
+    {
+      "path": "Assets/Scripts/OrbitalWeaponSystem.cs",
+      "bytes": 20763,
+      "sha256": "e4f64b496e66519e49db7b2828879c45e989b7b19b3843267c19fa167664a20e"
+    },
+    {
+      "path": "Assets/Scripts/OriginalRuneSpearhead009.cs",
+      "bytes": 1774,
+      "sha256": "656ff0579ae21991738c0d1d0b214b7c57517a6c2a3d4b71b275bbd1b77707e0"
+    },
+    {
+      "path": "Assets/Scripts/OuterIslandGeometry020.cs",
+      "bytes": 3054,
+      "sha256": "c198b4614efbf935cdeda1e2e9a2d2cadd052ed75ffbedae26c557a3ec78dc0e"
+    },
+    {
+      "path": "Assets/Scripts/OuterIslandMath020.cs",
+      "bytes": 8438,
+      "sha256": "9afaca64b99a9cf0fa84ef99c02bcd6ef25183d783fc6277b018f16d8939fa92"
+    },
+    {
+      "path": "Assets/Scripts/PassiveNodeIconLibrary.cs",
+      "bytes": 563,
+      "sha256": "ba241228092c4827e3c3d8c022f5fd94fa1767d1fb07a95017a37f52cd4d8194"
+    },
+    {
+      "path": "Assets/Scripts/PassiveStatusRules.cs",
+      "bytes": 1047,
+      "sha256": "6b30acc257d9fe1e6f75b56cdaf2e6b8cc0da5de14786541018b6031134dfc9b"
+    },
+    {
+      "path": "Assets/Scripts/PeerCapsuleSweep.cs",
+      "bytes": 2990,
+      "sha256": "349a80848766c5277858f0a0bf56a1932c08c296543b2ce78f1db3336d91892d"
+    },
+    {
+      "path": "Assets/Scripts/PeerCombatAuthority.cs",
+      "bytes": 17090,
+      "sha256": "42396dd3163af4307c047edc343ac6b50cdf3d43c7f0552dd234f1118e38d030"
+    },
+    {
+      "path": "Assets/Scripts/PeerCombatLedger.cs",
+      "bytes": 10711,
+      "sha256": "b759d322c59d08599a79862211ece46749f6dcc784bb83c8e2e050772ee1e4b2"
+    },
+    {
+      "path": "Assets/Scripts/PerformanceTelemetryReadout.cs",
+      "bytes": 2554,
+      "sha256": "ef2f5606ea9b8bebeec1d41b807cfc9dc70a33f5375254c3c5996613970a5cf2"
+    },
+    {
+      "path": "Assets/Scripts/PickupReachRules.cs",
+      "bytes": 1611,
+      "sha256": "180d8ac906a05d8039909a82ac66da7f14cd5b01858a909eaede7bfab056b10d"
+    },
+    {
+      "path": "Assets/Scripts/PickupVisibilityQuery.cs",
+      "bytes": 2135,
+      "sha256": "72cb418ea2cf2918d028225e800193250de922d23a9e700afbe0be9cadca9211"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.Acoustics015.cs",
+      "bytes": 2709,
+      "sha256": "8dfc0759510d514ccf9d3e9a6ddd2e96e2b365fa2df6ca88379a206c34ba022b"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.EnemyRoute.cs",
+      "bytes": 2733,
+      "sha256": "94d61660e37de704ecff55c9a2ff8deb9286ccf27c2e81edb68b4758be398c29"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.TowerPractice.cs",
+      "bytes": 1768,
+      "sha256": "c584a34134eba37342ad2960165cd1be667c497a8980535cd2d1f92c3850d950"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.TrainingLab.cs",
+      "bytes": 2767,
+      "sha256": "d580c6ce171fe3f40b52532d85dfb3747e8641c30bb63402cd077a93817a6577"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.XpClearance015.cs",
+      "bytes": 3970,
+      "sha256": "952419505f5714c65ad1022165f75c5cb7a92568db8041d81ad49579468955f9"
+    },
+    {
+      "path": "Assets/Scripts/PlacedElementShrine.cs",
+      "bytes": 43672,
+      "sha256": "15eca45ebea43d1341485c3315b3513bbfc6776bd79a54377c696b8265b0c184"
+    },
+    {
+      "path": "Assets/Scripts/PlayerSprintRules020.cs",
+      "bytes": 2482,
+      "sha256": "570f2db815fcda5ec1550ca44e242d4728c40c7ca74ec7cbcf6129345d9e0709"
+    },
+    {
+      "path": "Assets/Scripts/PortalAnomaly.cs",
+      "bytes": 8800,
+      "sha256": "39a59c8cc1b28d4927a15491d308d78f200c7e8d00a3c11d3e9ee2f8f0045e76"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.Cycle.cs",
+      "bytes": 4006,
+      "sha256": "c25ad05abbbf53dc2353493f9596afb9f646d342aeee38a29799a00462ad2a67"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.EditorPhaseProbe.cs",
+      "bytes": 11426,
+      "sha256": "98fea66b5a985a73369625355b4b06b5876bbcab2b939175457e15bd57c18d75"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.LensClouds.cs",
+      "bytes": 9722,
+      "sha256": "8d6465316c0900378bdba42f59951cc2515839d56908aa240ca46f21b0cef47e"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.Lighting.cs",
+      "bytes": 7380,
+      "sha256": "07bb51b8f9c76b0234abb8a376183b4537bd2a73d1f14cfbb4776443c7d4dff5"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.Portal.cs",
+      "bytes": 6100,
+      "sha256": "8f5fc3b948cf11f99011fd4610e11d6ee15fc3989020a735fec8e1162dbfbd13"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingAtmosphere020.cs",
+      "bytes": 26380,
+      "sha256": "6a60cb561c5b06e83869953782570668cf30a0ac240c739f5eb6244924d4ead3"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingContour020.cs",
+      "bytes": 5816,
+      "sha256": "a5c310663402f219e756bdfc0eaf0cf7fd55144ac857486fa524ef5dc080be82"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingFixtures020.cs",
+      "bytes": 7202,
+      "sha256": "550e62c57322423cb0461763edf4c97e8bd5f57767a642bcbfb77759d62fafc4"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingJobs020.cs",
+      "bytes": 1762,
+      "sha256": "4d4f221fc8ce149bd165adec36df3070cab9fd5bbb1e0c290f1cbcc33733287d"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingLayout020.cs",
+      "bytes": 29558,
+      "sha256": "966c4d99591cc075ef8843e36ad91a34cbf5a13efba415bcfe4bb8bd287fac2f"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingPrototypeGeometry020.cs",
+      "bytes": 16927,
+      "sha256": "a541087d0d61bea80d129b7fd7c85a2472dd1902d0ef1f0c9942a0b9c0306784"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingQueries020.cs",
+      "bytes": 5988,
+      "sha256": "4b86cb72ce2f9f878d23b5ed46222590bba73bbbc71f1dd09485c477a7682ddf"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingScratch020.cs",
+      "bytes": 4857,
+      "sha256": "ddd09eb7656ebf0b43af7eaf5707e9d1aba459de9b78719aa26e471d910ac77b"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingTour020.cs",
+      "bytes": 2517,
+      "sha256": "4b0cc614c93f698fe3d986f2380b2a16217d7c5682e4e03235846c8b75676521"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingTravel020.cs",
+      "bytes": 6334,
+      "sha256": "d23af08b4c131f7df55afe14978e2acd05abf01531ca023f27a355ebadcd71b9"
+    },
+    {
+      "path": "Assets/Scripts/PortalLandingWeather020.cs",
+      "bytes": 7585,
+      "sha256": "eb66ba840f76c67e31d01908536c8c3a4ecdc2e18691b167471dbfe540027999"
+    },
+    {
+      "path": "Assets/Scripts/PresentationFootprint.cs",
+      "bytes": 7698,
+      "sha256": "021db1e02f91c787439e1a4c648ff1aea1e8eaaeba612f367c23af6d721ae07b"
+    },
+    {
+      "path": "Assets/Scripts/ProductionSoundBank.cs",
+      "bytes": 4002,
+      "sha256": "ac065944c5e82be1679846c2f95de82b18dc406249773e317c868affb3f32f47"
+    },
+    {
+      "path": "Assets/Scripts/RapidCastRules015.cs",
+      "bytes": 3921,
+      "sha256": "0b4150c70a1f0c66b3d72ee604d2d7ae0b594a8b90a55f9362b3cdaf9d4a0ae1"
+    },
+    {
+      "path": "Assets/Scripts/RaykonAlchemyTableBuilder.cs",
+      "bytes": 8408,
+      "sha256": "1cd4e4400fc2f338743d82f11f81507962ab3fc2e97e8b464ebb1368f834974d"
+    },
+    {
+      "path": "Assets/Scripts/RaykonAlcoveMeshBuilder.cs",
+      "bytes": 10737,
+      "sha256": "92bc0cb4ed160a54c65f58199bb5766e173304d7ba39575ae1b6e98132aaa0f2"
+    },
+    {
+      "path": "Assets/Scripts/RaykonAlcoveRecipe.cs",
+      "bytes": 7463,
+      "sha256": "6a6d26fd0104f9953372610a7f85c80d230e3a268bf83df027889e5d480dcebb"
+    },
+    {
+      "path": "Assets/Scripts/RaykonModelBuilder.cs",
+      "bytes": 10486,
+      "sha256": "430bab4ce3194517be3f105e05a2c8359d09cd296b4d2d7ceed4382b1112b0a8"
+    },
+    {
+      "path": "Assets/Scripts/RaykonPresentation.Attention009.cs",
+      "bytes": 2044,
+      "sha256": "44339f7171f1f3a0a6bbe395237f478609410206468311eeb062c967d74f5100"
+    },
+    {
+      "path": "Assets/Scripts/RaykonPresentation.cs",
+      "bytes": 5605,
+      "sha256": "d44355363c2bc5d8e3c1d4ec53d08cae5fc8e76e32095c5259bf55d5ea5fd2de"
+    },
+    {
+      "path": "Assets/Scripts/RaykonPurpleWispPresentation.cs",
+      "bytes": 4463,
+      "sha256": "261d7303207601c1fb4e0182b926692cb4363253db12e99d9c22495560d9ccd7"
+    },
+    {
+      "path": "Assets/Scripts/ReadinessHudMath.cs",
+      "bytes": 6662,
+      "sha256": "eb94f4974c2d4da91a622016e85ffff2a77f7a65f9168c4d48b8d33c9d6ff078"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.AudioStatus009.cs",
+      "bytes": 901,
+      "sha256": "32069d5d2e0d7378f02cdc8a5ab010975eb44458e18422eef926b57a2046f8f1"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.CampaignNpc020.cs",
+      "bytes": 3883,
+      "sha256": "7a2e33f242ec823841a7bb6aaf4925fa3e36562ffb0dd05edf3417f77ac1a717"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.Discovery.cs",
+      "bytes": 5400,
+      "sha256": "97f35e8f4de6c954bfbae58681c641c7c2d5de8cba140eedb6af6aa2e44cb361"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.Flames020.cs",
+      "bytes": 2886,
+      "sha256": "71cac86adf7b8ea8df8baec2d466d0a97e7a10d13137a3e67e8cbe783bd5fcd9"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.GuidePlayback015.cs",
+      "bytes": 1531,
+      "sha256": "6ad414ccfd24bf83e876896b2a06ea4ae723ab2af8214731d2cfadea2a277e4f"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.MechanicsVoice009.cs",
+      "bytes": 4199,
+      "sha256": "cfed0e5173313618d31d42fbc60646c234256202728879e0f14265dd2d875b72"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.NpcBanter015.cs",
+      "bytes": 3067,
+      "sha256": "c1efd38d34423ea12a352d1d68337325901fdab55b5d0137a67e311f872eac53"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.NpcSubtitles020.cs",
+      "bytes": 7400,
+      "sha256": "c2c6838290f12efd4feebcdaf634a3a74851fb703005b8d892dad32a1b109b35"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.NpcVoices009.cs",
+      "bytes": 7348,
+      "sha256": "7afceb72220e7f322f37b5c83ef5a474ea9d2ab41232a58d00bbc2a6e8cb1e1f"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.Raykon.cs",
+      "bytes": 4146,
+      "sha256": "7c441ceb560e3e773f06517205d3fc923fe97508d74960a3d60ad1db8d2475f0"
+    },
+    {
+      "path": "Assets/Scripts/RefugeActivityDirector.cs",
+      "bytes": 7520,
+      "sha256": "67d7cde39a3fbe1d3a5e0d0a5595f7afc3aeb8485df5c0a5957e2737f8d351bb"
+    },
+    {
+      "path": "Assets/Scripts/RefugeCryptBarrierLayout015.cs",
+      "bytes": 4342,
+      "sha256": "a630f0ba4a62ce9515d541179b6ebe34af62bdcb5da414c5e96cd1478908d9a6"
+    },
+    {
+      "path": "Assets/Scripts/RefugeFlameRules020.cs",
+      "bytes": 3284,
+      "sha256": "b64d5d95c77186c91da646d4b15622bdf3dda323e2e2100bec9086c95620acb2"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcAssetCatalog.cs",
+      "bytes": 6573,
+      "sha256": "801efd402fa8c5aef108de3e79cffb1a4adfd8eee7f745d2c7211389299da7dc"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcNeutralModelAuthoring.cs",
+      "bytes": 3972,
+      "sha256": "7c4e9ba222221fd3fa8de4df3d51085cb80f949ab191b5ff8272727b79da962f"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcQuestBridge.cs",
+      "bytes": 1008,
+      "sha256": "19c2f4c539128e6b7b8e7820241a02cdc9eca4a1fea72119a2fb11fe14e2a78d"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcRuntimeOwner.Fluid009.cs",
+      "bytes": 3984,
+      "sha256": "15336c541e5af9a51b1f9fad709aa8f1b2d5488eac55890dce736049342bdedf"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcRuntimeOwner.GuardTap009.cs",
+      "bytes": 6827,
+      "sha256": "851f314ccd781634fe95a166b9c78163f4978df42a1c3e29ccf1b699c2d71b64"
+    },
+    {
+      "path": "Assets/Scripts/RefugeNpcRuntimeOwner.cs",
+      "bytes": 15000,
+      "sha256": "5636b1b74111801c39685c629a43fdc61a943a9e1a1e1afcc054d97292367257"
+    },
+    {
+      "path": "Assets/Scripts/RefugePlacementPolicy.cs",
+      "bytes": 3946,
+      "sha256": "24a715568af79073eead14d9ada362e5111c34e25c12c75d97ad9931461ce07f"
+    },
+    {
+      "path": "Assets/Scripts/RefugePracticeCycle020.cs",
+      "bytes": 2501,
+      "sha256": "d53de9c5822ae0930220d8ba18725e5de3f5fcac219ed0d213aa697781c6a357"
+    },
+    {
+      "path": "Assets/Scripts/RefugePropPlacement.cs",
+      "bytes": 5710,
+      "sha256": "8da00271df34d7207ad01afb8fb0077d4653fae8409e8507b24f55d3d98c219c"
+    },
+    {
+      "path": "Assets/Scripts/RefugeReactionFlower.cs",
+      "bytes": 6695,
+      "sha256": "5b115f6949d9764eb964103b79648a8798d65406b92a5901ae6185aa41cd4870"
+    },
+    {
+      "path": "Assets/Scripts/RefugeShrineDress020.cs",
+      "bytes": 2657,
+      "sha256": "44eb2dc4ad7cdfce1426b86f69d5bb0055b3d15c6150fe503c52179bedd49ec3"
+    },
+    {
+      "path": "Assets/Scripts/RemoteDangerState.cs",
+      "bytes": 7592,
+      "sha256": "964a7f74668b4e07f38f6766c546c21af6c68326a22ad0b14adb819f31377bd6"
+    },
+    {
+      "path": "Assets/Scripts/RemoteHostileBoltVisuals.cs",
+      "bytes": 4100,
+      "sha256": "07b51383d668c9b965e11dc76b32828909ed44ca02802f05d93721bd8d6dc5e5"
+    },
+    {
+      "path": "Assets/Scripts/RemoteOracleAvatar.Animation015.cs",
+      "bytes": 1967,
+      "sha256": "ff9cdc50488630e5dca23961ef7ef5c2c28395f66137bbbfba8a57506b51b5e7"
+    },
+    {
+      "path": "Assets/Scripts/RemoteOracleAvatar.cs",
+      "bytes": 7211,
+      "sha256": "b2481e362dfdeb5f81b3da5d53870d869d138e60299c45c5b665c523d0481a30"
+    },
+    {
+      "path": "Assets/Scripts/RigidPoseAnimation015.cs",
+      "bytes": 17402,
+      "sha256": "feda313df4fb0e7684e154b3c3d78b2e793eebb18d29432b8165aff733b31870"
+    },
+    {
+      "path": "Assets/Scripts/RigidPosePilot015.cs",
+      "bytes": 1528,
+      "sha256": "9489ea706436a1bc480e6ba2dc6457b999c5729ae8b751dd479db92de4e10280"
+    },
+    {
+      "path": "Assets/Scripts/RigidPoseRecipe015.cs",
+      "bytes": 2041,
+      "sha256": "2cec2698ee4cd91425149d8299642035086eaa62bf10e9c19662bd835ef676d5"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.ArenaImpacts.cs",
+      "bytes": 5860,
+      "sha256": "52f875f548196a02845ff696c8b0d826c68670c7e8e7eb84d643832d87e6b5f2"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.EnvironmentReactions.cs",
+      "bytes": 7621,
+      "sha256": "2380139bad3ad9c207fa3c1eced5c25bbb64e1cf3aaa9ec79abcc0a7b2c4f512"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.HubSpawn.cs",
+      "bytes": 11317,
+      "sha256": "947b30358838f2e5a2c96ea36c7bf0a6a6d663562187cb18b03f78577ce48136"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.Inactivity.cs",
+      "bytes": 13091,
+      "sha256": "6e2189193c3e719f3c201074548bb91c480a1405c9f0e51d2296ddc138d024d7"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.LaneBuild015.cs",
+      "bytes": 6370,
+      "sha256": "c5bc437c792000859706a2ae603c64a802e7de41a1f8d5e9386c13bfd61cfb48"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.PlayerPose015.cs",
+      "bytes": 1969,
+      "sha256": "c021600d608e6ccadfb7d3cef9fa078c9a293d0cbdcf603cd82333beaf4a8244"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.RefugeFlames020.cs",
+      "bytes": 3625,
+      "sha256": "24e6b0af3237c440d6d02e6f05656d4023c4c7b8945bb913567bb24cbfad9bc6"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.SharedTrainingLab.cs",
+      "bytes": 2839,
+      "sha256": "599514c8d49b6d7cb43447a95f7626821e10ea3202e79aee94dabf07c979307a"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.SoloRecovery.cs",
+      "bytes": 3227,
+      "sha256": "678f7b65fa4b03c78fb9cb8951fba3197ded1bed9d987b0617233d1e8f9b9647"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.TypedMode020.cs",
+      "bytes": 10108,
+      "sha256": "3196c937c559abcdac2a48344fa7a5d27d7070d1d2d9bb9aa7d3dfd9d91e0723"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.Xp015.cs",
+      "bytes": 5921,
+      "sha256": "cebcf46d471ebdfeb6d9405c911c92888c95eca365cabb225716fb9512a24be9"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnection.cs",
+      "bytes": 79873,
+      "sha256": "73c3e462134ebc1b6518dceecc5c4ec6fce49ee171b1a14afeabca99ff53e387"
+    },
+    {
+      "path": "Assets/Scripts/RoomConnectionAttempt.cs",
+      "bytes": 2435,
+      "sha256": "352ddbd7007cff9934eac7a60f1fd96bf7ba41eea18b2623530cdf273f905c0e"
+    },
+    {
+      "path": "Assets/Scripts/RoomIdlePolicy.cs",
+      "bytes": 7537,
+      "sha256": "e65bc72b084b68db92c4144d45a81dafc0d95f5f809d19136c251ae71c600028"
+    },
+    {
+      "path": "Assets/Scripts/SavedTowerModelLibrary.cs",
+      "bytes": 2941,
+      "sha256": "9a86a201b2f51073976495dcf945c94f6a4d0fd2879956dd6467300586406d81"
+    },
+    {
+      "path": "Assets/Scripts/SavedTowerModelPresentation.Elements.cs",
+      "bytes": 3087,
+      "sha256": "abe5d8ceaffdb2aa4c91a629f6c579cddee5b6b229a03605925c3edc83e14aec"
+    },
+    {
+      "path": "Assets/Scripts/SavedTowerModelPresentation.Workshop015.cs",
+      "bytes": 1250,
+      "sha256": "518ddf228a699d4195dd2363031c4f99096641d3c2d0d33cba3c7abcbf70720b"
+    },
+    {
+      "path": "Assets/Scripts/SavedTowerModelPresentation.cs",
+      "bytes": 7327,
+      "sha256": "8d506c48d850001303ac994e05af343810f847328a9030322be754993574da67"
+    },
+    {
+      "path": "Assets/Scripts/SavedTowerModelPreview.cs",
+      "bytes": 2038,
+      "sha256": "a9c1f08a148afff24e7289d000cd431e97c14169724f5c5ccb430da564c47db3"
+    },
+    {
+      "path": "Assets/Scripts/ShadePoseRecipe015.cs",
+      "bytes": 2131,
+      "sha256": "3d1e15cfc0c48103f23f30075480f51b3ba66efc6a7cd4589921ad51b4c8cca5"
+    },
+    {
+      "path": "Assets/Scripts/SharedTrainingLabJobs.cs",
+      "bytes": 880,
+      "sha256": "5ee874cd001792b7def22bc60f8cc6f1f2c0086b0eae35e279d60b2f777f2ae6"
+    },
+    {
+      "path": "Assets/Scripts/SharedTrainingLabState.cs",
+      "bytes": 12921,
+      "sha256": "9eaff9d6afafd749f763a2736ffbdeb5e85a2d07a597e6dbb88eb49035d1546b"
+    },
+    {
+      "path": "Assets/Scripts/ShrinePlacementBuilder.LaneBuild015.cs",
+      "bytes": 25325,
+      "sha256": "17293ec5e249eea0d19077002abce65cccc44d93f97afb34d69319d59cb1e6d6"
+    },
+    {
+      "path": "Assets/Scripts/ShrinePlacementBuilder.TowerPractice.cs",
+      "bytes": 2713,
+      "sha256": "30ac47aa4440d0ced5962d95862d8533d7f77308397d8f1c63e1fb70b719deb6"
+    },
+    {
+      "path": "Assets/Scripts/ShrinePlacementBuilder.TrainingLab.cs",
+      "bytes": 2685,
+      "sha256": "1ac4dedb5fe83074a91b99da084c1e6100419f18e44153a65d1d8804d9554bb7"
+    },
+    {
+      "path": "Assets/Scripts/ShrinePlacementBuilder.Workshop015.cs",
+      "bytes": 2866,
+      "sha256": "6901fb69565fdf02833fb18c1fec8680561fbf34a13e252d4fda020181dc81e4"
+    },
+    {
+      "path": "Assets/Scripts/ShrinePlacementBuilder.cs",
+      "bytes": 20914,
+      "sha256": "2287e823a5acc90afbeb37288338a5672b72336d9685e95b5d85b36ac4db2501"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnaceJob.cs",
+      "bytes": 1556,
+      "sha256": "c750a594d9be15504db3f42a4e844e141ae320294818f5bd771aa51797ae9fd8"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnaceLayout015.cs",
+      "bytes": 6153,
+      "sha256": "64e7455bc940e8cfb7e584a1de14c18f24636df0e62bb40bb297cfbea095338f"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnaceLayoutJob015.cs",
+      "bytes": 1746,
+      "sha256": "e1da706424a7c596ce339c8beff1eb5b380420969f3fa3a82545737425b0d2a1"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnaceMath.cs",
+      "bytes": 6709,
+      "sha256": "8e6836be97c82f09e1eb6a5f300890557768db0d6d026e8f6aff71425f6129a8"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnaceMeshBuilder.cs",
+      "bytes": 4060,
+      "sha256": "c28468d267723d5da0215fb54ffda0a06964e4e012b090283382f50e9f7c0efe"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnacePlacement.cs",
+      "bytes": 2389,
+      "sha256": "bb0420531305d1d266140c0304afeade81395dbc81e7174261856e587ee0f56f"
+    },
+    {
+      "path": "Assets/Scripts/SmithFurnacePlacementCold015.cs",
+      "bytes": 4897,
+      "sha256": "02f005fa81d4cd36e5754e3e52fc7252d70103d616b8c6d9a23e779c7ee30fd9"
+    },
+    {
+      "path": "Assets/Scripts/SoloStageRestartState.cs",
+      "bytes": 7681,
+      "sha256": "e623b0ed5397a66db1b87a797d100b669a5d77d5b1016ce97cd12f5128c505d7"
+    },
+    {
+      "path": "Assets/Scripts/SoundtrackBinding009.cs",
+      "bytes": 1690,
+      "sha256": "190c53dc4b8e6e59fa30de8fdeb3801970fec81980c97ad200fd525595f3150c"
+    },
+    {
+      "path": "Assets/Scripts/SpatialLightPulseRules.cs",
+      "bytes": 2662,
+      "sha256": "a4e32a72c8844164c43b50e407394b2c6c2bd0515a9a7f36e3c541a7e9316c57"
+    },
+    {
+      "path": "Assets/Scripts/SpatialTargetGrid.cs",
+      "bytes": 12873,
+      "sha256": "9a2dbd27ccb09f14bcc066f833d5669aa7a490f9b20c09a625852ad258a8427f"
+    },
+    {
+      "path": "Assets/Scripts/SpellImpactLighting.cs",
+      "bytes": 3698,
+      "sha256": "59b271a682691e7584c70b4f9f896617514cf8f3b426bab4a369820dd42fbc5c"
+    },
+    {
+      "path": "Assets/Scripts/SpellIngredientRules.cs",
+      "bytes": 2800,
+      "sha256": "20807e097964a9907c3de3318b905ee2c4060f404732800a3923027f659af020"
+    },
+    {
+      "path": "Assets/Scripts/SpellPairPresentation020.cs",
+      "bytes": 3036,
+      "sha256": "97897929ceb6ddff79ddc1bcff01d268a5a9294194e5f09b1d475a64d61a8c37"
+    },
+    {
+      "path": "Assets/Scripts/SpiderLegMath009.cs",
+      "bytes": 3745,
+      "sha256": "c1827f5cda94aa6622aa90bd711d822e3d7de5ee09961cb3053b39602538893a"
+    },
+    {
+      "path": "Assets/Scripts/SpiderLegPresentation009.cs",
+      "bytes": 7622,
+      "sha256": "2df462883cd4a71cf68646a723e1a0c722008ca91d5c11457d1ad0efd368201d"
+    },
+    {
+      "path": "Assets/Scripts/SpiderPoseRecipe015.cs",
+      "bytes": 4142,
+      "sha256": "3f5446d379ff034fbc1670c7b328da4dbd697f5bf109b7f4820d5683ef95ced7"
+    },
+    {
+      "path": "Assets/Scripts/StaffAttackSwayState.cs",
+      "bytes": 3929,
+      "sha256": "80090cc2c2f0165f251955eaeaad5e30c47d459afe35742b814c8a3690aed58f"
+    },
+    {
+      "path": "Assets/Scripts/StaffEngulfState020.cs",
+      "bytes": 2883,
+      "sha256": "44ab093b130bd5a7ff9f3cfe32959dd269439f260f98b576df74abeb4ca3f8dd"
+    },
+    {
+      "path": "Assets/Scripts/StaffSpiralState.cs",
+      "bytes": 2852,
+      "sha256": "f447c5341188e811527c7a654ee47007cbb03a19ecfb444adb8927f445851c89"
+    },
+    {
+      "path": "Assets/Scripts/SupportedFootstepJobs020.cs",
+      "bytes": 4373,
+      "sha256": "c23056d6f95ceca13e6531dd72d1791598eada53c101130038736ac7b65377f2"
+    },
+    {
+      "path": "Assets/Scripts/SupportedFootstepRules020.cs",
+      "bytes": 4219,
+      "sha256": "cf1e08c64ad7938f667a0003b404c87ec7148045fda8a0a5cc18c2ab109601e3"
+    },
+    {
+      "path": "Assets/Scripts/TowerAnvilPreviewAtlas.cs",
+      "bytes": 14662,
+      "sha256": "794a0f6a490da49a58744f54aae9b8c9a44b16f7642cd99009053105d72ea1d2"
+    },
+    {
+      "path": "Assets/Scripts/TowerAttackSlots.cs",
+      "bytes": 10534,
+      "sha256": "7e820500b0bd4325368d040d3033f34a87d706be6a2babf063c4a64a5be8b87e"
+    },
+    {
+      "path": "Assets/Scripts/TowerElementData.cs",
+      "bytes": 3102,
+      "sha256": "2c636b7345f2108cde8ca7b24b2b7ec16dc6bd003a893f7808a7dfbe761c63d9"
+    },
+    {
+      "path": "Assets/Scripts/TowerElementJobs.cs",
+      "bytes": 5540,
+      "sha256": "9ef9dc7c8414dfed4ee51ddfecd8592391b0b2be635678eccdc88e17fadc2e2e"
+    },
+    {
+      "path": "Assets/Scripts/TowerElementVisualInstance.cs",
+      "bytes": 8150,
+      "sha256": "f5cbfe8edefaefaf36d4e4583188baa64fc32de6e5af3a9427d2b75a437c4492"
+    },
+    {
+      "path": "Assets/Scripts/TowerElementVisualLibrary.cs",
+      "bytes": 5198,
+      "sha256": "239431205cd9d37494af658e5c7e22707356b48202b0921269e4058ed11749d3"
+    },
+    {
+      "path": "Assets/Scripts/TowerForgeDefinitions.cs",
+      "bytes": 5332,
+      "sha256": "2a980553d4fc34c5e5dd8996b0d0503d342e78c3974d66669462d1caae56e4ff"
+    },
+    {
+      "path": "Assets/Scripts/TowerForgeModeAdapters.cs",
+      "bytes": 3593,
+      "sha256": "04a583665829113a8f1e12e0211f27333e3786cc97749d7bbeaff255608c32a5"
+    },
+    {
+      "path": "Assets/Scripts/TowerForgePhaseRules.cs",
+      "bytes": 1263,
+      "sha256": "6528c7b4fed91317b7e5358b9ae23352921ff25202324bcd493977b426c5d2ba"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelAssetCatalog.cs",
+      "bytes": 4182,
+      "sha256": "464f045d7976de11a49cd06303ed17961276dc1ceec8c63dcbcf9e4231334b7d"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelClearanceProfiles.cs",
+      "bytes": 2903,
+      "sha256": "15b111324f054d3ee2d1e9e17fec80797f55c65b8e5eadf9174cc90ef137488d"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelLibrary.cs",
+      "bytes": 7947,
+      "sha256": "e36be3cdfcd410e73c4669b71e552890f558aa5d9fa08a424adb0bfa51e545b7"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelNavigationProfile.cs",
+      "bytes": 5727,
+      "sha256": "27623b7a5f6c4701611db168b819d0a9300ffbaa895261443da5aa30aa6ee13b"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelPresentation.cs",
+      "bytes": 6380,
+      "sha256": "87e865840a690cbd8c427c06749e26f0ef4c75fa942124b795543c7465019093"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelPreview.cs",
+      "bytes": 1981,
+      "sha256": "23cdd4b2ee80a8b9c430bd0688ab2d0c2862393df35165b6cab58006c784a4b1"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelPulseState.cs",
+      "bytes": 3584,
+      "sha256": "4feccf68fa75f016cd388b9d1891da986a2b2d6f4f855ede69db43267b6646b6"
+    },
+    {
+      "path": "Assets/Scripts/TowerModelRecipes.cs",
+      "bytes": 15548,
+      "sha256": "ec2b0ba7211c8d58844efd177559d875426ee0fbe1f28bbe9003af626ae65653"
+    },
+    {
+      "path": "Assets/Scripts/TowerPadHighlightBatch.cs",
+      "bytes": 5501,
+      "sha256": "efe9867beabb81a2727228a1b7f34401f44b158f1300a15ee5761b33fba07c7f"
+    },
+    {
+      "path": "Assets/Scripts/TowerPadPolicy.cs",
+      "bytes": 2880,
+      "sha256": "71bc88c83f5c2809defd7fbe627365498a7163e8f7e148548843c443752059c8"
+    },
+    {
+      "path": "Assets/Scripts/TowerPlatformGeometry.cs",
+      "bytes": 8960,
+      "sha256": "e3ed959577b0f753c06a05b3b3e9536115905d82be66765f53f802c872d176a2"
+    },
+    {
+      "path": "Assets/Scripts/TrainingLabDirector.Management.cs",
+      "bytes": 8480,
+      "sha256": "10af3cd60630ef6f211a3beca271062bf035a87d214452aba850585de0dc25ef"
+    },
+    {
+      "path": "Assets/Scripts/TrainingLabDirector.Shared.cs",
+      "bytes": 6259,
+      "sha256": "7ce0ae1a9606da731f2ae5798e8fe0d6fbf9037cca578907c98868d8daf9bc46"
+    },
+    {
+      "path": "Assets/Scripts/TrainingLabDirector.cs",
+      "bytes": 9291,
+      "sha256": "495fe502d3010862d7609fb7480ce75aee1201366cde9860e79959061f7ba070"
+    },
+    {
+      "path": "Assets/Scripts/TrainingLabRules.cs",
+      "bytes": 2443,
+      "sha256": "ef032061075ae5b40647050c9c21f16b59ddf7ca7b27285313f69a22990729c2"
+    },
+    {
+      "path": "Assets/Scripts/TrainingLabVoiceGuides.cs",
+      "bytes": 1239,
+      "sha256": "1c1749d531ca35b2a74a9b7ce6a3781d1040b47e37a1f0620e8d8a358d47b914"
+    },
+    {
+      "path": "Assets/Scripts/TreeLifeLease020.cs",
+      "bytes": 10039,
+      "sha256": "aa41f704bd03bece77431a4a90df86ca94dc99c8d11d77235b010e63452f37d1"
+    },
+    {
+      "path": "Assets/Scripts/TreeLifeRecipe020.cs",
+      "bytes": 7281,
+      "sha256": "377ead2081bc9b20e4d678e4fd3a0b06e5fbe5717253d3625418d640f7c293d1"
+    },
+    {
+      "path": "Assets/Scripts/TreeLifeTownFloraContribution020.cs",
+      "bytes": 12214,
+      "sha256": "8e2e6fbed79f64813fccad38a851598771b5af77d1e454df9b86ecbf5ee8eaa2"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.CosmicNova.cs",
+      "bytes": 10767,
+      "sha256": "2ed3d143f08bb3fb49f60971bea3309c8d4cbba690ad0e603dc5084563d03fa9"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.ExternalNarration009.cs",
+      "bytes": 2033,
+      "sha256": "1750ef49902212e3618e9c74a290725db74dba6b3a30e64557fcd5a5c640224d"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.GuidePlayback015.cs",
+      "bytes": 9832,
+      "sha256": "31ca8c07fdfc72b9b846bb19f1dd92f569ea86e3d1e958991a6fa872092210ee"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.GuideUi020.cs",
+      "bytes": 2000,
+      "sha256": "75997095144afec501a02d792d865518b8b33c5b2ff3e9bca607acca4a8fd10d"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.InstructionFlow.cs",
+      "bytes": 5804,
+      "sha256": "339c3a472adaf59b4ca9ee81f5f0e1d175f4eba2a62368ea3d1d627d488c3dbf"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.Navigation.cs",
+      "bytes": 1176,
+      "sha256": "afe8571b0645292b54a27ce47d5ba3c088099ddffc6bbafb720a2db746345a51"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.ObjectiveCompass.cs",
+      "bytes": 4191,
+      "sha256": "dabd44483874b7f2ee42de5c3e25fad587db73cb4bc9717b796a4db2d9f4fca3"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.Rapid150Readback.cs",
+      "bytes": 1774,
+      "sha256": "31ca4bb12402b9926613b559b416e436d8e400c03a18530ce415b4bac5585845"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.TowerPractice.cs",
+      "bytes": 9028,
+      "sha256": "8f923795a4f044f77d027a62aa6565f26438071d99729b24bd2eaaa18991a59b"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.TrainingLabNarration.cs",
+      "bytes": 2814,
+      "sha256": "6f379ebafab53d672c9abee226aa6e1db7fcf13785fac1cbb60e845024fbb075"
+    },
+    {
+      "path": "Assets/Scripts/TutorialDirector.cs",
+      "bytes": 29014,
+      "sha256": "ab91a7aaeb8661b0b59116ef3e9c6c88f958565523ede437c98d978e7c0e835a"
+    },
+    {
+      "path": "Assets/Scripts/TutorialFireLightPool.cs",
+      "bytes": 21059,
+      "sha256": "a1c805f68ad1b0ff896fe2f9cf2d1b704f678ba1d146c1c4fec540278bcb1f48"
+    },
+    {
+      "path": "Assets/Scripts/TutorialInstructionCards.cs",
+      "bytes": 9872,
+      "sha256": "de60a9ddd485eefabe6f6786758b900f4197bde0f7804b418b4679fd929cd6f6"
+    },
+    {
+      "path": "Assets/Scripts/TutorialInstructionState.cs",
+      "bytes": 1620,
+      "sha256": "0a74051a4275213f49ed106d84e4b014fcfafc00bb2b7a08edb0be6d7ccf3bd2"
+    },
+    {
+      "path": "Assets/Scripts/TutorialRenderPartition.cs",
+      "bytes": 8339,
+      "sha256": "34a6e568b959f44983d6d3ab207005b80b047d6a9f71724158f8c8797b454c11"
+    },
+    {
+      "path": "Assets/Scripts/TutorialRoomV2Catalog.cs",
+      "bytes": 3701,
+      "sha256": "556fe38b246ab0dca3b5c140db290035456676aec02ee38cd9c5fc3a62387986"
+    },
+    {
+      "path": "Assets/Scripts/TutorialRoomV2Geometry.cs",
+      "bytes": 17941,
+      "sha256": "9c04af7161c737fe2a862f9ea6caa5f47a3c142452cf1ab157261d3ce7f181fb"
+    },
+    {
+      "path": "Assets/Scripts/TutorialRoomV2Layout.cs",
+      "bytes": 9373,
+      "sha256": "f2d61ebad449db27f3285bbe264b422a13c4255bc16e4d1be36f7a62db3bfa38"
+    },
+    {
+      "path": "Assets/Scripts/TutorialRoomV2WallBoundary.cs",
+      "bytes": 9571,
+      "sha256": "c1ece8898f984c6e2c922723a2052aa81e2ab096ea671fd31c0adf2f1b5ea4d3"
+    },
+    {
+      "path": "Assets/Scripts/TutorialTowerPracticeRules.cs",
+      "bytes": 1276,
+      "sha256": "7936a0effd44eddb5eddefebb33b1a5035aec19d74fc9c0e1e8e8f5ca3261396"
+    },
+    {
+      "path": "Assets/Scripts/VoxelChunkData.cs",
+      "bytes": 3820,
+      "sha256": "dde799d8c6581553613ce89dd4d8f95f9e0623f96ee592629e59497cfc0cc49b"
+    },
+    {
+      "path": "Assets/Scripts/VoxelDistanceDetailController.cs",
+      "bytes": 11946,
+      "sha256": "f12b5944d28ae2fb775fcae331fd48e25e657449eaf141dbe206d9a0db89d121"
+    },
+    {
+      "path": "Assets/Scripts/VoxelDistanceMath.cs",
+      "bytes": 3224,
+      "sha256": "4537f4e102e1a4b58a914eb35b0393b7bb4b1c81fa1ac0d0877a26a0a8ff191f"
+    },
+    {
+      "path": "Assets/Scripts/VoxelFireEffect.cs",
+      "bytes": 11008,
+      "sha256": "4293d50ff0e311b85d18ca135a30f7694dd93912133808fa22516df991b27f63"
+    },
+    {
+      "path": "Assets/Scripts/VoxelGreedyMesher.cs",
+      "bytes": 8276,
+      "sha256": "4b15dc01186b71b3cabeb63fae7bfc6740c338ce1f6c6518e2929fb73fc14728"
+    },
+    {
+      "path": "Assets/Scripts/VoxelSkullRecipe.cs",
+      "bytes": 2360,
+      "sha256": "eb767240b2a3e0112d9699d50ddd767219ed989328a5998cb227f4e579a52f7a"
+    },
+    {
+      "path": "Assets/Scripts/WeatherAmbienceProbe020.cs",
+      "bytes": 2009,
+      "sha256": "b9c5b35395a18097f1a20ecd951f6fa62977ca403860a830677fa19b990749e9"
+    },
+    {
+      "path": "Assets/Scripts/WeatherAmbienceRules020.cs",
+      "bytes": 4450,
+      "sha256": "94deedbebe2b6973e1702038fb3bbf2d7da92d147ca4203688d17caba70bada0"
+    },
+    {
+      "path": "Assets/Scripts/WindBoundaryLayout020.cs",
+      "bytes": 1311,
+      "sha256": "2a043af3ced3c1a797a178f086dc24f7cb8e83e80bf331ba898dd0d5b64b1eb6"
+    },
+    {
+      "path": "Assets/Scripts/WindMath020.cs",
+      "bytes": 5205,
+      "sha256": "4dda4f7843eceff597c0935eef0480820fdfb8b0f29a107f7d4e423a19c84bce"
+    },
+    {
+      "path": "Assets/Scripts/WorkshopBuildMath015.cs",
+      "bytes": 3598,
+      "sha256": "22c9ee92da884f3ac167fe272b2b0ffe6c55816d1e70e968409bd26af56ce2a4"
+    },
+    {
+      "path": "Assets/Scripts/WorkshopBuildPool015.cs",
+      "bytes": 9252,
+      "sha256": "f107569b9d07e6910985e80df872c6dc88f4949401fe95b72fa219ed0aa10f47"
+    },
+    {
+      "path": "Assets/Scripts/WorkshopBuildResources015.cs",
+      "bytes": 4401,
+      "sha256": "d6b3c551e24dda4faa0c28af273b09bc48a9ac233acc5a4daf6cff6a5b259af7"
+    },
+    {
+      "path": "Assets/Scripts/WorldMode020.cs",
+      "bytes": 1355,
+      "sha256": "79a89c884b1e7572d2775c150eb4d228f8afeef45bbd1f8c260201ba6765f77c"
+    },
+    {
+      "path": "Assets/Scripts/XpCatchupFrameRules015.cs",
+      "bytes": 1406,
+      "sha256": "c49e46bcdaeb033617d00d3dc7373e480c945bfa2c58ee7584b31fea4dbd3de2"
+    },
+    {
+      "path": "Assets/Scripts/XpCatchupOrbs015.cs",
+      "bytes": 8831,
+      "sha256": "229bf1b513c689efb4dde70642cdff1efbebe777a3087217078df4d2ffca0f19"
+    },
+    {
+      "path": "Assets/Scripts/XpCatchupProjectionJob015.cs",
+      "bytes": 2078,
+      "sha256": "3feb10d9c4b039bd5a2654e9c6210344650c0531027e1c9f14de460f84e221a9"
+    },
+    {
+      "path": "Assets/Scripts/XpClearanceJobs015.cs",
+      "bytes": 7223,
+      "sha256": "cb6af538d9cfd8d8552bb8a4c0a3ed0644ee7fc52787a3f3b80123190deaead2"
+    },
+    {
+      "path": "Assets/Scripts/XpClearanceMath015.cs",
+      "bytes": 1974,
+      "sha256": "d098e33db8ad65d945d7ab9aa98189e9f02ba995d93dd0168d2f1de0f7f63a49"
+    },
+    {
+      "path": "Assets/Scripts/XpFrame015.cs",
+      "bytes": 4738,
+      "sha256": "853e467338f26139ccdf6f1f7eee2d86970a1b1cfea9a64ecb0e4b7699ad1780"
+    },
+    {
+      "path": "Assets/Scripts/XpLedgerJobs015.cs",
+      "bytes": 1715,
+      "sha256": "52f30f9e0aedbe364b3871e535e514d43edd57baa4e71fc710a8be1d03e83593"
+    },
+    {
+      "path": "Assets/Scripts/XpLedgerMath015.cs",
+      "bytes": 3923,
+      "sha256": "2910255e385690b87055448e978dc182d7db9438583a483064a8de815a874d5d"
+    },
+    {
+      "path": "Assets/Scripts/XpPickup.cs",
+      "bytes": 3598,
+      "sha256": "3926fb48ff86a0f334984b6ecc3f7e1cfdeb6f31242d4d4ad16e7c2ab75d63b0"
+    },
+    {
+      "path": "Assets/Scripts/XpPresentationJobs015.cs",
+      "bytes": 4264,
+      "sha256": "01ccd1ee77c9083b1b473d6434a0ae10aae0630aebf16cc4b5b51957fdb1701f"
+    },
+    {
+      "path": "Documentation/ThirdParty/PUBLIC-PROJECT-NOTICE.md",
+      "bytes": 511,
+      "sha256": "361696f50609fa88d10dd109e3d58d28826a1f33b5a85571909d04f48e5415ea"
+    },
+    {
+      "path": "Documentation/ThirdParty/THIRD-PARTY-NOTICES.md",
+      "bytes": 33160,
+      "sha256": "c2e00ae5021ba30d3e5b9f7e5f86da73b9f104c22b7425f1c0cbaa74d482b68c"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.2d.sprite@1.0.0/LICENSE.md",
+      "bytes": 440,
+      "sha256": "0a17bbd475505efe813bf30e6a613fa5dbc9935edcdcf4ce7c37d521382a839d"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.assistant@2.20.0-pre.2/Editor/Unity.AI.Search.Editor/ThirdParty/HuggingfaceHub/LICENSE",
+      "bytes": 11356,
+      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.assistant@2.20.0-pre.2/LICENSE.md",
+      "bytes": 503,
+      "sha256": "6d4c2725be39f9bb649a7baf7d625a575634e980018d3f56d8dd1065d6c11df3"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.assistant@2.20.0-pre.2/Plugins/Markdig/license.txt",
+      "bytes": 1309,
+      "sha256": "9606385fa9e0938d16ec8e858c6388bfe7dbaf9f8d344d37c68f6f1b82db16b3"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.assistant@2.20.0-pre.2/Third Party Notices.md",
+      "bytes": 45863,
+      "sha256": "b20abf2699a5cb03f568d4bf0b4d4ad23be9bf3777a4b0c2d47a9a15326dd7ad"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.inference@2.6.1/LICENSE.md",
+      "bytes": 516,
+      "sha256": "e97d1d0a9fc9be7fae3a0426bf00aa2633e05ca32fd126605679085872b31ad3"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.inference@2.6.1/Third Party Notices.md",
+      "bytes": 3787,
+      "sha256": "659e0ed1eb40ad5964f38f43ff278619dba7481ea58ceb2f308672e60e5705ae"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ai.navigation@2.0.15/LICENSE.md",
+      "bytes": 453,
+      "sha256": "2b2113e0522b3eaa9e701d70956f9affaccac7e79d99b6029903bcec7139590e"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.cloud.gltfast@6.20.0/LICENSE.md",
+      "bytes": 10780,
+      "sha256": "cccf2d7a6c705ec991d5229a775e7fbd41fa6de57d4e3f33bbecb967c3055ef9"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.collab-proxy@2.13.6/LICENSE.md",
+      "bytes": 438,
+      "sha256": "5df34c3570740990614c70db227189636bafdd43d5486e49e5fc5f0482fd07fa"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.collab-proxy@2.13.6/Third Party Notices.md",
+      "bytes": 16902,
+      "sha256": "8e044f986eb0fb51b93452c5c350b41677c4e132dfeb9b0b278a4b9b9615a895"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.collections@6.6.0/LICENSE.md",
+      "bytes": 448,
+      "sha256": "4947f647c031b0fec440237f8136386a606dd998089bb1df67316ee693f568f5"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.dt.app-ui@2.2.4/LICENSE.md",
+      "bytes": 435,
+      "sha256": "0f8cd486efd587bfee72e1ed45cd1fb8dc47f8a21ba4414b8f9322f2cb722c56"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.dt.app-ui@2.2.4/Third Party Notices.md",
+      "bytes": 9447,
+      "sha256": "4c6387cda03c518d7a6d4d37c67fb0707db00f29c86cefdbc0c3928672f65ae2"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.entities@6.6.0/LICENSE.md",
+      "bytes": 445,
+      "sha256": "1213c4365bc4b3d2a55e40cde7b7b812e2a0afa208c27ce4ecf49fd86e36f681"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.entities@6.6.0/Unity.Core.Editor/Compression/lz4-1.9.1/LICENSE",
+      "bytes": 1311,
+      "sha256": "d15d99c8dc6b0ec22174c0e563a95bc40f9363ca7f9d9d793bb5c5a8e8d0af71"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.entities@6.6.0/Unity.Core/Hashes/LICENSE-XXHASH",
+      "bytes": 1087,
+      "sha256": "efc43f2e704090c8bd7cff3212d13d08f340d2845f99dc22212904cb9c1adc35"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ext.nunit@2.1.0/LICENSE.md",
+      "bytes": 433,
+      "sha256": "3622d79bb4de21087d36ba91bcc84816e6fc2ace098e17eb431b9e1dfb6dde32"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ext.nunit@2.1.0/Third Party Notices.md",
+      "bytes": 1249,
+      "sha256": "ef37b1ccbae5e9b641482cbd77a74ee96193a39d232cc8d856b9044f37db9244"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ide.rider@3.0.38/LICENSE.md",
+      "bytes": 1193,
+      "sha256": "49d8e39c5ba9fa2e7b8403d994162ffc49dc7a366b0691fdfa4c06bbaadc4d81"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ide.visualstudio@2.0.26/LICENSE.md",
+      "bytes": 1178,
+      "sha256": "af294e2812515c3569252d3ca7e2cb2519d82572df764529ac45ca72359e4995"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ide.visualstudio@2.0.26/ThirdPartyNotices.md",
+      "bytes": 1940,
+      "sha256": "08f3213e8b9842a65a58bcc6893a9eedcfb47bb74c89c5764627b7cc3e1a2763"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.inputsystem@1.20.0/LICENSE.md",
+      "bytes": 510,
+      "sha256": "419718e59cd6c1f9c3ed80bd004394504bed368c23ad8665cce1792a33c8a02c"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.mathematics@1.4.0/LICENSE.md",
+      "bytes": 450,
+      "sha256": "5b1a26ff2ca6e6e7d9fd2b6df151e1a43c671fdf49c05dcee1227f20dcf25fde"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.netcode.gameobjects@2.13.3/LICENSE.md",
+      "bytes": 493,
+      "sha256": "48fecd5f02a7a7fbd6a0a2d80f6e54c886d370fb9af101dfcc56b2f74af4663e"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.nuget.mono-cecil@1.11.6/LICENSE.md",
+      "bytes": 486,
+      "sha256": "76101254034fbea9afc4169e98ce15382b0f130e3bf15e7da1ca599d940e1cda"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.nuget.mono-cecil@1.11.6/Third Party Notices.md",
+      "bytes": 1277,
+      "sha256": "99966d24b32096a2a1963d9ccec993cf1c729fafd359179ee727762b2dd2b4ba"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.nuget.newtonsoft-json@3.2.2/LICENSE.md",
+      "bytes": 481,
+      "sha256": "a5177bfecfea04d225e4a26a631db86721a03b4080350867847e71dc26b44f85"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.nuget.newtonsoft-json@3.2.2/Third Party Notices.md",
+      "bytes": 4719,
+      "sha256": "f07d2ea4af53fd1c9800b345bb4fbfa3ab0181d8c87625d6c265cd65142df097"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.pipeline@0.8.0-exp.1/LICENSE.md",
+      "bytes": 517,
+      "sha256": "35d72abfdaec2a1a80a565885ef9a92f10f78de3266ce769f9a76c17c9c45dbf"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.pipeline@0.8.0-exp.1/Third Party Notices.md",
+      "bytes": 6892,
+      "sha256": "edb1f62b93337299b1c1f94282026d36b7da976f3201588bd772e6b0e7f2b3dd"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.profiling.core@1.0.3/LICENSE.md",
+      "bytes": 485,
+      "sha256": "33197414e7362ae534aeeab9ab6a9dfe0b5ca74b04f304805f592bcf667a5a99"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.render-pipelines.core@17.6.0/LICENSE.md",
+      "bytes": 491,
+      "sha256": "39691adc5fdaf614d951f53637e22501baf46fcc535a69ab8a21ebaa8b9e9cb4"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.render-pipelines.core@17.6.0/THIRD PARTY NOTICES.md",
+      "bytes": 3587,
+      "sha256": "fdfacc9a242bda05b26eace324033b467b7d70e83a2761cd03337b612affc339"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.render-pipelines.universal-config@17.6.0/LICENSE.md",
+      "bytes": 503,
+      "sha256": "fa2dcbc8ff967f49342c6c61854909ba4bbcc70b27f07d25538b8eaf7be5be3c"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.render-pipelines.universal@17.6.0/LICENSE.md",
+      "bytes": 496,
+      "sha256": "4be520a425e06c8de56fa8aee1ce957cfe610406456278172a2d18b7c388c2cf"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.render-pipelines.universal@17.6.0/Third Party Notices.md",
+      "bytes": 1794,
+      "sha256": "0652509dfc81a1a3d9e037e59bd047b305155fc5c4abeef69e2fc078488035fd"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.scriptablebuildpipeline@3.0.3/LICENSE.md",
+      "bytes": 485,
+      "sha256": "708fd5dbf70546187337563c35af5a55808a8d4b803bcae3967542e9c5a92691"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.searcher@4.9.5/LICENSE.md",
+      "bytes": 5842,
+      "sha256": "73e67aa49be44b2b1e37d4244224bf111a82b79235324457bcc82ac4fb339f61"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.authentication@3.8.0/LICENSE.md",
+      "bytes": 515,
+      "sha256": "3fc2121cb513394f8fe3cfc56956b5cd1a647d7d03d0f38880304e254ee1106e"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.authentication@3.8.0/Third Party Notices.md",
+      "bytes": 2871,
+      "sha256": "b784d8059bdca4d04d4a1171030330a9244a4e7d03c56879e868c6a7f466af18"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.core@1.18.0/LICENSE.md",
+      "bytes": 505,
+      "sha256": "4d420941694555cbb3309715dd852d78f18daea5e5a758f39433d7070ffefb62"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.deployment.api@1.1.3/LICENSE.md",
+      "bytes": 514,
+      "sha256": "e3b65b52943f53c647bc2e3a667399c2a43367c5e0141c56b575f4fe46a65b79"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.deployment@1.7.2/LICENSE.md",
+      "bytes": 510,
+      "sha256": "ce7d44ea0c33d23113ad3062f5aad9d21487f539b1ba442ba48f00cb3e96ff9d"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.deployment@1.7.2/Third Party Notices.md",
+      "bytes": 1322,
+      "sha256": "5f251da912d8614147f50c0f56438995a301bd15779bdc59e867f040b6c34bf7"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.multiplayer@2.4.0/LICENSE.md",
+      "bytes": 544,
+      "sha256": "0d4e87abea50b195dc909bd138a7576f5998434bea26c5b47659c1e6f24f9778"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.multiplayer@2.4.0/Third Party Notices.md",
+      "bytes": 2118,
+      "sha256": "4aa8bb8db03e4d89ba99917b912a07fa73f961333edbb5bb89f40f7580c932ca"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.qos@1.5.1/LICENSE.md",
+      "bytes": 509,
+      "sha256": "7ae34a80e37ee683d287ed6093377de724d1eae8c8e03b54a9c1c20be8fc9e4a"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.wire@1.6.0/LICENSE.md",
+      "bytes": 510,
+      "sha256": "e488cf7084c094613e70ade7a4bf3f1f309ad29c6391c88aa265dcd45be39033"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.services.wire@1.6.0/Third Party Notices.md",
+      "bytes": 2133,
+      "sha256": "2dfe4f3de7987f1926ba050166479054d66f49cf8bccfa47992a3abe0f84fb0a"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.shadergraph@17.6.0/LICENSE.md",
+      "bytes": 481,
+      "sha256": "364b0c08b7fe15b70c4777dccb26fc21d02ae831c2f707dbe29879ac15ece353"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.test-framework.performance@6.6.0/LICENSE.md",
+      "bytes": 496,
+      "sha256": "202adffac8b9d21d3b148a294d241894f3bcef85724c01b6a0bd52269a3798c8"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.test-framework.performance@6.6.0/Third Party Notices.md",
+      "bytes": 1317,
+      "sha256": "361cdb83b8f7c4868ad5c61d8014ab423d9229919219f77bae1eb36084e0227a"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.test-framework@1.8.0/LICENSE.md",
+      "bytes": 475,
+      "sha256": "d3b09e9683afbc8d468a83000308f18e7133eaf7879af870747000a66e3c0693"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.timeline@6.6.0/LICENSE.md",
+      "bytes": 464,
+      "sha256": "73111ef76bd8a502c29b167865620de787af612b5f0ba6b3a517ade3b9519853"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.transport@6.6.0/LICENSE.md",
+      "bytes": 442,
+      "sha256": "bcbfa9a6e7d2e9d0e1b693246ff99203b986dbc6433a5437b6cc307c3a052af9"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.ugui@2.6.0/LICENSE.md",
+      "bytes": 431,
+      "sha256": "3f8833f9736c0b5db5076663ba5abb0a33606712fa9128456ac834fc9d43fdd6"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.visualscripting@1.9.12/LICENSE.md",
+      "bytes": 446,
+      "sha256": "38110f8f09a9b7828467d10ba992c3ffb8e3819feb23bd37d8bd342cc78a478f"
+    },
+    {
+      "path": "Documentation/ThirdParty/packages/com.unity.visualscripting@1.9.12/Third Party Notices.md",
+      "bytes": 33791,
+      "sha256": "76dadc7d5862b0c6a3a8741658c2667a535877a73dcf76db2ab03a9915adfc7d"
+    },
+    {
+      "path": "EXPORT_SCOPE.json",
+      "bytes": 603,
+      "sha256": "de50a4cdf6d7ae8325ae3321509911558dfd74ed7a3bc2406414ddf2a7df19c9"
+    },
+    {
+      "path": "LICENSE",
+      "bytes": 2522,
+      "sha256": "1f2953e0b98aa519258c3fd73aece6a734f18a4d44afe5a45a79f5229d6c73c4"
+    },
+    {
+      "path": "Packages/manifest.json",
+      "bytes": 2581,
+      "sha256": "b04faa9b8339b5d6222c132d4fa8db11810fa0e50f6cd126391a7cf792204947"
+    },
+    {
+      "path": "Packages/packages-lock.json",
+      "bytes": 20428,
+      "sha256": "45c8dc00f14c91bf6a42b56ba713f84620043c6c8995d661380583d68ef313ae"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2947,
+      "sha256": "0aec661012f15662b24bb2d192660dc710c45780b2cd38881c22f339c6d98ab6"
+    },
+    {
+      "path": "RIGHTS.md",
+      "bytes": 2827,
+      "sha256": "19f1d93d10cd30f165f8de53ff706ccacf041f077e7e9ab288a4575269329974"
+    },
+    {
+      "path": "RIGHTS_RESERVED.txt",
+      "bytes": 370,
+      "sha256": "fa356514b89c46a823fd2304c91ee8c86cb207ac440350cb9ce8cd2046e59b5c"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "bytes": 1508,
+      "sha256": "b85021e32298500824a7f7a9c72664d0fe5d0a016da44b43fdcb5d202d8eeb97"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.txt",
+      "bytes": 259,
+      "sha256": "e8256d86ac78d0e05d704b28363b2690c52b942176243b9b4eaa13d3d7bba251"
+    }
+  ]
+}

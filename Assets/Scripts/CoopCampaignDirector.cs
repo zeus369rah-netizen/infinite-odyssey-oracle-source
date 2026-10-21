@@ -11,7 +11,7 @@ namespace OdysseyOracle
     // advances CampaignQuestState; client snapshots are presentation. World metres,
     // maximum8 scalar peer gates/3NPC targets; no service creation or wallet IO.
     [DisallowMultipleComponent]
-    public sealed class CoopCampaignDirector : MonoBehaviour
+    public sealed partial class CoopCampaignDirector : MonoBehaviour
     {
         [Serializable] sealed class Frame
         {
@@ -42,9 +42,8 @@ namespace OdysseyOracle
         double nextHello, nextMembership, preparationStarted;
         public const double PreparationTimeoutSeconds=CampaignQuestState.PreparationTimeoutSeconds;
         bool helloAccepted, wasConnected;
-        Transform returnPortal;
-        Material returnMaterial;
-        public const int ProtocolVersion = 10;
+
+        public const int ProtocolVersion = 12;
         const string HelloKind = "oracle.campaign.hello.v1", StateKind = "oracle.campaign.state.v1";
         const string VisitKind = "oracle.campaign.visit.v1", ReadyKind = "oracle.campaign.ready.v1", ReturnKind = "oracle.campaign.return.v1";
         const string FaultKind = "oracle.campaign.prepare.failed.v1";
@@ -53,6 +52,7 @@ namespace OdysseyOracle
         public int Epoch => view?.epoch ?? 0;
         public int StageNumber => view != null ? view.stage : 1;
         public bool Active => Phase != CampaignPhase.None;
+        public bool FirstStageCoreLoadout => view != null && view.firstStageCoreLoadout;
         public bool InRefuge => Phase == CampaignPhase.Refuge;
         public string CampaignId => view?.campaign ?? "";
         public string Context => view == null ? "" : view.campaign + ".refuge." + view.stage;
@@ -62,15 +62,16 @@ namespace OdysseyOracle
         public bool LocalReady => LocalPeer()?.ready ?? false;
         public int ReadyPlayerCount
         { get { int n = 0; if (view != null) foreach (var p in view.peers) if (p.ready) n++; return n; } }
-        public static Vector3 ReturnPortalPosition => new Vector3(0f, 0f, 6.5f);
+        // Compatibility position only: the first actual active road, never a synthetic shrine exit.
+        public static Vector3 ReturnPortalPosition=>GameSession.Instance!=null&&GameSession.Instance.World!=null&&GameSession.Instance.World.IsCoopArena?GameSession.Instance.World.GetInvasionPortal(0):Vector3.zero;
         public string Status => cachedStatus;
         string BuildStatus() => (string.IsNullOrEmpty(preparationNotice) ? "" : preparationNotice + " ") +
-            (Phase == CampaignPhase.Refuge ? "Stage " + StageNumber + "/3 · Visit the Smith and Runekeeper, then ready at the portal (" + ReadyPlayerCount + "/" + (view?.peers.Length ?? 0) + ")." :
-            Phase == CampaignPhase.Preparing ? "Preparing stage " + StageNumber + "/3 · Waiting for the party's arena barrier." :
-            Phase == CampaignPhase.Defense ? "Stage " + StageNumber + "/3 · Defend for 150 seconds while 100 enemies enter." :
-            Phase == CampaignPhase.StageClear ? "Stage " + StageNumber + "/3 clear · Use the violet return portal near the shrine." :
-            Phase == CampaignPhase.Complete ? "All three stages complete. Thank you for playing this prototype." :
-            Phase == CampaignPhase.Failed ? "The stage ended before survival and all 100 enemy arrivals completed. Your party remains connected." : "Waiting for the connected host's campaign.");
+            (Phase == CampaignPhase.Refuge ? "Level " + StageNumber + "/" + CampaignQuestState.StageCount + " · " + InterstageBlockedReason + " (" + ReadyPlayerCount + "/" + (view?.peers.Length ?? 0) + " ready)." :
+            Phase == CampaignPhase.Preparing ? "Preparing level " + StageNumber + "/" + CampaignQuestState.StageCount + " · Waiting for the party's arena barrier." :
+            Phase == CampaignPhase.Defense ? "Level " + StageNumber + "/" + CampaignQuestState.StageCount + " · " + StageNumber + " active road(s). Clear five waves; forty waves span all eight milestones." :
+            Phase == CampaignPhase.StageClear ? "Level " + StageNumber + "/" + CampaignQuestState.StageCount + " clear · " + InterstageBlockedReason :
+            Phase == CampaignPhase.Complete ? "All eight challenge levels complete. Thank you for playing this prototype." :
+            Phase == CampaignPhase.Failed ? "The milestone ended before all five waves were admitted and cleared. Your party remains connected." : "Waiting for the connected host's campaign.");
         bool Authority => rooms != null && rooms.Connected && rooms.IsHost;
 
         public void Initialize(GameSession session, Action prepareArena)
@@ -78,25 +79,42 @@ namespace OdysseyOracle
             if (owner != null) throw new InvalidOperationException("Initialize the campaign once.");
             if(session==null||session.Rooms==null||session.Defense==null)throw new ArgumentNullException(nameof(session));
             owner = session; rooms = owner.Rooms; model = new CampaignQuestState(RoomConnection.MaximumPlayers);
+            WarmInterstagePortalJob();
             flow=new CampaignSessionFlow(owner,this,prepareArena);
             startHandler=BeginConnectedCampaign;activeHandler=()=>Active;
             if(rooms.CampaignStartHandler!=null)throw new InvalidOperationException("The room already has a campaign lifecycle owner.");
             rooms.CampaignStartHandler=startHandler;rooms.CampaignLifecycleActive=activeHandler;
             owner.Defense.BindCampaign(this);
+            InitializeSoloRestart();
             rooms.ReliableMessageReceived += OnMessage;
         }
         public static bool IsRefugeSession(GameSession session)
-        {var campaign=session!=null?session.GetComponent<CoopCampaignDirector>():null;return campaign!=null&&campaign.InRefuge;}
+        {var campaign=session!=null?session.GetComponent<CoopCampaignDirector>():null;return campaign!=null&&campaign.InRefuge&&session.World!=null&&session.World.Mode020==WorldMode020.TutorialRefuge;}
         public void BeginConnectedCampaign()
         {
             if (rooms == null || !rooms.Connected) return;
-            if (Authority) { if (!Active) StartNewCampaign(); }
+            if (Authority) { if (!Active) StartInitialFromValidatedPortal(); }
             else { RotateHello(); SendHello(); }
+        }
+        void StartInitialFromValidatedPortal()
+        {
+            // CampaignActive is set only by Room's accepted common start nonce.
+            // A local portal click, partial roster or menu CreateParty is insufficient.
+            if (!Authority || Active || !rooms.CampaignActive || !rooms.CampaignRosterSettled ||
+                !rooms.LocalReady || rooms.PlayerCount < 1 || rooms.PlayerCount > 2 ||
+                rooms.PlayerCount > RoomConnection.MaximumPlayers || rooms.ReadyPlayerCount != rooms.PlayerCount) return;
+            var members = ConnectedMembers();
+            if (members.Length != rooms.PlayerCount) return;
+            preparationNotice = "";
+            owner.Defense.ClearSoloRestartRewardScope();
+            if (!model.BeginFromPortal(Guid.NewGuid().ToString("N"), members)) return;
+            Publish();
         }
         public void StartNewCampaign()
         {
             if (!Authority || Active && Phase != CampaignPhase.Complete && Phase != CampaignPhase.Failed) return;
             preparationNotice = "";
+            owner.Defense.ClearSoloRestartRewardScope();
             if (!model.Begin(Guid.NewGuid().ToString("N"), ConnectedMembers())) return;
             Publish();
         }
@@ -127,18 +145,19 @@ namespace OdysseyOracle
         public bool CanUseRunekeeper(ulong peer) => Authority && model.CanLearn(peer) && NpcReach(peer, CampaignQuestState.RunekeeperRole);
         public void NotifyDefenseEnded(bool survived, string hostRun, float remaining)
         {
-            if (Authority && model.CompleteDefense(hostRun, remaining, survived, owner.Defense.SpawnedThisWave)) Publish();
+            if (Authority && model.CompleteDefense(hostRun, remaining, survived, owner.Defense.CampaignAcceptedAdmissions, owner.Defense.CampaignCompletedWaves)) Publish();
         }
         public void CancelCampaign()
         {
             view = null; appliedCampaign = null; appliedEpoch = 0; helloAccepted = false;localHello=null;viewFence.Clear();
             cachedStatus = BuildStatus();
-            if (returnPortal != null) returnPortal.gameObject.SetActive(false);
+            interstageReturnBlocked="";
             StateChanged?.Invoke();
         }
         void Update()
         {
             if (owner == null || rooms == null) return;
+            if(TickSoloRestart())return;
             bool connected = rooms.Connected;
             if (!owner.HasStarted && Active) { CancelCampaign(); return; }
             if (!connected)
@@ -181,7 +200,7 @@ namespace OdysseyOracle
             if(Active&&owner.Objective!=Status)owner.Objective=Status;
             if (Phase == CampaignPhase.StageClear && owner.IsPlaying && !AbilityBindings.IsRebinding && Keyboard.current != null &&
                 Keyboard.current[GameActionBindings.GetKey("Interact")].wasPressedThisFrame &&
-                (owner.Player.transform.position - ReturnPortalPosition).sqrMagnitude <= 3.25f * 3.25f)
+                LocalStageClearPortal())
                 RequestReturnToRefuge();
         }
         void RotateHello()
@@ -203,6 +222,7 @@ namespace OdysseyOracle
         }
         void OnMessage(ulong sender, string payload)
         {
+            if(soloRestart.HoldsSimulation)return;
             if (rooms == null || !rooms.Connected || string.IsNullOrEmpty(payload) || payload.Length > 4096 ||
                 payload.IndexOf("\"kind\":\"oracle.campaign.", StringComparison.Ordinal) < 0) return;
             Frame frame; try { frame = JsonUtility.FromJson<Frame>(payload); } catch (ArgumentException) { return; }
@@ -271,6 +291,7 @@ namespace OdysseyOracle
                 next.phase == (int)CampaignPhase.Refuge && view.stage == next.stage;
             var previous=view;
             view = next;
+            CacheAcceptedSoloRestartBoundary(next);
             cachedStatus = BuildStatus();
             if (transition)
             {
@@ -289,15 +310,14 @@ namespace OdysseyOracle
                 else if (Phase == CampaignPhase.StageClear) flow.StageClear();
                 else if (Phase == CampaignPhase.Complete || Phase == CampaignPhase.Failed) flow.Ending(Phase == CampaignPhase.Complete);
             }
-            if (Phase == CampaignPhase.StageClear) EnsureReturnPortal();
-            else if (returnPortal != null) returnPortal.gameObject.SetActive(false);
+            if(Phase!=CampaignPhase.StageClear)interstageReturnBlocked="";
             owner.Objective = Status; StateChanged?.Invoke();
         }
         CampaignPeerSnapshot LocalPeer()
         { if (view != null && rooms != null) foreach (var peer in view.peers) if (peer.id == rooms.LocalClientId) return peer; return null; }
         public bool NpcReach(ulong id, int role)
         {
-            if (!InRefuge || role < 1 || role > 3 || owner.World.IsCoopArena) return false;
+            if (!InRefuge || role < 1 || role > 3 || owner.World.Mode020!=WorldMode020.TutorialRefuge) return false;
             if (role == CampaignQuestState.SmithRole && owner.Shop?.Blacksmith != null)
                 RegisterNpcTarget(role, owner.Shop.Blacksmith.transform, owner.Shop.Blacksmith.TowerAnvilFeet, owner.Shop.Blacksmith.TowerAnvilAimPoint);
             if(role==CampaignQuestState.RunekeeperRole)
@@ -315,10 +335,11 @@ namespace OdysseyOracle
         }
         bool PortalReach(ulong id, bool returning)
         {
-            if (returning ? Phase != CampaignPhase.StageClear || !owner.World.IsCoopArena : !InRefuge || owner.World.IsCoopArena) return false;
-            Vector3 point = returning ? ReturnPortalPosition : owner.World.PortalPosition;
+            if (returning ? Phase != CampaignPhase.StageClear || !owner.World.IsCoopArena : !InRefuge || owner.World.Mode020!=WorldMode020.TutorialRefuge) return false;
+            if(returning)return rooms.TryGetPlayerPose(id,out var acceptedFeet,out _)&&TryStageClearPortal(acceptedFeet,CampaignPortalMath.HostReach,out _,out _,out _,out _);
+            Vector3 point=owner.World.PortalPosition;
             return rooms.TryGetPlayerPose(id, out var feet, out _) && Finite(feet) &&
-                (feet - point).sqrMagnitude <= 3.4f * 3.4f && Visible(feet + Vector3.up * 1.65f, point + Vector3.up * 1.5f, returnPortal);
+                (feet - point).sqrMagnitude <= 3.4f * 3.4f && Visible(feet + Vector3.up * 1.65f, point + Vector3.up * 1.5f, null);
         }
         bool Visible(Vector3 from, Vector3 to, Transform allowed)
         {
@@ -350,31 +371,16 @@ namespace OdysseyOracle
         static bool Contains(CampaignSnapshot s, ulong id) { foreach (var p in s.peers) if (p.id == id) return true; return false; }
         static bool Finite(Vector3 p) => !float.IsNaN(p.x) && !float.IsInfinity(p.x) && !float.IsNaN(p.y) &&
             !float.IsInfinity(p.y) && !float.IsNaN(p.z) && !float.IsInfinity(p.z);
-        void EnsureReturnPortal()
-        {
-            if (returnPortal == null)
-            {
-                returnPortal = new GameObject("Stage-clear refuge return portal").transform;
-                returnPortal.SetParent(transform, false); returnPortal.position = ReturnPortalPosition;
-                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
-                returnMaterial = new Material(shader) { name = "Campaign return violet emission" };
-                returnMaterial.SetColor("_BaseColor", new Color(.22f, .04f, .4f));
-                returnMaterial.EnableKeyword("_EMISSION"); returnMaterial.SetColor("_EmissionColor", new Color(1.4f, .08f, 2.5f));
-                foreach (float side in new[] { -1f, 1f }) OracleCombat.CreateBlock(returnPortal, "Return frame", new Vector3(side * 1.1f, 1.4f, 0), new Vector3(.22f, 2.8f, .22f), returnMaterial);
-                OracleCombat.CreateBlock(returnPortal, "Return lintel", new Vector3(0, 2.8f, 0), new Vector3(2.4f, .22f, .22f), returnMaterial);
-                OracleCombat.CreateBlock(returnPortal, "Return threshold", new Vector3(0, .08f, 0), new Vector3(2.4f, .16f, .45f), returnMaterial);
-            }
-            returnPortal.gameObject.SetActive(true);
-        }
         void OnDestroy()
         {
+            DisposeSoloRestart();
             if (rooms != null)
             {
                 rooms.ReliableMessageReceived -= OnMessage;
                 if(rooms.CampaignStartHandler==startHandler)rooms.CampaignStartHandler=null;
                 if(rooms.CampaignLifecycleActive==activeHandler)rooms.CampaignLifecycleActive=null;
             }
-            if (returnMaterial != null) Destroy(returnMaterial);
+
         }
     }
 }
@@ -382,3 +388,23 @@ namespace OdysseyOracle
 // World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
 // Bounded cached collider/root references only; no new economy/native buffers or quest bits.
 // Root owns Unity integration and native acceptance; this is a guarded work candidate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing host-owned campaign identities/phase and accepted arena world coordinates.
+// Array Formats: Explicit stage-one baseline entitlement scalar; inherited bounded peers and real arena barrier.
+// Dependencies/Pointers: Room validates the full ready roster before first Preparing; no fabricated NPC visits, HP, clock, reward or protocol change.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Actual cleared-level monster portal world anchors and refuge-only Smith; stable same-party campaign identity.
+// Array Formats: Bounded cold8-point reach job and existing phase/ready/Forge stores; no new visual/actor/wire field.
+// Dependencies/Pointers: Existing host phase/epoch/pose/LOS and interlevel visits/readiness own progression; no midwave exit, battlefield shop or SDK session reset.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.

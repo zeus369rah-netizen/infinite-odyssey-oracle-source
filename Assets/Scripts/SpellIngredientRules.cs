@@ -11,6 +11,8 @@ namespace OdysseyOracle
             for (int bits = mask; bits != 0; bits &= bits - 1) count++;
             return count;
         }
+        // A logical triple is three existing single projectiles, never a new fusion.
+        public static bool ValidProjectileMask(int mask) => ConfirmedSelection.ValidMask(mask) && Count(mask) != 3;
         public static bool IsSuper(int mask) => mask == 15;
         public static float RecoverySeconds(int mask) => IsSuper(mask) ? SuperRecoverySeconds : NormalRecoverySeconds;
         public static int MaskFor(int element, int combo = 0)
@@ -23,7 +25,7 @@ namespace OdysseyOracle
         {
             if (element < 0 || element > 3) return 0;
             int candidate = explicitMask == 0 ? MaskFor(element, combo) : explicitMask;
-            return ConfirmedSelection.ValidCastMask(candidate) && (candidate & (1 << element)) != 0 ? candidate : 0;
+            return ValidProjectileMask(candidate) && (candidate & (1 << element)) != 0 ? candidate : 0;
         }
     }
     public struct AutoSelectionWait
@@ -43,3 +45,8 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Unity metres, Y-up/XZ; four ingredient bits and caller-owned four-double recovery timestamps.
 // Existing host/solo owners retain simulation clocks, pooled48 projectiles and private native memory lifetimes.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.

@@ -7,7 +7,7 @@ namespace OdysseyOracle
 {
     public sealed partial class OdysseyHud
     {
-        private enum JourneyPanel { None, Start, Choice, Pause, Settings, Minimap, Controls, Graphics, Audio, Tree, Build, Portal, Lore, Outcome, FieldForge, TutorialPortalSkip, Customize, TutorialInstruction, RaykonMentor, TrainingLab }
+        private enum JourneyPanel { None, Start, Choice, Pause, Settings, Minimap, Controls, Graphics, Audio, Acoustics015, MusicLibrary009, Tree, Build, Portal, Lore, Outcome, FieldForge, TutorialPortalSkip, Customize, TutorialInstruction, RaykonMentor, TrainingLab, MechanicsGuide, Exit020, Play020, Solo020 }
         private readonly Dictionary<JourneyPanel, RectTransform> panels = new Dictionary<JourneyPanel, RectTransform>();
         private readonly List<RectTransform> fittedCards = new List<RectTransform>();
         private readonly List<UnityEngine.UI.Button> hoverButtons = new List<UnityEngine.UI.Button>();
@@ -121,10 +121,11 @@ namespace OdysseyOracle
         private bool graphicsUiSnapshotValid;
         private static readonly string[] GraphicsPresetDescriptions =
         {
-            "ULTRA  ·  Full scene resolution, longer shadows and the most lighting detail.",
+            "ULTRA  ·  Full scene resolution, bounded soft shadows and the most lighting detail.",
             "MEDIUM  ·  Softer scene resolution, nearby shadows and moderate lighting detail.",
             "LOW  ·  Reduced scene resolution, short shadows and fewer lights.",
-            "VERY LOW  ·  Half scene resolution, no shadows and minimal additional lights."
+            "VERY LOW  ·  Half scene resolution, shadows off by default and minimal effects.",
+            "ULTRA (BETA)  ·  With High shadows and support: 4096/54m shadows, desktop High SMAA, +8 saturation and a subtle flare. Desktop WebGPU uses the supported path; WebGL2/mobile keep the fallback. Portal/particle detail stay max; there is no global animation tier."
         };
         // # ARCHITECTURE SNAPSHOT
         // UI layout is in the existing 1920x1080 CanvasScaler reference space.
@@ -134,25 +135,27 @@ namespace OdysseyOracle
         // it is presentation state, never a second simulation or preference store.
         private struct GraphicsUiSnapshot
         {
-            public int Preset, Particles, FrameCap, ShadowMap, Lights, ShadowMetres, ParticlePercent, DistanceBlocks, EffectiveMetres, FarPercent;
+            public int Preset, Particles, FrameCap, ShadowMap, Lights, ShadowMetres, ParticlePercent, DistanceBlocks, EffectiveMetres, FarPercent, ShadowQuality020, ShadowCascades020;
             public float Scale, EffectiveScale, Brightness;
-            public bool Auto, Bloom, Customized, Opaque, TextureDetail, Overlay;
+            public bool Auto, Bloom, SoftShadows, Reflections020, Customized, Opaque, TextureDetail, Overlay, Clouds020, WeatherEffects020, ShadowFiltering020;
 
             public bool SameAs(GraphicsUiSnapshot other)
             {
                 return Preset == other.Preset && Particles == other.Particles && FrameCap == other.FrameCap
                     && ShadowMap == other.ShadowMap && Lights == other.Lights && ShadowMetres == other.ShadowMetres
                     && ParticlePercent == other.ParticlePercent && Scale == other.Scale && EffectiveScale == other.EffectiveScale
-                    && Brightness == other.Brightness && Auto == other.Auto && Bloom == other.Bloom
+                    && Brightness == other.Brightness && Auto == other.Auto && Bloom == other.Bloom && SoftShadows == other.SoftShadows && Reflections020 == other.Reflections020
                     && Customized == other.Customized && Opaque == other.Opaque && DistanceBlocks == other.DistanceBlocks
                     && EffectiveMetres == other.EffectiveMetres && FarPercent == other.FarPercent
-                    && TextureDetail == other.TextureDetail && Overlay == other.Overlay;
+                    && TextureDetail == other.TextureDetail && Overlay == other.Overlay
+                    && ShadowQuality020 == other.ShadowQuality020 && ShadowCascades020 == other.ShadowCascades020
+                    && Clouds020 == other.Clouds020 && WeatherEffects020 == other.WeatherEffects020 && ShadowFiltering020 == other.ShadowFiltering020;
             }
         }
         private UnityEngine.UI.Text resolutionValue;
         private UnityEngine.UI.Text resolutionHeading, effectiveResolutionValue, autoResolutionValue;
         private UnityEngine.UI.Text resolutionExplanation;
-        private UnityEngine.UI.Text brightnessValue, particleValue, frameCapValue;
+        private UnityEngine.UI.Text brightnessValue, particleValue, frameCapValue, reflectionValue020;
         private UnityEngine.UI.Slider brightnessSlider;
         private UnityEngine.UI.Slider fieldOfViewSlider, screenShakeSlider, bobbingSlider;
         private UnityEngine.UI.Text fieldOfViewValue, screenShakeValue, bobbingValue;
@@ -205,17 +208,21 @@ namespace OdysseyOracle
             menuRoot = Stretch(parent, "JourneyMenuOverlay");
             menuDimmer = Paint(menuRoot, new Color(.015f, .022f, .022f, .77f), true);
             menuInput = menuRoot.gameObject.AddComponent<CanvasGroup>();
-            BuildStartPanel();
+            BuildMenuShowcaseBackdrop();
+            BuildStartPanel();BuildPlayModePanels020();
             BuildChoicePanel();
-            BuildPausePanel();
+            BuildPausePanel();BuildExitPanel020();
             BuildTutorialPortalSkipPanel();
             BuildTutorialInstructionPanel();
             BuildCustomizationPanel();
             BuildSettingsPanel();
+            BuildMechanicsGuide009();
             BuildMinimapSettingsPanel();
             BuildControlsPanel();
             BuildGraphicsPanel();
             BuildAudioPanel();
+            BuildAcousticSettings015();
+            BuildMusicLibrary009();
             BuildPassiveTree();
             BuildShrineMenu();
             BuildPortalPanel();
@@ -226,6 +233,8 @@ namespace OdysseyOracle
             BuildMinimapShortcut(parent);
             BuildIntroOverlay(parent);
             BuildLoadingOverlay(parent);
+            BuildQuickPortalButton(parent);
+            BuildCampaignBook020(parent);
         }
 
         private RectTransform PanelContent(JourneyPanel id, string name, Vector2 size, bool centered = true)
@@ -255,7 +264,7 @@ namespace OdysseyOracle
 
         private void BuildStartPanel()
         {
-            var content = PanelContent(JourneyPanel.Start, "StartGamePanel", new Vector2(700, 880));
+            var content = PanelContent(JourneyPanel.Start, "StartGamePanel", new Vector2(700, 650));
             var start = panels[JourneyPanel.Start];
             start.anchorMin = start.anchorMax = new Vector2(1, .5f);
             start.pivot = new Vector2(1, .5f);
@@ -263,27 +272,21 @@ namespace OdysseyOracle
             start.GetComponent<UnityEngine.UI.Image>().color = new Color(.025f, .04f, .033f, .91f);
             BuildReturnBrand(content);
             BuildMenuElementBadges(content);
-            MenuLabel(content, "Premise", "Rest by the fire. Learn the four elements.\nYour return begins in the refuge.", 18, Muted, 56);
-            MenuButton(content, "PlayTutorial", "PLAY TUTORIAL", () =>
+            MenuButton(content,"StartGame020","START GAME",OpenPlayModes020,54);
+            MenuButton(content, "StartSettings", "SETTINGS", () => OpenSettings(JourneyPanel.Start), 54);
+            mainMoreLabel020=MenuButton(content,"MainMore020","MORE",ToggleMainMore020,32).GetComponentInChildren<UnityEngine.UI.Text>();
+            mainExtras020=BuildMenuGroup020(content,"MainExtras020");
+            // Campaign is a primary Solo choice; More retains optional tutorial/showcase tools.
+            MenuButton(mainExtras020, "SkipTutorial", "TUTORIAL", () =>
             {
                 if (IntroActive) return;
                 session.Audio?.StartAudioFromGesture();
                 session.BeginCampaign();
-            }, 58);
-            MenuButton(content, "SkipTutorial", "SKIP TUTORIAL", SkipTutorialFromMenu);
-            MenuButton(content, "CoopPlaytest", ConfiguredCoopMenu, () =>
-            {
-                session.Audio?.StartAudioFromGesture();
-                SetPanel(JourneyPanel.Choice);
-            }, 64);
-            var solo = MenuButton(content, "SoloCampaignComingSoon", "SOLO CAMPAIGN  ·  COMING SOON", () => { });
-            solo.interactable = false;
-            solo.GetComponentInChildren<UnityEngine.UI.Text>().color = new Color(.45f, .49f, .46f);
-            MenuButton(content, "StartCustomizeOracle", "CUSTOMIZE ORACLE", () => OpenCustomization(JourneyPanel.Start));
-            MenuButton(content, "StartSettings", "SETTINGS", () => OpenSettings(JourneyPanel.Start));
+            }, 36);
+            BuildShowcaseStartControls(mainExtras020);
+            mainExtras020.gameObject.SetActive(false);
             BuildUnityCredit(content);
         }
-
         private void BuildReturnBrand(RectTransform parent)
         {
             var brand = Rect(parent, "OracleReturnTitleLogo", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 180));
@@ -328,6 +331,7 @@ namespace OdysseyOracle
             AbilityBindings.CancelRebind();
             ClosePanels();
             session.SkipTutorialToHub();
+            session.EnterPortal();
         }
 
         private void BuildIntroOverlay(Transform parent)
@@ -388,18 +392,19 @@ namespace OdysseyOracle
             loadingRoot = Stretch(parent, "ActualArenaPreloadOverlay");
             Paint(loadingRoot, new Color(.008f, .016f, .012f, .96f), true);
             loadingCard = Frame(loadingRoot, "ArenaPreparationStatus", new Vector2(.5f, .5f), new Vector2(.5f, .5f),
-                Vector2.zero, new Vector2(980, 280), new Color(.025f, .04f, .031f, 1), Gold);
-            Label(loadingCard, "ArenaPreparationHeading", "PREPARING COOPERATIVE DEFENSE", 26, Gold, TextAnchor.UpperCenter,
+                Vector2.zero, new Vector2(980, 340), new Color(.025f, .04f, .031f, 1), Gold);
+            Label(loadingCard, "ArenaPreparationHeading", GameWaitMessage020, 20, Gold, TextAnchor.UpperCenter,
                 new Vector2(0, -30), new Vector2(900, 44), new Vector2(.5f, 1));
             loadingStatus = Label(loadingCard, "ActualPreloadStage", "", 21, Ivory, TextAnchor.MiddleCenter,
                 new Vector2(0, -88), new Vector2(900, 74), new Vector2(.5f, 1));
             var bar = Rect(loadingCard, "ActualPreparationProgress", new Vector2(.5f, 0), new Vector2(.5f, 0),
-                new Vector2(0, 69), new Vector2(860, 10));
+                new Vector2(0, 112), new Vector2(860, 10));
             Paint(bar, new Color(.12f, .17f, .13f));
             loadingFill = Paint(Stretch(bar, "ActualPreparationFill"), Emerald);
             Border(bar, MutedGold, 1);
             loadingProgress = Label(loadingCard, "ActualPreparationProgressText", "", 14, Muted, TextAnchor.MiddleCenter,
-                new Vector2(0, 21), new Vector2(900, 30), new Vector2(.5f, 0));
+                new Vector2(0, 73), new Vector2(900, 30), new Vector2(.5f, 0));
+            loadingCancel020=Button(loadingCard,"CancelActualLoading020","CANCEL",new Vector2(.5f,0),new Vector2(.5f,0),new Vector2(0,18),new Vector2(220,40),CancelGameLoading020);
             loadingRoot.gameObject.SetActive(false);
         }
 
@@ -417,7 +422,7 @@ namespace OdysseyOracle
                 menuInput.interactable = menuInput.blocksRaycasts = false;
                 menuRoot.gameObject.SetActive(false);
                 hudRoot.gameObject.SetActive(false);
-                if (!loadingWasVisible && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
+                if (!loadingWasVisible && EventSystem.current != null) EventSystem.current.SetSelectedGameObject(loadingCancel020!=null?loadingCancel020.gameObject:null);
             }
             else if (loadingWasVisible) SetPanel(currentPanel);
             loadingWasVisible = active;
@@ -426,21 +431,23 @@ namespace OdysseyOracle
 
         private void BuildChoicePanel()
         {
-            var content = PanelContent(JourneyPanel.Choice, "CampaignAndRoomsPanel", new Vector2(880, 850));
-            MenuLabel(content, "ChoiceTitle", "CO-OP ROOM", 32, Ivory, 64);
-            MenuLabel(content, "ChoiceDescription", ConfiguredRoomDescription, 18, Muted, 68);
+            var content = PanelContent(JourneyPanel.Choice, "CampaignAndRoomsPanel", new Vector2(880, 760));
+            roomModeTitle020=MenuLabel(content, "ChoiceTitle", "MULTIPLAYER · TOWER DEFENSE", 28, Ivory, 54);
+            BuildRoomModeChoices020(content);
+            roomCampaignNotice020=MenuLabel(content,"CampaignTownStatus020",CampaignTownPreparing020,17,Muted,46);
+            RefreshRoomModeCopy020();
+            // Connection status and the real code field carry the room context.
             campaignButton = MenuButton(content, "SoloCampaignUnavailable", "SOLO CAMPAIGN  ·  COMING SOON", () => { }, 48);
             campaignButton.interactable = false;
             campaignButton.GetComponentInChildren<UnityEngine.UI.Text>().color = new Color(.45f, .49f, .46f);
-            MenuLabel(content, "RoomHeading", "SHARED ROOM", 14, Gold, 25);
-            createRoomButton = MenuButton(content, "CreateGame", "CREATE GAME", () =>
-            {
-                if (session.Rooms == null) { localRoomMessage = "Room service is not ready. Play Tutorial is available from the main menu."; return; }
-                localRoomMessage = "";
-                session.Rooms.CreateRoom();
-            });
-            var joinRow = Rect(content, "JoinRow", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 50));
-            Height(joinRow, 50);
+            campaignButton.gameObject.SetActive(false);
+            var hostRow=BuildRoomButtonRow020(content,"MultiplayerHostChoices020",48);
+            createRoomButton=RoomRowButton020(hostRow,"CreateGame","HOST",HostSelectedRoom020,48);
+            roomHostRetryLabel020=createRoomButton.GetComponentInChildren<UnityEngine.UI.Text>();
+            roomQuickHost020=RoomRowButton020(hostRow,"QuickHostRoom020","QUICK HOST · PREPARING",QuickHostSelectedRoom020,48);
+            roomQuickHost020.interactable=false;
+            var joinRow = Rect(content, "JoinRow", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 64));
+            Height(joinRow, 64);
             var rowLayout = joinRow.gameObject.AddComponent<UnityEngine.UI.HorizontalLayoutGroup>();
             rowLayout.spacing = 14;
             rowLayout.childControlWidth = rowLayout.childControlHeight = true;
@@ -450,29 +457,25 @@ namespace OdysseyOracle
             var inputLayout = roomCodeInput.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             inputLayout.minWidth = 250;
             inputLayout.flexibleWidth = 1;
-            joinRoomButton = Button(joinRow, "JoinRoom", "JOIN ROOM", Vector2.zero, new Vector2(.5f, .5f),
-                Vector2.zero, new Vector2(215, 50), () =>
-                {
-                    if (session.Rooms == null) { localRoomMessage = "Room service is not ready. Play Tutorial is available from the main menu."; return; }
-                    var code = roomCodeInput.text.Trim().ToUpperInvariant();
-                    if (string.IsNullOrEmpty(code)) { localRoomMessage = "Enter a room code to join."; return; }
-                    localRoomMessage = "";
-                    session.Rooms.JoinRoom(code);
-                });
+            joinRoomButton = Button(joinRow, "JoinRoom", "JOIN", Vector2.zero, new Vector2(.5f, .5f),
+                Vector2.zero, new Vector2(215, 64), JoinSelectedRoom020);
+            roomJoinRetryLabel020=joinRoomButton.GetComponentInChildren<UnityEngine.UI.Text>();
             var joinLayout = joinRoomButton.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             joinLayout.minWidth = joinLayout.preferredWidth = 215;
-            roomStatus = MenuLabel(content, "ActualConnectionStatus", "", 17, Muted, 94);
-            roomRoster = MenuLabel(content, "ActualRoomCodeAndCount", "", 18, Gold, 38);
-            MenuButton(content, "ChoiceBack", "BACK", () => SetPanel(session.HasStarted ? JourneyPanel.Pause : JourneyPanel.Start), 44);
+            BuildRoomWait020(content);
+            roomStatus = MenuLabel(content, "ActualConnectionStatus", "", 17, Muted, 78);
+            roomRoster = MenuLabel(content, "ActualRoomCodeAndCount", "", 26, Ivory, 58);
+            roomRoster.resizeTextForBestFit=true;roomRoster.resizeTextMinSize=18;roomRoster.resizeTextMaxSize=26;
+            MenuButton(content, "ChoiceBack", "BACK", BackMenu015, 44);
         }
 
         private UnityEngine.UI.InputField RoomInput(Transform parent)
         {
             var rect = Frame(parent, "RoomCodeInput", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero,
-                new Vector2(430, 50), new Color(.055f, .07f, .065f, 1), MutedGold);
+                new Vector2(430, 64), new Color(.07f, .095f, .08f, 1), Gold);
             rect.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
             var input = rect.gameObject.AddComponent<UnityEngine.UI.InputField>();
-            var text = Label(rect, "InputText", "", 20, Ivory, TextAnchor.MiddleLeft,
+            var text = Label(rect, "InputText", "", 28, Ivory, TextAnchor.MiddleLeft,
                 Vector2.zero, Vector2.zero, new Vector2(.5f, .5f));
             text.rectTransform.anchorMin = Vector2.zero;
             text.rectTransform.anchorMax = Vector2.one;
@@ -497,32 +500,47 @@ namespace OdysseyOracle
 
         private void BuildPausePanel()
         {
-            var content = PanelContent(JourneyPanel.Pause, "PausePanel", new Vector2(780, 990));
-            MenuLabel(content, "PauseTitle", "JOURNEY PAUSED", 36, Ivory, 72);
-            pauseDescription = MenuLabel(content, "PauseDescription", "Your journey waits.\nReturn when you are ready.", 19, Muted, 64);
-            MenuButton(content, "Resume", "RESUME & LOCK MOUSE", ResumeJourney, 58);
-            skipTutorialPauseButton = MenuButton(content, "SkipRemainingTutorial", "SKIP TUTORIAL", SkipTutorialFromMenu);
-            MenuButton(content, "PauseMinimapSettings", "MINIMAP SETTINGS", () => OpenMinimapSettings(JourneyPanel.Pause));
-            skillTreeButton = MenuButton(content, "OpenTree", "PASSIVE TREE  [" + GameActionBindings.GetLabel("SkillTree") + "]", () => ShowSkillTree());
-            MenuButton(content, "PauseCustomizeOracle", "CUSTOMIZE ORACLE", () => OpenCustomization(JourneyPanel.Pause));
-            MenuButton(content, "PauseSettings", "SETTINGS", () => OpenSettings(JourneyPanel.Pause));
+            var content = PanelContent(JourneyPanel.Pause, "PausePanel", new Vector2(780, 460));
+            restartTutorialButton015=MenuButton(content,"RestartTutorialRun","RESTART TUTORIAL",()=>session.RestartTutorial015(),38);
+            MenuButton(content, "Resume", "RESUME", ResumeJourney, 54);
+            replayVoiceButton=MenuButton(content,"ContinueInstruction","GAME GUIDE",OpenGuideFromPause015,42);
+            MenuButton(content, "PauseSettings", "SETTINGS", () => OpenSettings(JourneyPanel.Pause),42);
+            MenuButton(content, "ReturnMain", "LEAVE", ShowExitPanel020,42);
+            pauseMoreLabel020=MenuButton(content,"PauseMore020","MORE",TogglePauseMore020,32).GetComponentInChildren<UnityEngine.UI.Text>();
+            pauseExtras020=BuildMenuGroup020(content,"PauseExtras020");
+            content=ScrollingContent(pauseExtras020,"PauseActionsScroll",420,out _);
+            pauseDescription = MenuLabel(content, "PauseDescription", "", 17, Muted, 44);
+            legacyHowToHub020=MenuButton(content,"PauseMechanicsGuide","HOW TO PLAY",()=>OpenMechanicsGuide009(JourneyPanel.Pause),42);
+            skipTutorialPauseButton = MenuButton(content, "SkipRemainingTutorial", "SKIP & ENTER PORTAL", SkipTutorialFromMenu);
+            skillTreeButton = MenuButton(content, "OpenTree", "SKILLS", () => ShowSkillTree());
             MenuButton(content,"Achievements","ACHIEVEMENTS",()=>ShowAchievementBook());
-            MenuButton(content, "PauseRoomOptions", "ROOM OPTIONS", () => SetPanel(JourneyPanel.Choice));
-            replayVoiceButton = MenuButton(content, "ContinueInstruction", "CONTINUE LESSON", () => session.Tutorial?.TryOpenInstructionCard());
-            MenuButton(content, "ReturnMain", "RETURN TO MAIN MENU", ReturnToMainMenu);
+            legacyJoinHub020=MenuButton(content,"JoinFriendFromPause","JOIN FRIEND",JoinFriendFromGuide015,40);
+            legacyHostHub020=MenuButton(content,"HostPartyFromPause","HOST CO-OP",HostCoopFromGuide015,40);
+            partyVitalsMenuButton015=MenuButton(content,"PartyVitalsDisclosure","EXPAND PARTY VITALS",TogglePartyVitals015,36);
+            partyVitalsMenuLabel015=partyVitalsMenuButton015.GetComponentInChildren<UnityEngine.UI.Text>();
             pauseControls = MenuLabel(content, "PauseControls", "", 15, Muted, 91);
             MenuLabel(content, "PauseBackend", GraphicsLabel(), 11, Muted, 20);
+            pauseExtras020.gameObject.SetActive(false);
+            BuildPauseGuide020();
         }
-
         private void BuildSettingsPanel()
         {
-            var panel = PanelContent(JourneyPanel.Settings, "SettingsPanel", new Vector2(920, 940));
-            MenuLabel(panel, "SettingsTitle", "DESKTOP SETTINGS", 34, Ivory, 62);
-            var content = ScrollingContent(panel, "DesktopSettingsScrollView", 660, out _);
+            var panel = PanelContent(JourneyPanel.Settings, "SettingsPanel", new Vector2(920, 520));
+            MenuLabel(panel, "SettingsTitle", "SETTINGS", 34, Ivory, 62);
+
+            MenuButton(panel, "AudioSettings", "AUDIO / NARRATION", () => { RefreshSettings(); SetPanel(JourneyPanel.Audio); });
+            MenuButton(panel, "AllControlSettings", "CONTROLS", () => { RefreshControls(); SetPanel(JourneyPanel.Controls); });
+            MenuButton(panel, "GraphicsSettings", "GRAPHICS", () => { RefreshGraphics(); SetPanel(JourneyPanel.Graphics); });
+            MenuButton(panel, "SettingsCustomizeOracle", "CHARACTER", () => OpenCustomization(JourneyPanel.Settings));
+            settingsMoreLabel020=MenuButton(panel,"SettingsMore020","MORE",ToggleSettingsMore020,32).GetComponentInChildren<UnityEngine.UI.Text>();
+            settingsExtras020=BuildMenuGroup020(panel,"SettingsExtras020");
+            var content = ScrollingContent(settingsExtras020, "DesktopSettingsScrollView", 350, out _);
+            MenuButton(content,"SettingsMechanicsGuide","HOW TO PLAY",()=>OpenMechanicsGuide009(JourneyPanel.Settings));
+            MenuButton(content, "MinimapPreferences", "MAP", () => OpenMinimapSettings(JourneyPanel.Settings));
+            BuildDialogueSettings020(content);
             uiScaleSlider = CameraPreferenceRow(content, "InterfaceScale", "INTERFACE SIZE", .75f, 1.35f,
                 value => interfacePreferences?.SetUiScale(value), out uiScaleValue);
             MenuLabel(content, "InterfaceScaleExplanation", "Interface size is separate from scene resolution. Menus fit inside the window.", 14, Muted, 48);
-            MenuButton(content, "MinimapPreferences", "MINIMAP SETTINGS", () => OpenMinimapSettings(JourneyPanel.Settings));
             autoFireSettingButton = MenuButton(content, "OptionalAutoFire", "", () =>
             {
                 if (session.Combat == null || !session.HasStarted) return;
@@ -531,7 +549,7 @@ namespace OdysseyOracle
                 RefreshSettings();
             });
             autoFireSettingLabel = autoFireSettingButton.GetComponentInChildren<UnityEngine.UI.Text>();
-            MenuLabel(content, "OptionalAutoFireScope", "Select 1 or 2 elements, or all 4 for Nova. Three elements cannot cast. Optional auto-fire waits 0.5 seconds after your latest selection; left-click casts manually.", 14, Muted, 76);
+            MenuLabel(content, "OptionalAutoFireScope", "Prepare 1, 2 or 3 elements, or all 4 for Nova. A triple volley clears after firing. Optional auto-fire waits 0.5 seconds after selection. Click to cast, or hold click and press fresh element keys when ready.", 14, Muted, 76);
             BuildSensitivity(content);
             fieldOfViewSlider = CameraPreferenceRow(content, "FieldOfView", "FIELD OF VIEW", 70, 110, value =>
             {
@@ -546,13 +564,6 @@ namespace OdysseyOracle
                 if (session.Player != null) session.Player.BobbingIntensity = value;
             }, out bobbingValue);
             MenuLabel(content, "MotionBlurStatus", "NO MOTION BLUR", 13, Muted, 26);
-            MenuButton(content, "GraphicsSettings", "GRAPHICS", () => { RefreshGraphics(); SetPanel(JourneyPanel.Graphics); });
-            MenuButton(content, "AudioSettings", "AUDIO  ·  MUSIC / SFX / VOICE", () => { RefreshSettings(); SetPanel(JourneyPanel.Audio); });
-            MenuButton(content, "AllControlSettings", "CONTROLS  ·  MOVEMENT / INTERACTIONS / SPELLS", () =>
-            {
-                RefreshControls();
-                SetPanel(JourneyPanel.Controls);
-            });
             MenuButton(content, "ResetCameraAndGraphics", "RESET CAMERA & GRAPHICS SETTINGS", () =>
             {
                 session.Player?.ResetControlPreferences();
@@ -566,9 +577,10 @@ namespace OdysseyOracle
                 interfacePreferences?.ResetDefaults();
                 RefreshInterfaceSettings();
             });
-            MenuLabel(content, "InterfaceResetScope", "Restores interface size and minimap preferences only. Progression, controls, camera and audio remain separate.", 14, Muted, 62);
+            MenuLabel(content, "InterfaceResetScope", "Restores interface size, minimap and NPC subtitle preferences. Progression, controls, camera and audio remain separate.", 14, Muted, 62);
             progressionResetButton = MenuButton(content, "ResetOracleProgression", "RESET SAVED PROGRESSION", ResetSavedProgression);
             progressionResetStatus = MenuLabel(content, "SavedProgressionResetScope", "Clears this Oracle's saved progression on this device only.", 15, Muted, 92);
+            settingsExtras020.gameObject.SetActive(false);
             MenuButton(panel, "SettingsBack", "BACK", () =>
             {
                 AbilityBindings.CancelRebind();
@@ -660,8 +672,10 @@ namespace OdysseyOracle
             var bounds = (canvas.transform as RectTransform).rect.size;
             var requested = interfacePreferences.MinimapSizeFactor;
             var availableWidth = tutorialPrompt != null && tutorialPrompt.gameObject.activeSelf ? (bounds.x - 900) * .5f - 56 : bounds.x * .3f - 56;
-            var fit = Mathf.Min(requested, Mathf.Max(140, availableWidth) / 229, (bounds.y - 132) / 295);
-            var effectiveScale = Mathf.Max(.45f, fit);
+            bool performanceBelow=session.Graphics!=null&&session.Graphics.PerformanceTelemetry!=null&&session.Graphics.PerformanceTelemetry.OverlayVisible;
+            var readyFit=ReadinessHudMath.Fit(bounds.x,bounds.y,minimapRoot.rect.height,requested,availableWidth,session.HasStarted,performanceBelow?94f:0f);
+            readinessFooterFits=readyFit.FooterFits;
+            var effectiveScale=readyFit.Scale;
             if (!Mathf.Approximately(minimapRoot.localScale.x, effectiveScale)) minimapRoot.localScale = Vector3.one * effectiveScale;
             if (!Mathf.Approximately(minimapOpacityGroup.alpha, interfacePreferences.MinimapOpacity)) minimapOpacityGroup.alpha = interfacePreferences.MinimapOpacity;
             if (minimapShortcut != null)
@@ -677,10 +691,11 @@ namespace OdysseyOracle
             }
             if (performanceOverlayRect != null)
             {
-                var position = new Vector2(36, -54 - minimapRoot.rect.height * effectiveScale);
+                var position = new Vector2(36, -54 - (minimapRoot.rect.height+ReadinessFooterExtraHeight) * effectiveScale);
                 if ((performanceOverlayRect.anchoredPosition - position).sqrMagnitude > .01f)
                     performanceOverlayRect.anchoredPosition = position;
             }
+            FitTopActions020(bounds);
         }
 
         private void RefreshInterfaceSettings()
@@ -735,7 +750,8 @@ namespace OdysseyOracle
             for (var i = 0; i < GameActionBindings.ActionNames.Length; i++)
             {
                 var action = GameActionBindings.ActionNames[i];
-                if (i == 8) MenuLabel(content, "ElementHeading", "FOUR ELEMENTS · CAST 1 / 2 / 4 · THREE NEEDS FOURTH", 15, Gold, 42);
+                if (i == 8) MenuLabel(content, "ElementHeading", "FOUR ELEMENTS · SINGLE / PAIR / TRIPLE / NOVA", 15, Gold, 42);
+                if (i == 12) MenuLabel(content, "MusicBindingsHeading015", "MUSIC · INDEPENDENT PLAYBACK CONTROLS", 15, Gold, 29);
                 var row = Rect(content, "Binding" + action, Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 50));
                 Height(row, 50);
                 Label(row, "ActionName", GameActionBindings.GetDisplayName(action), 19, Ivory, TextAnchor.MiddleLeft,
@@ -746,7 +762,7 @@ namespace OdysseyOracle
             }
             MenuLabel(content, "FixedControlsHeading", "FIXED BROWSER & MOUSE CONTROLS", 15, Gold, 29);
             FixedControlRow(content, "Look and aim", "MOUSE · FIXED");
-            FixedControlRow(content, "Cast selected 1 / 2 / 4 elements", "LEFT MOUSE · FIXED");
+            FixedControlRow(content, "Cast prepared 1 / 2 / 3 / 4 elements", "LEFT MOUSE · FIXED");
             FixedControlRow(content, "Pause / release pointer", "ESCAPE · FIXED");
             FixedControlRow(content, "Tower menu / confirm placement", "RIGHT MOUSE · FIXED");
             bindingStatus = MenuLabel(panel, "BindingStatus", "", 16, Muted, 66);
@@ -817,8 +833,9 @@ namespace OdysseyOracle
 
         private void BuildAudioPanel()
         {
-            var content = PanelContent(JourneyPanel.Audio, "AudioSettingsPanel", new Vector2(860, 800));
-            MenuLabel(content, "AudioTitle", "AUDIO", 34, Ivory, 62);
+            var panel = PanelContent(JourneyPanel.Audio, "AudioSettingsPanel", new Vector2(860, 800));
+            MenuLabel(panel, "AudioTitle", "AUDIO", 34, Ivory, 62);
+            var content = ScrollingContent(panel,"AudioPreferencesScrollView020",550,out _);
             masterSlider = VolumeRow(content, "MasterVolume", "MASTER VOLUME", value => { if (session.Audio != null) session.Audio.MasterVolume = value; }, out masterValue);
             musicSlider = VolumeRow(content, "MusicVolume", "MUSIC", value => { if (session.Audio != null) session.Audio.MusicVolume = value; }, out musicValue);
             sfxSlider = VolumeRow(content, "SfxVolume", "SOUND EFFECTS", value => { if (session.Audio != null) session.Audio.SfxVolume = value; }, out sfxValue);
@@ -845,7 +862,10 @@ namespace OdysseyOracle
                 RefreshSettings();
             }, 38);
             audioNote = MenuLabel(content, "AudioAvailability", "Captions remain enabled.", 14, Muted, 36);
-            MenuButton(content, "AudioBack", "BACK", () => SetPanel(JourneyPanel.Settings), 47);
+            MenuButton(content,"MusicLibraryEntry009","MUSIC LIBRARY",OpenMusicLibrary009,38);
+            MenuButton(content, "PositionalSound015", "POSITIONAL SOUND", () => { SetPanel(JourneyPanel.Acoustics015); RefreshAcousticSettings015(true); }, 38);
+            BuildWeatherAmbienceControls020(content);
+            MenuButton(panel, "AudioBack", "BACK", () => SetPanel(JourneyPanel.Settings), 47);
         }
 
         private UnityEngine.UI.Slider VolumeRow(RectTransform parent, string name, string heading,
@@ -864,8 +884,8 @@ namespace OdysseyOracle
             var panel = PanelContent(JourneyPanel.Graphics, "GraphicsSettingsPanel", new Vector2(940, 980));
             MenuLabel(panel, "GraphicsTitle", "GRAPHICS", 34, Ivory, 62);
             var content = ScrollingContent(panel, "GraphicsPreferencesScrollView", 680, out _);
-            var presets = Rect(content, "QualityPresets", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 116));
-            Height(presets, 116);
+            var presets = Rect(content, "QualityPresets", Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(0, 180));
+            Height(presets, 180);
             var rows = presets.gameObject.AddComponent<UnityEngine.UI.VerticalLayoutGroup>();
             rows.spacing = 12;
             rows.childControlWidth = rows.childControlHeight = rows.childForceExpandWidth = true;
@@ -923,6 +943,13 @@ namespace OdysseyOracle
                 RefreshGraphics();
             });
             bloomValue = bloomButton.GetComponentInChildren<UnityEngine.UI.Text>();
+            BuildShadowQualityDropdown020(content);
+            var reflectionButton020=MenuButton(content,"ToggleReflections020","",()=>
+            {
+                if(session.Graphics!=null)session.Graphics.SetReflectionsEnabled020(!session.Graphics.ReflectionsEnabled020);
+                RefreshGraphics();
+            });
+            reflectionValue020=reflectionButton020.GetComponentInChildren<UnityEngine.UI.Text>();
             var particles = MenuButton(content, "CycleParticleDetail", "", () =>
             {
                 if (session.Graphics != null) session.Graphics.SetParticleQuality((session.Graphics.ParticleQuality + 1) % 3);
@@ -984,9 +1011,11 @@ namespace OdysseyOracle
             {
                 Preset = quality.Preset, Particles = quality.ParticleQuality, FrameCap = quality.FrameRateCap,
                 ShadowMap = quality.ShadowMapResolution, Lights = quality.AdditionalLightsPerObject,
+                ShadowQuality020 = quality.ShadowQuality020, ShadowCascades020 = quality.ShadowCascadeCount020,
+                Clouds020 = quality.CloudsEnabled020, WeatherEffects020 = quality.WeatherEffectsEnabled020, ShadowFiltering020 = quality.ShadowSoftFiltering020,
                 ShadowMetres = Mathf.RoundToInt(quality.ShadowDistance), ParticlePercent = Mathf.RoundToInt(quality.EffectiveParticleFactor * 100),
                 Scale = quality.ResolutionScale, EffectiveScale = quality.EffectiveResolutionScale, Brightness = quality.Brightness,
-                Auto = quality.AutoResolutionEnabled, Bloom = quality.BloomEnabled,
+                Auto = quality.AutoResolutionEnabled, Bloom = quality.BloomEnabled, SoftShadows = quality.SoftShadowsEnabled, Reflections020 = quality.ReflectionsEnabled020,
                 Customized = quality.PresetIsCustomized, Opaque = quality.OpaqueTextureEnabled,
                 DistanceBlocks = quality.RenderDistanceBlocks, EffectiveMetres = Mathf.RoundToInt(quality.EffectiveRenderDistanceMetres),
                 FarPercent = Mathf.RoundToInt(quality.FarDetailPixelation * 100), TextureDetail = quality.TextureDetailAvailable,
@@ -996,9 +1025,13 @@ namespace OdysseyOracle
             graphicsUiSnapshot = snapshot;
             graphicsUiSnapshotValid = true;
             var selected = Mathf.Clamp(snapshot.Preset, 0, GraphicsPreferences.PresetCount - 1);
-            graphicsDescription.text = GraphicsPresetDescriptions[selected] + (snapshot.Customized
-                ? "\nCUSTOM SETTINGS  ·  Select the preset again to restore its fixed values."
-                : "\nFIXED PRESET  ·  Selecting a preset switches automatic resolution off.");
+            graphicsDescription.text = GraphicsPresetDescriptions[selected] + (quality.PresetPreservesResolutionPolicy
+                ? (snapshot.Customized
+                    ? "\nCUSTOM EFFECTS  ·  Reselect Beta to reset effects; scale and automatic scaling stay as chosen."
+                    : "\nPRESET EFFECTS  ·  Resolution limit and automatic scaling stay as chosen.")
+                : (snapshot.Customized
+                    ? "\nCUSTOM SETTINGS  ·  Select the preset again to restore its fixed values."
+                    : "\nFIXED PRESET  ·  Selecting this preset switches automatic resolution off."));
             for (var i = 0; i < graphicsPresetButtons.Length; i++)
             {
                 var active = i == selected;
@@ -1013,10 +1046,14 @@ namespace OdysseyOracle
             effectiveResolutionValue.text = (quality.UsingFixedResolution ? "FIXED" : "ADAPTIVE") + " | CURRENT  " + Mathf.RoundToInt(quality.EffectiveResolutionScale * 100)
                 + "%  ·  MAXIMUM  " + Mathf.RoundToInt(quality.ResolutionScale * 100) + "%";
             bloomValue.text = "BLOOM  ·  " + (quality.BloomEnabled ? "ON" : "OFF");
+            shadowQualityDropdown020.SetValueWithoutNotify(quality.ShadowQuality020);
+            cloudsValue020.text = "CLOUDS  ·  " + (quality.CloudsEnabled020 ? "ON" : "OFF");
+            weatherEffectsValue020.text = "WEATHER EFFECTS  ·  " + (quality.WeatherEffectsEnabled020 ? "ON" : "OFF");
+            reflectionValue020.text=quality.ReflectionsEnabled020?"REFLECTIONS  ·  ON":"REFLECTIONS  ·  OFF";
             brightnessSlider.SetValueWithoutNotify(quality.Brightness);
             brightnessValue.text = Mathf.RoundToInt(quality.Brightness * 100) + "%";
             particleValue.text = "PARTICLE DETAIL  ·  " + (quality.ParticleQuality == 0 ? "LOW" : quality.ParticleQuality == 1 ? "MEDIUM" : "HIGH");
-            graphicsDrawState.text = "SHADOWS  " + (snapshot.ShadowMetres > 0 ? snapshot.ShadowMetres + " m  ·  MAP " + snapshot.ShadowMap : "OFF")
+            graphicsDrawState.text = "SHADOWS  " + (snapshot.ShadowMetres > 0 ? snapshot.ShadowMetres + " m  ·  MAP " + snapshot.ShadowMap + "  ·  CASCADES " + snapshot.ShadowCascades020 + (snapshot.ShadowFiltering020 ? "  ·  SOFT" : "  ·  HARD") : "OFF")
                 + "\nADDITIONAL LIGHTS / OBJECT  " + snapshot.Lights + "  ·  SCENE COLOR COPY  " + (snapshot.Opaque ? "ON" : "OFF")
                 + "\nEFFECTIVE PARTICLE FACTOR  " + snapshot.ParticlePercent + "%  ·  NO MOTION BLUR";
             frameCapValue.text = "FRAME RATE LIMIT  ·  " + (quality.FrameRateCap == 0 ? "UNCAPPED" : quality.FrameRateCap + " FPS");
@@ -1030,7 +1067,7 @@ namespace OdysseyOracle
             performanceToggleLabel.text = "LOCAL PERFORMANCE OVERLAY | " + (snapshot.Overlay ? "ON" : "OFF (OPTIONAL)");
             resolutionExplanation.text = quality.AutoResolutionEnabled
                 ? "Automatic resolution may lower the scene toward a " + quality.AdaptiveTargetFrameRate
-                    + " FPS target, up to your maximum. The interface stays sharp.\nSelecting a preset switches this optional setting off; the frame cap stays separate."
+                    + " FPS target, up to your maximum. The interface stays sharp.\nUltra (Beta) keeps this choice; other presets turn it off. The frame cap stays separate."
                 : "Scene resolution stays fixed while automatic resolution is off. Lower values give a softer image.\nUltra is the fresh-profile default. The frame cap is independent and does not guarantee a frame rate.";
         }
 
@@ -1219,39 +1256,7 @@ namespace OdysseyOracle
 
         private void BuildShrineMenu()
         {
-            var content = PanelContent(JourneyPanel.Build, "ElementShrineBuildMenu", new Vector2(1000, 1000));
-            MenuLabel(content, "BuildTitle", "BUILD TOWERS", 30, Ivory, 58);
-            MenuLabel(content, "BuildInstructions", "Four core blueprints are included. Choose a tower, then aim at an empty highlighted pad.\nPress interact or right-click to place. Each placement spends one build token; Smith upgrades are optional.", 18, Muted, 90);
-            var choices = ScrollingContent(content, "AllTowerTypes", 500, out _, true);
-            var grid = choices.gameObject.AddComponent<UnityEngine.UI.GridLayoutGroup>();
-            grid.constraint = UnityEngine.UI.GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 2;
-            grid.cellSize = new Vector2(390, 160);
-            grid.spacing = new Vector2(16, 12);
-            grid.padding = new RectOffset(12, 12, 12, 12);
-            grid.childAlignment = TextAnchor.UpperCenter;
-            towerBuildButtons = new UnityEngine.UI.Button[TowerForgeDefinitions.BaseTypes];
-            towerBuildLabels = new UnityEngine.UI.Text[TowerForgeDefinitions.BaseTypes];
-            for (var i = 0; i < TowerForgeDefinitions.BaseTypes; i++)
-            {
-                var element = i;
-                var button = Button(choices, "BuildTower" + i, ShrinePlacementBuilder.TowerNames[i].ToUpperInvariant() + "\n" + ShrinePlacementBuilder.TowerDescriptions[i],
-                    Vector2.zero, new Vector2(.5f, .5f), Vector2.zero, new Vector2(390, 160), () =>
-                {
-                    if (session.Builder == null) return;
-                    if (session.Builder.TrySelectShrine(element)) HideBuildMenu();
-                    else buildFeedback.text = session.Builder.Hint;
-                });
-                towerBuildButtons[i] = button;
-                towerBuildLabels[i] = button.GetComponentInChildren<UnityEngine.UI.Text>();
-                towerBuildLabels[i].fontSize = 20;
-            }
-            buildFeedback = MenuLabel(content, "ActualBuildFeedback", "", 17, Gold, 66);
-            MenuButton(content, "CancelBuildMenu", "CANCEL", () =>
-            {
-                session.Builder?.CancelPlacement();
-                HideBuildMenu();
-            }, 47);
+            BuildCompactTowerPicker015();
         }
 
         private void BuildPortalPanel()
@@ -1293,7 +1298,7 @@ namespace OdysseyOracle
                 Vector2.zero, new Vector2(590, 150), new Vector2(.5f, .5f));
             campaignMapName = Label(coop, "CoopMapName", "SHRINE DEFENSE", 25, Gold, TextAnchor.UpperCenter,
                 new Vector2(0, -252), new Vector2(626, 36), new Vector2(.5f, 1));
-            campaignMapDescription = Label(coop, "CoopMapDescription", "Defend the green shrine for ten minutes.\nFire · Water · Earth · Air towers.", 18, Ivory, TextAnchor.UpperCenter,
+            campaignMapDescription = Label(coop, "CoopMapDescription", "40 waves · 8 milestones of five.\nFire · Water · Earth · Air towers.", 18, Ivory, TextAnchor.UpperCenter,
                 new Vector2(0, -291), new Vector2(626, 50), new Vector2(.5f, 1));
             portalReadyLabel = Label(coop, "ActualLocalCoopReadyAction", "READY FOR CO-OP", 20, Emerald, TextAnchor.UpperCenter,
                 new Vector2(0, -349), new Vector2(626, 28), new Vector2(.5f, 1));
@@ -1307,6 +1312,8 @@ namespace OdysseyOracle
             var campaignSize = portalCampaignButton.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             campaignSize.minWidth = campaignSize.preferredWidth = 340;
             var solo = portalCampaignButton.transform as RectTransform;
+            // Solo and parties share the same tower-defense campaign authority.
+            portalCampaignButton.gameObject.SetActive(false);
             Label(solo, "SoloTitle", "SOLO\nCAMPAIGN", 29, Muted, TextAnchor.UpperCenter,
                 new Vector2(0, -54), new Vector2(306, 92), new Vector2(.5f, 1));
             Label(solo, "SoloDescription", "A solo campaign is in development.\n\nPlay or skip the tutorial from the campfire menu.", 18, Muted, TextAnchor.UpperCenter,
@@ -1430,11 +1437,13 @@ namespace OdysseyOracle
             ForwardBookWritingState(false);
         }
 
-        private void OnDisable() { StopBookReveal(); session?.World?.EndRaykonTalk(); }
+        private void OnDisable() { HideNibwickControls020(); CloseCampaignBookImmediate020(); HideAnvilPreview(); menuShowcase?.SetVisible(false); StopBookReveal(); session?.World?.EndRaykonTalk(); }
 
         public void ShowLoreBook(string title, string body)
         {
             if (!built || session == null || !session.HasStarted || session.IsDead || session.IsDowned || session.Victory || ShopVisible) return;
+            HideAchievementBadges020();
+            HideNibwickControls020();
             ForgetRefugeNpcConversation();
             AbilityBindings.CancelRebind();
             session.Pause();
@@ -1450,16 +1459,20 @@ namespace OdysseyOracle
         private void BuildCampaignHud()
         {
             tutorialPrompt = Frame(hudRoot, "TutorialInstructionPanel", new Vector2(.5f, 1), new Vector2(.5f, 1),
-                new Vector2(0, -148), new Vector2(900, 151), new Color(.025f, .04f, .033f, .83f), MutedGold);
+                new Vector2(0, -148), new Vector2(680, 108), new Color(.025f, .04f, .033f, .83f), MutedGold);
             tutorialHeading = Label(tutorialPrompt, "LessonHeading", "", 20, Gold, TextAnchor.UpperCenter,
-                new Vector2(0, -16), new Vector2(852, 28), new Vector2(.5f, 1));
+                new Vector2(0, -8), new Vector2(630, 26), new Vector2(.5f, 1));
             tutorialInstruction = Label(tutorialPrompt, "LessonInstruction", "", 18, Ivory, TextAnchor.UpperCenter,
-                new Vector2(0, -52), new Vector2(852, 59), new Vector2(.5f, 1));
+                new Vector2(0, -38), new Vector2(630, 64), new Vector2(.5f, 1));
+            tutorialInstruction.gameObject.SetActive(false);
             BuildTutorialSkipHint();
-            captionPanel = Frame(hudRoot, "GuideCaptions", new Vector2(.5f, 0), new Vector2(.5f, 0),
-                new Vector2(0, 235), new Vector2(1070, 117), new Color(.015f, .025f, .022f, .93f), MutedGold);
-            captionText = Label(captionPanel, "FullNarrationCaption", "", 20, Ivory, TextAnchor.MiddleCenter,
-                Vector2.zero, new Vector2(1020, 97), new Vector2(.5f, .5f));
+            captionPanel = Rect(tutorialPrompt, "ExactPlayingCaption", new Vector2(.5f, 1), new Vector2(.5f, 1),
+                new Vector2(0, -112), new Vector2(852, 126));
+            captionText = Label(captionPanel, "FullNarrationCaption", "", 17, Ivory, TextAnchor.MiddleCenter,
+                Vector2.zero, new Vector2(852, 126), new Vector2(.5f, .5f));
+            captionPanel.gameObject.SetActive(false);
+            BuildPracticeInteractionPrompt();BuildCompactGuide015();
+            BuildObjectiveCompass();
             var shrine = Frame(hudRoot, "ShrineHealth", new Vector2(1, 0), new Vector2(1, 0),
                 new Vector2(-36, 62), new Vector2(327, 95), Panel, MutedGold);
             Label(shrine, "ShrineName", "GREEN SHRINE", 15, Gold, TextAnchor.UpperLeft,
@@ -1473,8 +1486,9 @@ namespace OdysseyOracle
             Border(bar, Gold, 1);
             Label(shrine, "ShrineWarning", "PROTECT THE SHRINE", 10, Muted, TextAnchor.UpperLeft,
                 new Vector2(18, -72), new Vector2(291, 17), new Vector2(0, 1));
-            roomHudStatus = Label(hudRoot, "ActualConnectedRoom", "", 12, Emerald, TextAnchor.UpperRight,
-                new Vector2(-36, -277), new Vector2(335, 38), new Vector2(1, 1));
+            roomHudStatus = Label(hudRoot, "ActualConnectedRoom", "", 22, Ivory, TextAnchor.UpperRight,
+                new Vector2(-36, -276), new Vector2(335, 52), new Vector2(1, 1));
+            roomHudStatus.resizeTextForBestFit=true;roomHudStatus.resizeTextMinSize=14;roomHudStatus.resizeTextMaxSize=22;
             comboText = Label(hudRoot, "ActualElementCombo", "", 17, Gold, TextAnchor.MiddleCenter,
                 new Vector2(0, 58), new Vector2(620, 36), new Vector2(.5f, .5f));
             autoFireStatus = Label(hudRoot, "ActualConfirmedCastingStatus", "MANUAL CAST | SELECT 1, 2 OR ALL 4 ELEMENTS", 14, Gold, TextAnchor.MiddleCenter,
@@ -1547,6 +1561,7 @@ namespace OdysseyOracle
         public void ClosePanels()
         {
             session?.World?.EndRaykonTalk();
+            session?.Builder?.CancelPlacement();
             AbilityBindings.CancelRebind();
             treePreview = false;
             SetPanel(JourneyPanel.None);
@@ -1554,21 +1569,17 @@ namespace OdysseyOracle
 
         public void ShowBuildMenu()
         {
-            if (!built || session == null || !session.HasStarted || session.IsDead || session.IsDowned || session.Victory || ShopVisible
+            if (!built || session == null || !session.IsPlaying || currentPanel != JourneyPanel.None || session.IsDead || session.IsDowned || session.Victory || ShopVisible
                 || session.FieldSmith != null && session.FieldSmith.Visible
                 || session.Builder == null || !session.Builder.CanOpenHoveredBuildPad || session.Defense == null || !session.Defense.Running) return;
-            AbilityBindings.CancelRebind();
-            session.Pause();
-            buildSnapshotValid = false;
-            bool opened = currentPanel != JourneyPanel.Build;
-            SetPanel(JourneyPanel.Build);
-            RefreshTowerBuildMenu();
+            bool opened=!CompactBuildPickerVisible015;
+            ShowCompactTowerPicker015();
             if (opened) session.Audio?.PlayProductionCue(ProductionCue.TowerBuilderOpen);
         }
 
         public void HideBuildMenu()
         {
-            if (currentPanel == JourneyPanel.Build) ResumeJourney();
+            HideCompactTowerPicker015();
         }
 
         public void ShowPortalChoices()
@@ -1621,7 +1632,8 @@ namespace OdysseyOracle
 
         private void SetPanel(JourneyPanel panel)
         {
-            if (currentPanel == JourneyPanel.Lore && panel != JourneyPanel.Lore) { StopBookReveal(); session?.World?.EndRaykonTalk(); }
+            if(panel!=JourneyPanel.None&&session!=null&&session.Builder!=null&&session.Builder.IsPlacing)session.Builder.CancelPlacement();
+            if (currentPanel == JourneyPanel.Lore && panel != JourneyPanel.Lore) { HideNibwickControls020(); StopBookReveal(); session?.World?.EndRaykonTalk(); }
             if (panel != JourneyPanel.Settings && progressionResetArmed)
             {
                 progressionResetArmed = false;
@@ -1629,7 +1641,12 @@ namespace OdysseyOracle
                 progressionResetStatus.text = "Clears this Oracle's saved progression on this device only.";
                 progressionResetStatus.color = Muted;
             }
+            if(panel!=JourneyPanel.FieldForge||IntroActive||LoadingActive||DownedActive||ShopVisible)HideAnvilPreview();
+            if(currentPanel!=panel)CloseMenuExtras020(panel);
+            if(!menuBack015)menuAncestry015.Navigate((int)currentPanel,(int)panel,(int)JourneyPanel.None,(int)JourneyPanel.Start);
+            if(currentPanel==JourneyPanel.TutorialInstruction&&panel!=JourneyPanel.TutorialInstruction&&panel!=JourneyPanel.Settings)guideCursorReturn015=false;
             currentPanel = panel;
+            if(panel!=JourneyPanel.Pause)HidePauseGuide020();
             foreach (var entry in panels) entry.Value.gameObject.SetActive(entry.Key == panel);
             var blocked = IntroActive || LoadingActive || DownedActive || ShopVisible;
             if (menuRoot != null) menuRoot.gameObject.SetActive(panel != JourneyPanel.None && !blocked);
@@ -1637,6 +1654,7 @@ namespace OdysseyOracle
             if (loreInk != null) loreInk.SetPresentationActive(panel == JourneyPanel.Lore && !blocked);
             if (graphicsPerformanceReadout != null) graphicsPerformanceReadout.SetMenuOpen(panel == JourneyPanel.Graphics && !blocked);
             SetCustomizationVisible(panel == JourneyPanel.Customize && !blocked);
+            if(panel!=JourneyPanel.Start||blocked||session==null||session.HasStarted)menuShowcase?.SetVisible(false);
             if (menuDimmer != null) menuDimmer.color = panel == JourneyPanel.Start && session != null && !session.HasStarted
                 ? new Color(.008f, .014f, .012f, .12f) : new Color(.015f, .022f, .022f, .77f);
             if (EventSystem.current == null) return;
@@ -1650,6 +1668,7 @@ namespace OdysseyOracle
         private void UpdateExpandedMenu()
         {
             if (menuRoot == null) return;
+            TrackMenuContext015();RefreshGuidePauseButtons015();
             if (UpdateIntroOverlay()) { SetCustomizationVisible(false); return; }
             if (UpdateLoadingOverlay()) { SetCustomizationVisible(false); return; }
             if (DownedActive || ShopVisible)
@@ -1702,50 +1721,63 @@ namespace OdysseyOracle
             else if (session.Paused && currentPanel == JourneyPanel.None)
                 SetPanel(JourneyPanel.Pause);
             else if (!session.Paused && (currentPanel == JourneyPanel.Pause || currentPanel == JourneyPanel.Choice
-                || currentPanel == JourneyPanel.Settings || currentPanel == JourneyPanel.Minimap || currentPanel == JourneyPanel.Controls || currentPanel == JourneyPanel.Graphics || currentPanel == JourneyPanel.Audio || currentPanel == JourneyPanel.TutorialPortalSkip || currentPanel == JourneyPanel.Customize || currentPanel == JourneyPanel.RaykonMentor || currentPanel == JourneyPanel.TrainingLab))
+                || currentPanel == JourneyPanel.Settings || currentPanel == JourneyPanel.Minimap || currentPanel == JourneyPanel.Controls || currentPanel == JourneyPanel.Graphics || currentPanel == JourneyPanel.Audio || currentPanel == JourneyPanel.Acoustics015 || currentPanel == JourneyPanel.MusicLibrary009 || currentPanel == JourneyPanel.TutorialPortalSkip || currentPanel == JourneyPanel.Customize || currentPanel == JourneyPanel.RaykonMentor || currentPanel == JourneyPanel.TrainingLab))
                 SetPanel(JourneyPanel.None);
             observedStarted = session.HasStarted;
             // Full menus own the view. Keep guide and minimap previews visible.
             hudRoot.gameObject.SetActive(session.HasStarted && (currentPanel == JourneyPanel.None
                 || currentPanel == JourneyPanel.Minimap || IsGuidePreviewVisible));
             var unobscured = session.HasStarted && !session.Paused && currentPanel == JourneyPanel.None && !failure && !session.Victory;
-            pauseButton.gameObject.SetActive(unobscured);
-            crosshair.gameObject.SetActive(unobscured);
+            pauseButton.gameObject.SetActive(false);
+            if(pointerButtonLabel015!=null)
+            {
+                string text=session.CursorFree015?"RESUME":"PAUSE";
+                if(pointerButtonLabel015.text!=text)pointerButtonLabel015.text=text;
+            }
+            crosshair.gameObject.SetActive(unobscured&&!session.CursorFree015);
             if (replayVoiceButton != null)
             {
-                var guideSegment = session.Tutorial != null && (session.Tutorial.HasPendingInstruction || session.Tutorial.AwaitingSkillsMenu);
-                replayVoiceButton.gameObject.SetActive(guideSegment);
+                replayVoiceButton.gameObject.SetActive(!CampaignHubHudMode020);
             }
-            skillTreeButton.gameObject.SetActive(session.CombatUnlocked || CampaignUiInRefuge);
+            skillTreeButton.gameObject.SetActive(!CampaignHubHudMode020&&(session.CombatUnlocked || CampaignUiInRefuge));
             skipTutorialPauseButton.gameObject.SetActive(CanOfferTutorialSkip);
             var connectionEnded = session.CoopMode && session.Rooms != null && !session.Rooms.Connected;
-            pauseDescription.fontSize = connectionEnded ? 17 : 19;
+            pauseDescription.fontSize = connectionEnded || CampaignUiHasSoloRestartNotice ? 17 : 19;
             RefreshCampaignCopy();
-            pauseDescription.text = connectionEnded ? "ROOM CONNECTION ENDED\n" + session.Rooms.Status
+            pauseDescription.text = CampaignUiHasSoloRestartNotice ? campaignPauseCopy : connectionEnded ? "ROOM CONNECTION ENDED\n" + session.Rooms.Status
                 : CampaignUiActive ? campaignPauseCopy : "Your journey waits.\nReturn when you are ready.";
+            RefreshCampaignHubPauseMenu020();
+            RefreshPauseGuide020();
         }
 
         private void UpdateExpandedUi()
         {
+            RefreshQuickPortalButton();RefreshExitPanel020();
+            TickMenuShowcase();
+            TickAnvilPreview();
             RefreshRaykonMentor();
             RefreshButtonMotion();
             RefreshRoomStatus();
             RefreshTutorialSkipAccess();
-            if (currentPanel == JourneyPanel.Pause)
+            if (currentPanel == JourneyPanel.Pause && pauseMore020 && pauseControlsBinding020!=GameActionBindings.LastChangeFrame)
             {
+                pauseControlsBinding020=GameActionBindings.LastChangeFrame;
                 pauseControls.text = "Move " + GameActionBindings.GetLabel("Forward") + "/" + GameActionBindings.GetLabel("Left")
                     + "/" + GameActionBindings.GetLabel("Back") + "/" + GameActionBindings.GetLabel("Right")
                     + "  ·  Run " + GameActionBindings.GetLabel("Sprint") + "  ·  Jump " + GameActionBindings.GetLabel("Jump")
                     + "\nInteract " + GameActionBindings.GetLabel("Interact") + "  ·  Tree " + GameActionBindings.GetLabel("SkillTree") + "  ·  ESC Pause"
-                    + "\nTap 1 or 2 elements, or all 4 for Nova. Three selected: add the fourth.\nLeft-click casts. Auto-fire waits 0.5s after selection. Element recovery 4s; Nova 5s.";
+                    + "\nPrepare 1 / 2 / 3 elements, or 4 for Nova. Triple volleys clear after firing.\nClick to cast, or hold click and press fresh element keys. Global interval 0.5s; elements 4s; Nova 5s. Optional auto waits 0.5s after selection.";
                 skillTreeButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "PASSIVE TREE  [" + GameActionBindings.GetLabel("SkillTree") + "]";
             }
             if (currentPanel == JourneyPanel.Settings || currentPanel == JourneyPanel.Audio) RefreshSettings();
+            RefreshMusicLibrary009();
+            RefreshAcousticSettings015();
+            RefreshAchievementBadgeLayout020();
             if (currentPanel == JourneyPanel.Minimap) RefreshInterfaceSettings();
             if (currentPanel == JourneyPanel.Controls) RefreshControls();
             if (currentPanel == JourneyPanel.Graphics) RefreshGraphics();
             if (currentPanel == JourneyPanel.Customize) UpdateCustomizationNavigation();
-            if (currentPanel == JourneyPanel.Build) RefreshTowerBuildMenu();
+            RefreshTowerBuildMenu();
             if (currentPanel == JourneyPanel.Lore && Application.isFocused && !AbilityBindings.IsRebinding)
             {
                 var bookKeyboard = UnityEngine.InputSystem.Keyboard.current;
@@ -1797,15 +1829,9 @@ namespace OdysseyOracle
             RefreshConfirmedInputPresentation(live);
             comboText.text = !live || !session.CombatUnlocked || session.Combat == null ? ""
                 : session.Combat.CastIndicator == "CAST" ? "CAST" : session.Combat.HitFlash > 0f ? "HIT" : "";
-            tutorialPrompt.gameObject.SetActive(instructionVisible && tutorial != null && !string.IsNullOrEmpty(tutorial.Heading));
-            captionPanel.gameObject.SetActive(instructionVisible && tutorial != null && !string.IsNullOrEmpty(tutorial.Subtitle));
-            if (tutorial != null)
-            {
-                tutorialHeading.text = tutorial.Heading;
-                tutorialInstruction.text = tutorial.Instruction + (!session.IsDowned && tutorial.CurrentLesson == TutorialDirector.Lesson.Move
-                    ? "\nMouse aims. After training: select 1 / 2 / 4 elements, then left-click." : "");
-                captionText.text = tutorial.Subtitle;
-            }
+            RefreshSingleTopGuide(instructionVisible, tutorial);
+            RefreshPracticeInteractionPrompt();
+            RefreshObjectiveCompass();
             downedCard.gameObject.SetActive(DownedActive);
             downedResumeButton.gameObject.SetActive(DownedActive && session.Paused);
             allyReviveProgress.gameObject.SetActive(live && !string.IsNullOrEmpty(session.DownedHint) && session.ReviveProgress > 0);
@@ -1830,10 +1856,7 @@ namespace OdysseyOracle
             {
                 var seconds = Mathf.Max(0, Mathf.CeilToInt(session.Defense.RemainingSeconds));
                 defenseTimer.text = session.Defense.Running ? "DEFENSE  " + (seconds / 60).ToString("00") + ":" + (seconds % 60).ToString("00") : "SHARED ROOM";
-                defenseWave.text = session.Defense.Running
-                    ? "WAVE " + session.Defense.WaveNumber + "  ·  " + session.Defense.SpawnedThisWave + " / " + session.Defense.WaveQuota
-                        + " ADMITTED\n" + session.Defense.AliveCount + " ENEMIES ALIVE"
-                    : "WAITING FOR DEFENSE";
+                RefreshDefenseWaveCopy015();
                 SetFill(defenseWaveFill, session.Defense.Running ? session.Defense.SpawnedThisWave / (float)Mathf.Max(1, session.Defense.WaveQuota) : 0);
                 defenseStatus.text = session.Defense.Status + "\nTOKENS " + session.Defense.LocalBuildTokens
                     + " | SPAWN " + session.Defense.AdmissionLaneCount + " | DRAIN " + session.Defense.DrainingLaneCount + "\n"
@@ -1855,15 +1878,22 @@ namespace OdysseyOracle
             if (roomStatus == null) return;
             var rooms = session.Rooms;
             var busy = rooms != null && rooms.Busy;
-            createRoomButton.interactable = !busy && (rooms == null || !rooms.Connected);
-            joinRoomButton.interactable = !busy && (rooms == null || !rooms.Connected);
+            createRoomButton.interactable = RoomMenuRequestAllowed020() && rooms.CanHostRoom020(roomMenuMode020);
+            joinRoomButton.interactable = RoomMenuRequestAllowed020() && rooms.CanJoinRoom020(roomMenuMode020);
             roomCodeInput.interactable = !busy;
+            roomQuickHost020.interactable=false;
+            bool selectable=!busy&&(rooms==null||!rooms.Connected);
+            roomCampaignMode020.interactable=roomDefenseMode020.interactable=selectable;
             campaignButton.interactable = false;
-            roomStatus.text = !string.IsNullOrEmpty(localRoomMessage) ? localRoomMessage
-                : rooms != null ? rooms.Status : "Room service is not connected. Play Tutorial is available from the main menu.";
-            roomRoster.text = rooms != null && rooms.Connected ? "ROOM  " + rooms.Code + "   ·   " + rooms.PlayerCount + " / " + RoomConnection.MaximumPlayers + " ORACLES" : "";
-            roomHudStatus.text = rooms != null && rooms.Connected ? "ROOM " + rooms.Code + "  ·  " + rooms.PlayerCount + "/" + RoomConnection.MaximumPlayers + " ORACLES" : "";
-            roomStatus.color = rooms != null && rooms.Connected ? Emerald : Muted;
+            bool online=rooms!=null&&rooms.RoomOnline020;
+            bool failed=rooms!=null&&rooms.RoomPhase020==RoomConnectionPhase020.Failed;
+            RefreshRoomRetry020(failed);
+            roomStatus.text=busy||online||failed?rooms.RoomStatus020:!string.IsNullOrEmpty(localRoomMessage)?localRoomMessage
+                :roomMenuMode020==CoopRoomMode020.CampaignTown&&(rooms==null||!rooms.SupportsRoomMode020(roomMenuMode020))?CampaignTownPreparing020
+                :rooms!=null?rooms.RoomStatus020:"Room service is not connected.";
+            RefreshRoomRoster020(online,online?rooms.RoomShareCode020:"",online?rooms.PlayerCount:0,online?rooms.RoomCapacity020:0);
+            roomStatus.color=online?Emerald:Muted;
+            RefreshGameWait020(busy);
         }
 
         private void RefreshButtonMotion()
@@ -1939,6 +1969,7 @@ namespace OdysseyOracle
                 musicValue.text = Mathf.RoundToInt(session.Audio.MusicVolume * 100) + "%";
                 sfxValue.text = Mathf.RoundToInt(session.Audio.SfxVolume * 100) + "%";
             }
+            RefreshWeatherAmbienceControls020();
         }
 
         private void RefreshTree()
@@ -2029,6 +2060,7 @@ namespace OdysseyOracle
             Canvas.ForceUpdateCanvases();
             var bounds = (canvas.transform as RectTransform).rect.size;
             lastCanvasSize = bounds;
+            FitTopActions020(bounds);
             foreach (var card in fittedCards)
             {
                 var size = card.sizeDelta;
@@ -2047,7 +2079,7 @@ namespace OdysseyOracle
             if (downedCard != null)
                 downedCard.localScale = Vector3.one * Mathf.Min(1, (bounds.x - 96) / 860, (bounds.y - 96) / 224);
             if (loadingCard != null)
-                loadingCard.localScale = Vector3.one * Mathf.Min(1, (bounds.x - 96) / 980, (bounds.y - 96) / 280);
+                loadingCard.localScale = Vector3.one * Mathf.Min(1, (bounds.x - 96) / 980, (bounds.y - 96) / 340);
         }
     }
 
@@ -2085,3 +2117,86 @@ namespace OdysseyOracle
 
 // # ARCHITECTURE SNAPSHOT
 // Existing world metres and Canvas coordinates; fixed twelve-card value state, existing Combat/Nova/Tower owners and real point costs retained.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing Canvas/start-card reference coordinates; additive start-only scripted visual lease; existing pointer/focus policies unchanged.
+// Array Formats: Private fixed native pose buffers and completed fences belong only to preview; no gameplay or website integration.
+// Dependencies/Pointers: Existing World/Rooms/HP/save/audio owners remain canonical; saved assets are borrowed and the isolated visual lease is privately owned.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing World/Canvas; one objective compass replaces floor-arrow publication, actual map legend retained.
+// Array Formats: one bounded HUD/native store with fenced disposal; preserved original floor recipe stays inactive.
+// Dependencies/Pointers: original tutorial/campaign/physics/input authorities unchanged; source-only integration/native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing Canvas/minimap-local readiness footer; actual accepted1/2-member state and separate8-level label.
+// Array Formats: Cold bounded cached captions and value-only view/layout; no hot allocation or native owner.
+// Dependencies/Pointers: Read-only ready/phase/remaining-seconds; existing parent/menu/map ownership and bottom-HUD fit retained; root native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing HUD/menu lifecycle; immediate hide/dispose for one private TowerAnvil atlas.
+// Array Formats: cached presentation owner only; completed native writers before hiding/disposal, no perframe resource creation.
+// Dependencies/Pointers: existing menu/input/pause/purchase/save authority unchanged; native/browser acceptance root-owned.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing2D music/uGUI only; world/spatial/campaign authority unchanged.
+// Array Formats: Additive fixed18 playlist masks/rows and at most2 optional clip leases; existing two-source fade/duck/volume/focus remain canonical.
+// Dependencies/Pointers: Root verifies/imports/binds recordings; pending assets use honest existing-theme fallback. Cold boundary loads only, no PCM/new sources; native listening/memory/browser/UI acceptance pending.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space:Unity World listener/emitter metres; existing settings use local uGUI.
+// Array Formats:Existing pools remain fixed;8voice leases/2queries/16hits per ray; audio-local Morton refresh keys.
+// Dependencies/Pointers:Audio owns native reader fences/low-pass/backend leases; accepted World/tower lifetime hooks invalidate acoustic revisions. No narration/gameplay authority replaced.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current authenticated run/epoch/context and monotonic real-time pending request ages; placement/world coordinates unchanged.
+// Array Formats: Immutable Frame64, fixed Pending96 scalar state and one cached Frame64 per existing peer; no per-frame heap container or ABI change.
+// Dependencies/Pointers: Bounded same-nonce delivery, exact host replay and response-controlled UI only. Root alone imports/native-tests; frozen original packet remains unchanged.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted metre/Y-up/XZ support roots and HUD Canvas; cosmetic floor boxes do not establish build permission.
+// Array Formats: Existing fixed8192 preview records, one ray job, four cached original tower choices, unchanged Frame64 pending/replay transaction.
+// Dependencies/Pointers: Local picker owns no pause/cursor/economy; accepted host result alone closes successful transaction. Normal input/native/Web rendering remain separate acceptance gates.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing fitted Canvas cards and room-code focus; no player/world coordinates.
+// Array Formats: Cold controls reuse existing fields, three scalar disclosure states and cached group references.
+// Dependencies/Pointers: Existing authoritative Solo/Create/Join/settings/leave callbacks remain; root owns native/browser/layout acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing current-WEB graphics settings and RoomV2-local light presentation only; no structural/camera/gameplay position changes.
+// Array Formats: One Off/Soft preference and existing scalar UI snapshot/private URP/light cache; one primary directional light/one cascade/25m1024cap, existing three-window mesh batch.
+// Dependencies/Pointers: Current root dirty/dialogue/guide/flora hooks preserved; existing owners manage cold settings/resource updates. No new per-frame CPU/light/shadow-map/render-feature owner; root verifies native/WebGL shader/visual/frame behavior.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing fitted guide/menu Canvas and actual guide view/audio state.
+// Array Formats: Existing bounded UI/state stores; cold immutable65status labels, no frame formatting.
+// Dependencies/Pointers: Original restart/portal/settings/narration/voice/input/achievement owners remain. Root owns source apply and full compile/native/browser/listening acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing graphics Canvas and world-metre shadow settings; palette/actor/world geometry unchanged.
+// Array Formats: Four scalar tiers and two weather flags; native pipeline/resource buffers retain their existing owner.
+// Dependencies/Pointers: Private clone/public APIs only; existing input/menu, light restoration and save owner retained; atmosphere consumes instance flags.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing Sound uGUI panel and unchanged palette/font/input.
+// Array Formats: Existing rows move into existing scroll factory; weather controls cache displayed scalars.
+// Dependencies/Pointers: Existing navigation and audio owner persist explicit user choices; no hierarchy/prefab/scene writes by this work packet.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing graphics preference scalars and fitted HUD copy; no world/camera transforms.
+// Array Formats: One derived Beta policy boolean and existing cached UI snapshot; no new runtime store or collection.
+// Dependencies/Pointers: Existing catalog/schema/defaults, saved scale/auto policy and private render owners remain authoritative; root alone applies/imports and verifies native UI.

@@ -88,7 +88,9 @@ namespace OdysseyOracle
                     enemy.NavigationRadius + .29f + SpacingPadding);
             for(int i=0;i<boundedPeers;i++)if(peers[i].Targetable)
                 result=PresentationFootprint.LimitSweptXZ(position,result,peers[i].Feet,enemy.NavigationRadius+.29f+SpacingPadding);
-            result = PlacedElementShrine.LimitMovementAroundTowers(position, result, enemy.TowerBodyRadius, enemy.MinimumVisualY, enemy.MaximumVisualY);
+            // Normal defense ignores collider-free tower bodies; retain world/floor and actor spacing.
+            if (enemy.TowerAggressionAllowed011)
+                result = PlacedElementShrine.LimitMovementAroundTowers(position, result, enemy.TowerBodyRadius, enemy.MinimumVisualY, enemy.MaximumVisualY);
             result.y = 0f;
             return result;
         }
@@ -109,3 +111,8 @@ namespace OdysseyOracle
         public void Dispose() { grid.Dispose(); actors.Clear(); }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authored world-metre lanes/shrine support; no teleport/root/collider rewrite.
+// Array Formats: Existing48actors/fourtowers and snapshot bounds; default-deny numeric tower permission, no frame allocations.
+// Dependencies/Pointers: Only exact intentionally toggled training owner permits tower combat; host shrine/player/world/HP/reward/replay owners preserved. Native/peer acceptance pending.

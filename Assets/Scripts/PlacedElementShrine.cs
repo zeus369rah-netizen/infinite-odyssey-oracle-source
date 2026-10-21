@@ -12,6 +12,7 @@ namespace OdysseyOracle
         private GameSession session;
         private Transform crystal;
         SavedTowerModelPresentation towerModel;
+        internal SavedTowerModelPresentation WorkshopModel015=>towerModel;
         uint acceptedVisualShotSerial;
         float acceptedModelInterval=1.5f,lastVisualShotInterval=1.5f;
         private float fireRemaining, pulse, supportCueRemaining;
@@ -38,12 +39,14 @@ namespace OdysseyOracle
         public Vector3 Position => transform.position;
         public Vector3 AimPoint => Position + Vector3.up * .9f;
         public bool IsSupport => Element == 9;
-        public const float DefaultMaxHealth = 80f;
-        public float MaxHealth => DefaultMaxHealth;
+        public const float DefaultMaxHealth = CampaignBalance015.BaseTowerHealth;
+        int acceptedPolicyTier015 = 1, acceptedPolicyWave015 = 1;
+        float acceptedMaximumHealth015 = DefaultMaxHealth;
+        public float MaxHealth => acceptedMaximumHealth015;
         public float Health { get; private set; } = DefaultMaxHealth;
         public bool IsDestroyed => Health <= 0f;
 
-        internal void Initialize(GameSession gameSession, int id, int element, Material green, Material gold, Material elementMaterial,SavedTowerModelLibrary modelLibrary=null,int acceptedTier=1,int acceptedRevision=0)
+        internal void Initialize(GameSession gameSession, int id, int element, Material green, Material gold, Material elementMaterial,SavedTowerModelLibrary modelLibrary=null,int acceptedTier=1,int acceptedRevision=0,bool deferRegistration015=false)
         {
             session = gameSession;
             Id = id;
@@ -57,12 +60,16 @@ namespace OdysseyOracle
             }
             else crystal = CreateVisual(transform, green, gold, elementMaterial, meshes);
             healthVisuals = GetComponentsInChildren<Renderer>();
-            Health = DefaultMaxHealth;
+            acceptedPolicyTier015 = MatchTowerForgeRules.ValidTier(acceptedTier) ? acceptedTier : 1;
+            acceptedPolicyWave015 = session != null && session.Defense != null && session.Defense.Running ? CurrentTowerPolicyWave015 : 1;
+            acceptedMaximumHealth015 = TowerForgeDefinitions.ValidType(Element) ? CampaignBalance015.TowerMaximumHealth(acceptedPolicyTier015, acceptedPolicyWave015) : DefaultMaxHealth;
+            Health = acceptedMaximumHealth015;
+            if (TowerForgeDefinitions.ValidType(Element)) acceptedModelInterval = lastVisualShotInterval = CampaignBalance015.TowerShotInterval(MatchTowerForgeRules.Interval(acceptedPolicyTier015), acceptedPolicyWave015);
             fireRemaining = .25f + (id % 7) * .07f;
-            RegisterFeedback();
+            if(!deferRegistration015){RegisterFeedback();RegisterAcousticTower015();}
         }
 
-        private void OnEnable() { if (session != null) RegisterFeedback(); }
+        private void OnEnable() { if (session != null) { RegisterFeedback(); RegisterAcousticTower015(); } }
 
         private void RegisterFeedback()
         {
@@ -84,6 +91,7 @@ namespace OdysseyOracle
             if (remoteOnly || IsDestroyed || session == null || !lab&&(session.Defense == null ||
                 !session.Defense.IsAuthority || !session.Defense.Running) || !session.SimulationActive ||
                 float.IsNaN(damage) || float.IsInfinity(damage) || damage <= 0f) return;
+            if(!lab&&TowerForgeDefinitions.ValidType(Element))ApplyAcceptedTowerPolicy015(session.Defense.GetTowerTier(Id,Element),CurrentTowerPolicyWave015);
             float trainingLabBefore=Health;SetHealth(Mathf.Max(0f, Health - damage));
             if(lab)trainingLabOwner.ObserveTowerDamage(this,trainingLabBefore,Health);
         }
@@ -92,7 +100,21 @@ namespace OdysseyOracle
         {
             if (session == null || session.Defense == null || session.Defense.IsAuthority ||
                 float.IsNaN(health) || float.IsInfinity(health)) return;
+            if(TowerForgeDefinitions.ValidType(Element))ApplyAcceptedTowerPolicy015(session.Defense.GetTowerTier(Id,Element),Mathf.Max(acceptedPolicyWave015,CurrentTowerPolicyWave015));
             SetHealth(Mathf.Clamp(health, 0f, MaxHealth));
+        }
+
+        int CurrentTowerPolicyWave015 => TutorialPracticeAuthorized || TrainingLabAuthorized || SharedTrainingLabReplica ? 1 :
+            session != null && session.Defense != null ? Mathf.Clamp(session.Defense.WaveNumber, 1, CampaignBalance015.WaveCount) : 1;
+        internal bool ApplyAcceptedTowerPolicy015(int tier, int wave)
+        {
+            if (!TowerForgeDefinitions.ValidType(Element) || !MatchTowerForgeRules.ValidTier(tier) || !CampaignBalance015.ValidWave(wave)) return false;
+            if (tier == acceptedPolicyTier015 && wave == acceptedPolicyWave015) return true;
+            if (!CampaignBalance015.TryAdvanceTowerHealth(acceptedPolicyTier015, acceptedPolicyWave015, acceptedMaximumHealth015, Health,
+                tier, wave, out float maximum, out float health)) return false;
+            acceptedPolicyTier015 = tier; acceptedPolicyWave015 = wave; acceptedMaximumHealth015 = maximum; Health = health;
+            acceptedModelInterval = CampaignBalance015.TowerShotInterval(MatchTowerForgeRules.Interval(tier), wave);
+            return true;
         }
 
         private void SetHealth(float health)
@@ -100,6 +122,7 @@ namespace OdysseyOracle
             Health = health;
             if (!IsDestroyed || destructionShown) return;
             destructionShown = true;
+            RemoveAcousticTower015();
             towerModel?.OnAcceptedDestroyed();
             if (session != null && session.Combat != null)
                 session.Combat.HitEffect(AimPoint, ShrinePlacementBuilder.TowerColors[Element], .5f);
@@ -216,7 +239,7 @@ namespace OdysseyOracle
         {
             bool lab=TrainingLabAuthorized;
             bool training=TutorialPracticeAuthorized||lab;
-            bool running = training || session != null && session.Defense != null && session.Defense.Running && session.SimulationActive;
+            bool running = training || session != null && session.SimulationActive && (SharedTrainingLabReplica || session.Defense != null && session.Defense.Running);
             if (feedback != null) feedback.Tick(running ? Time.deltaTime : 0f, running);
             if (!running || IsDestroyed) return;
             float dt = Time.deltaTime;
@@ -258,7 +281,8 @@ namespace OdysseyOracle
             if (!(training?(lab?TryGetTrainingLabTarget(origin,out target):TryGetTutorialPracticeTarget(origin,out target)):TryFindEligibleTarget(origin,out target)))
             { fireRemaining = .2f; return; }
             int acceptedTier=training?1:Element<4?session.Defense.GetTowerTier(Id,Element):1;
-            fireRemaining=Element<4?MatchTowerForgeRules.Interval(acceptedTier):Element==8?1.8f:1.5f;
+            float baseInterval015=Element<4?MatchTowerForgeRules.Interval(acceptedTier):Element==8?1.8f:1.5f;
+            fireRemaining=!training&&Element<4?CampaignBalance015.TowerShotInterval(baseInterval015,CurrentTowerPolicyWave015):baseInterval015;
             Vector3 hitPoint = target.AimPoint;
             Color color = ShrinePlacementBuilder.TowerColors[Element];
             session.Combat.HitEffect(origin, color, .28f);
@@ -271,7 +295,7 @@ namespace OdysseyOracle
             ShowShotFeedback(hitPoint, secondaryA, secondaryB, secondaryCount);
             if(!training)AuthoritativeShot?.Invoke(Id, hitPoint, secondaryA, secondaryB, secondaryCount);
             float practiceBefore=training?target.HP:0f;
-            target.TakeHit(Element<4?MatchTowerForgeRules.Damage(acceptedTier):Element==8?12f:8f);
+            target.TakeHit(Element<4?(training?MatchTowerForgeRules.Damage(1):session.Defense.GetAcceptedTowerDamage015(Id,Element)):Element==8?12f:8f,hitPoint-origin,Element>=0&&Element<4?1<<Element:0,hitPoint);
             if(training){if(lab)ObserveTrainingLabTowerShot(target,practiceBefore);else ObserveTutorialPracticeDamage(target,practiceBefore);}
             if (target.Alive)
             {
@@ -288,7 +312,7 @@ namespace OdysseyOracle
                 secondaryTargets[i] = null;
                 if (secondary == null || !secondary.Targetable) continue;
                 session.Combat.HitEffect(secondary.AimPoint, color, .4f);
-                secondary.TakeHit(Element == 4 ? 5f : 6f);
+                secondary.TakeHit(Element == 4 ? 5f : 6f,secondary.AimPoint-origin,0,secondary.AimPoint);
             }
         }
 
@@ -297,7 +321,7 @@ namespace OdysseyOracle
             pulse = 1f;
             if(towerModel!=null)
             {
-                lastVisualShotInterval=remoteOnly?acceptedModelInterval:Mathf.Clamp(fireRemaining,.05f,10f);
+                lastVisualShotInterval=remoteOnly||session!=null&&session.Defense!=null&&!session.Defense.IsAuthority?acceptedModelInterval:Mathf.Clamp(fireRemaining,.05f,10f);
                 towerModel.OnAcceptedShot(++acceptedVisualShotSerial,primary,lastVisualShotInterval);
             }
             Vector3 visualOrigin=towerModel!=null?towerModel.VisualMuzzle:Position+Vector3.up*1.25f;
@@ -308,15 +332,17 @@ namespace OdysseyOracle
                 if(towerModel!=null&&Element==2)session.Audio.PlayCrossbow(visualOrigin);
                 else session.Audio.PlayTower(Element==8?2:Element,visualOrigin);
             }
-            feedback?.Play(Element, visualOrigin, primary, secondaryA, secondaryB,
-                Mathf.Clamp(count, 0, 2), feedbackMaterial);
+            if(Element>=4||towerModel==null||!towerModel.ElementPresentationReady)
+                feedback?.Play(Element, visualOrigin, primary, secondaryA, secondaryB,
+                    Mathf.Clamp(count, 0, 2), feedbackMaterial);
         }
 
         public bool ApplyAcceptedModelTier(int tier,int revision,float acceptedInterval)
         {
             if(towerModel==null||float.IsNaN(acceptedInterval)||float.IsInfinity(acceptedInterval)||acceptedInterval<.05f||acceptedInterval>10f)return false;
             if(!towerModel.ApplyAcceptedTier(tier,revision))return false;
-            acceptedModelInterval=acceptedInterval;return true;
+            if(!ApplyAcceptedTowerPolicy015(tier,Mathf.Max(acceptedPolicyWave015,CurrentTowerPolicyWave015)))return false;
+            acceptedModelInterval=CampaignBalance015.TowerShotInterval(acceptedInterval,acceptedPolicyWave015);RegisterAcousticTower015();return true;
         }
 
         public static void PlayRemoteShotFeedback(int towerId, Vector3 primary, Vector3 secondaryA, Vector3 secondaryB, int secondaryCount)
@@ -342,8 +368,8 @@ namespace OdysseyOracle
         private bool Eligible(OracleEnemy enemy)
         {
             if (enemy == null || !enemy.Targetable) return false;
-            if ((Element == 2 || Element == 7 || Element == 8) && enemy.IsFlying) return false;
-            return Element != 3 || enemy.IsFlying;
+            if (TowerForgeDefinitions.ValidType(Element)) return CampaignBalance015.TowerTargetGroupAllows(Element,enemy.IsFlying);
+            return (Element != 7 && Element != 8) || !enemy.IsFlying;
         }
 
         private int FindSecondaryTargets(Vector3 origin, OracleEnemy primary, Vector3 primaryPoint)
@@ -660,6 +686,7 @@ namespace OdysseyOracle
 
         private void OnDisable()
         {
+            RemoveAcousticTower015();
             for (int i = 0; i < registered.Length; i++) if (registered[i] == this) registered[i] = null;
             for (int i = 0; i < registered.Length; i++) if (registered[i] != null) return;
             if (feedback != null) feedback.Dispose();
@@ -668,6 +695,7 @@ namespace OdysseyOracle
 
         private void OnDestroy()
         {
+            RemoveAcousticTower015();
             for (int i = 0; i < meshes.Count; i++) if (meshes[i] != null) Destroy(meshes[i]);
         }
     }
@@ -675,3 +703,37 @@ namespace OdysseyOracle
 
 // # ARCHITECTURE SNAPSHOT
 // Bounded offline tutorial adapter; existing actor/HP/tower/native owners and reward boundaries remain.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing tower Head-local/Y-up pivots and accepted target world points remain canonical; foundation/pads/target lock/range unchanged.
+// Array Formats: Existing saved72 meshes/four materials remain borrowed; additive12 original FX templates, two renderers and one fixed96-byte native state/pose pair per instance.
+// Dependencies/Pointers: Existing accepted tier/shot owners feed cosmetics only; Burst fences finish before Object writes. No authority/economy/radius/status/audio/network rewrite; native acceptance pending.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space:Unity World listener/emitter metres; existing settings use local uGUI.
+// Array Formats:Existing pools remain fixed;8voice leases/2queries/16hits per ray; audio-local Morton refresh keys.
+// Dependencies/Pointers:Audio owns native reader fences/low-pass/backend leases; accepted World/tower lifetime hooks invalidate acoustic revisions. No narration/gameplay authority replaced.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Accepted global waves1..40, tiers1..3 and existing Y-up/XZ tower roots; exact bound lesson/lab adapters remain separate.
+// Array Formats: Existing fixed4 towers and unchanged host snapshots plus cached scalar policy tier/wave/maximum; no ABI, save, cost, damage, enemy-aggression or hot allocation change.
+// Dependencies/Pointers: CampaignBalance015 owns target groups/capacity/additive4percent rate and durability math. Host alone accepts context; monotonic policy rebases preserve damaged fraction, repeated contexts are inert, and dead towers stay dead.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authoritative legacy Combat/World/revision and actor pool lifetime, world metres/Y-up.
+// Array Formats: Existing48 actors with bounded feedback values/Morton jobs and one synchronous accepted-damage observation; no extra damage, mesh or material owner.
+// Dependencies/Pointers: Positive actual HP loss owns immediate cached MPB red flash and observer dispatch. Root composes this exact work projection and verifies native collision/flash/audio/network/GC; replicas never move authoritatively.

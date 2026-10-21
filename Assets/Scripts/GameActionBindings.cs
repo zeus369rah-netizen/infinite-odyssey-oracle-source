@@ -8,12 +8,12 @@ namespace OdysseyOracle
     public static class GameActionBindings
     {
         public static readonly string[] ActionNames = { "Forward", "Back", "Left", "Right", "Sprint", "Jump",
-            "Interact", "SkillTree", "Ability1", "Ability2", "Ability3", "Ability4" };
+            "Interact", "SkillTree", "Ability1", "Ability2", "Ability3", "Ability4", "MusicSkip", "MusicPause" };
         private static readonly string[] Names = { "Move forward", "Move backward", "Move left", "Move right",
-            "Sprint", "Jump", "Interact / read / build", "Skill tree", "Fire", "Water", "Earth", "Air" };
+            "Sprint", "Jump", "Interact / read / build", "Skill tree", "Fire", "Water", "Earth", "Air", "Skip song", "Pause / resume music" };
         private static readonly Key[] Defaults = { Key.W, Key.S, Key.A, Key.D, Key.LeftShift, Key.Space,
-            Key.E, Key.P, Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4 };
-        private static readonly Key[] Keys = new Key[12];
+            Key.E, Key.P, Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.N, Key.M };
+        private static readonly Key[] Keys = new Key[ActionNames.Length];
         private const string Prefix = "OdysseyOracle.ActionKey.";
         private static int captureAfterFrame, lastCaptureFrame = -1;
         public static int RebindingIndex { get; private set; } = -1;
@@ -26,7 +26,7 @@ namespace OdysseyOracle
         {
             for (int i = 0; i < Keys.Length; i++)
             {
-                int legacy = i >= 8 ? PlayerPrefs.GetInt("OdysseyOracle.ElementKey." + (i - 8), (int)Defaults[i]) : (int)Defaults[i];
+                int legacy = i >= 8 && i < 12 ? PlayerPrefs.GetInt("OdysseyOracle.ElementKey." + (i - 8), (int)Defaults[i]) : (int)Defaults[i];
                 Key candidate = (Key)PlayerPrefs.GetInt(Prefix + ActionNames[i], legacy);
                 if (!IsBindable(candidate) || UsedEarlier(candidate, i))
                 {
@@ -122,3 +122,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Saved local keyboard commands, no gameplay or audio-space mutation.
+// Array Formats: Fourteen cold key/name/default slots; original twelve indices preserved, legacy element migration limited to8..11.
+// Dependencies/Pointers: One existing capture owner/conflict validator, persisted MusicSkip and MusicPause; transport dispatch observes rebind/text/focus fences.

@@ -14,7 +14,7 @@ namespace OdysseyOracle
     [StructLayout(LayoutKind.Sequential,Pack=1,Size=4)]
     public readonly struct OracleAvatarMeshSlot
     {
-        // Bone:0 body,1 left arm,2 right arm,3 wand. Palette:0 robe,1 hat,2 hair,3 gold,4 dark,5 gem,6 paper.
+        // Bone:0 body,1 left arm,2 right arm,3 wand,4 left leg,5 right leg. Palette:0 robe,1 hat,2 hair,3 gold,4 dark,5 gem,6 paper.
         // Variant:0 common,1 hat style,2 clothing,3 shoulders,4 book visibility.
         public readonly byte Bone,Palette,Variant,Value;
         public OracleAvatarMeshSlot(byte bone,byte palette,byte variant=0,byte value=0)
@@ -26,7 +26,7 @@ namespace OdysseyOracle
     // Numeric box traversal is engine-independent; no GameObject, Mesh, Object or Physics API occurs here.
     public static class OracleAvatarRecipe
     {
-        public const int MaximumBoxes=128,MeshSlots=29,VerticesPerBox=24,IndicesPerBox=36;
+        public const int MaximumBoxes=128,MeshSlots=31,VerticesPerBox=24,IndicesPerBox=36;
         public static OracleAvatarMeshSlot Slot(int index)
         {
             switch(index)
@@ -44,6 +44,7 @@ namespace OdysseyOracle
                 case 23:return new OracleAvatarMeshSlot(0,4,4);case 24:return new OracleAvatarMeshSlot(0,3,4);
                 case 25:return new OracleAvatarMeshSlot(0,6,4);case 26:return new OracleAvatarMeshSlot(3,3);
                 case 27:return new OracleAvatarMeshSlot(3,4);case 28:return new OracleAvatarMeshSlot(3,5);
+                case 29:return new OracleAvatarMeshSlot(4,4);case 30:return new OracleAvatarMeshSlot(5,4);
                 default:throw new ArgumentOutOfRangeException(nameof(index));
             }
         }
@@ -54,8 +55,8 @@ namespace OdysseyOracle
             Add(output,ref n,0,0,1.02f,0,.55f,.60f,.35f); // fitted torso
             Add(output,ref n,0,0,.95f,-.202f,.59f,.75f,.075f); // layered back mantle, structural overlap
             Add(output,ref n,2,0,.62f,0,.50f,.38f,.32f);
-            Add(output,ref n,2,-.17f,.43f,0,.18f,.56f,.24f);Add(output,ref n,2,.17f,.43f,0,.18f,.56f,.24f);
-            Add(output,ref n,2,-.17f,.12f,.06f,.22f,.24f,.37f);Add(output,ref n,2,.17f,.12f,.06f,.22f,.24f,.37f); // soleY0
+            Add(output,ref n,29,0,-.28f,0,.18f,.56f,.24f);Add(output,ref n,30,0,-.28f,0,.18f,.56f,.24f);
+            Add(output,ref n,29,0,-.59f,.06f,.22f,.24f,.37f);Add(output,ref n,30,0,-.59f,.06f,.22f,.24f,.37f); // soleY0
             Add(output,ref n,1,0,.76f,.014f,.586f,.07f,.38f); // gold belt
             Add(output,ref n,1,-.245f,1.03f,.179f,.028f,.51f,.024f);Add(output,ref n,1,.245f,1.03f,.179f,.028f,.51f,.024f);
             Add(output,ref n,2,0,1.45f,-.006f,.37f,.38f,.34f); // dark hood/hidden face
@@ -100,6 +101,11 @@ namespace OdysseyOracle
 }
 
 // # ARCHITECTURE SNAPSHOT
-// Presentation-only28-byte numeric boxes and4-byte mesh-slot descriptors. Fixed128 boxes/29 slots.
+// Presentation-only28-byte numeric boxes and4-byte mesh-slot descriptors. Fixed128 boxes/31 slots; original resting geometry preserved.
 // Metres Y-up/+Z front; body origin is validated feetY0, arm pivots±.35/1.15, wand remains existing rigid owner.
 // No entity tracking/native ownership is moved; numeric recipes are cold immutable input, not world voxels.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original Oracle accepted world roots and camera/child-local poses only; no authority geometry changes.
+// Array Formats: Fixed31shared body slots/2prewarmed player graphs and original palette/pose/feedback buffers; no wire ABI growth.
+// Dependencies/Pointers: Player/Rooms/Combat remain sole owners; root integrates default-OFF original native player pilot and verifies real bindings/peer/clearance.

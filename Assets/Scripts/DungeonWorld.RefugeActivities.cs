@@ -10,6 +10,7 @@ namespace OdysseyOracle
         public Vector3 TutorialTowerPracticeTargetPosition => TrainingLabDummyPosition;
         public Vector3 TutorialStaffPosition => new Vector3(2.6f,0f,-1.2f);
         public bool TrainingStaffAvailable => trainingStaff!=null && trainingStaff.activeSelf;
+        public bool TrainingStaffCollected015=>trainingStaff!=null&&!trainingStaff.activeSelf;
         GameObject trainingStaff;
 
         void BuildRefugeActivities()
@@ -62,3 +63,8 @@ namespace OdysseyOracle
 // Coordinate Space: Y-up refuge metres, supported floor vertexY0; explicit nonoverlapping activity footprints.
 // Array Formats: Fixed three zone anchors and one cold combined staff, shared original batch materials.
 // Dependencies/Pointers: DungeonWorld owns all meshes/materials and the one pickup lifetime; gameplay authority stays with tutorial/combat.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.

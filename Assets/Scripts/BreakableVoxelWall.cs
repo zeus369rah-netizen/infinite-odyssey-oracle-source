@@ -112,6 +112,8 @@ namespace OdysseyOracle
                 RebuildCount++;
                 lastRebuildFrame = Time.frameCount;
                 chunk.MarkClean();
+                GameSession.Instance?.Audio?.RefreshAcousticCollider015(meshCollider);
+                GameSession.Instance?.World?.RebuildXpClearance015();
             }
         }
 
@@ -131,3 +133,12 @@ namespace OdysseyOracle
         }
     }
 }
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space:Unity World listener/emitter metres; existing settings use local uGUI.
+// Array Formats:Existing pools remain fixed;8voice leases/2queries/16hits per ray; audio-local Morton refresh keys.
+// Dependencies/Pointers:Audio owns native reader fences/low-pass/backend leases; accepted World/tower lifetime hooks invalidate acoustic revisions. No narration/gameplay authority replaced.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current world solid AABB supersets and original XP anchors; floor and complete rotating/bobbing octahedron envelope included.
+// Array Formats: Fixed4104 native solids/Morton grid and4095 source-pair certificates; independent world/source generations.
+// Dependencies/Pointers: World and source owners complete readers before mutation/dispose. Existing claims/recipient masks/range/LOS and XP arithmetic remain canonical; native real merges/performance pending root.

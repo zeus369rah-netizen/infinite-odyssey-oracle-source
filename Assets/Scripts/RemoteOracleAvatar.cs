@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 namespace OdysseyOracle
 {
     // Visual representation only. The local CharacterController remains the movement owner.
-    public sealed class RemoteOracleAvatar : MonoBehaviour
+    public sealed partial class RemoteOracleAvatar : MonoBehaviour
     {
         public ulong ClientId { get; private set; }
         Vector3 targetPosition;
@@ -20,6 +20,8 @@ namespace OdysseyOracle
         public void Initialize(ulong clientId, Vector3 position, float yaw)
         {
             if (initialized) return;
+            var rooms=RoomConnection.Instance;
+            if(rooms!=null&&rooms.Connected&&clientId==rooms.LocalClientId){gameObject.SetActive(false);return;}
             ClientId = clientId;
             gameObject.name = "Remote Oracle " + clientId;
             CreateMaterials();
@@ -45,8 +47,10 @@ namespace OdysseyOracle
             targetPosition = position;
             targetRotation = Quaternion.Euler(0f, yaw, 0f);
             // Joining, portals and host-approved stage changes must not interpolate through walls.
-            if ((transform.position - position).sqrMagnitude > 64f)
+            if ((transform.position - position).sqrMagnitude > 64f) {
+                nativePose015?.Reset();
                 transform.SetPositionAndRotation(position, targetRotation);
+            }
         }
 
         void Update()
@@ -59,11 +63,12 @@ namespace OdysseyOracle
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, blend);
             motion = Mathf.Lerp(motion, Mathf.Clamp01((transform.position - previous).magnitude / Mathf.Max(.001f, dt) / 3f), blend);
             phase += dt * 8f;
-            appearanceModel.Animate(phase,motion);
             bool knownDowned=TryGetHealth(out var health)&&health.Downed;
+            bool nativePose=EvaluatePlayerPose015(dt,knownDowned);
+            if(!nativePose)appearanceModel.Animate(phase,motion);
             if(visualBody!=null)visualBody.localRotation=Quaternion.Slerp(visualBody.localRotation,
                 knownDowned?Quaternion.Euler(0f,0f,72f):Quaternion.identity,blend);
-            if (wand != null)
+            if (wand != null && !nativePose)
                 wand.localRotation = Quaternion.Euler(6f + Mathf.Sin(phase) * motion * 5f, 0f, -13f);
         }
 
@@ -117,6 +122,7 @@ namespace OdysseyOracle
 
         void OnDestroy()
         {
+            DisposePlayerPose015();
             appearanceModel?.Dispose();appearanceModel=null;
             if (!initialized) return;
             materialUsers--;
@@ -131,3 +137,13 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up, first-person camera and host ownership.
+// Array Formats: Fixed spawn/admission state; no new hot allocations or native ownership.
+// Dependencies/Pointers: Host pose preserved; accepted guest spawn commits before camera/body/pose publication; root owns integration/native tests.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original Oracle accepted world roots and camera/child-local poses only; no authority geometry changes.
+// Array Formats: Fixed31shared body slots/2prewarmed player graphs and original palette/pose/feedback buffers; no wire ABI growth.
+// Dependencies/Pointers: Player/Rooms/Combat remain sole owners; root integrates default-OFF original native player pilot and verifies real bindings/peer/clearance.

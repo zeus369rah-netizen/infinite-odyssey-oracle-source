@@ -17,10 +17,10 @@ namespace OdysseyOracle
     // native memory; Netcode writers dispose per send. Cold party JSON remains
     // allocating; no whole-network zeroGC/performance claim. Source IDs are NGO IDs.
     // Real session + transport state. Cloud membership alone is never reported as connected.
-    public sealed class RoomConnection : MonoBehaviour
+    public sealed partial class RoomConnection : MonoBehaviour
     {
         public static RoomConnection Instance { get; private set; }
-        public string Code => session == null ? string.Empty : session.Code;
+        public string Code => RoomShareCode020;
         public string Status { get; private set; } = "Create a private game or enter your friend's room code.";
         public bool Busy { get; private set; }
         public bool Connected { get; private set; }
@@ -65,7 +65,7 @@ namespace OdysseyOracle
             ArenaPoseValidator=null;return true;
         }
         public bool AdmissionsBlocked => network != null && network.IsServer ? HostAdmissionsBlocked : remoteAdmissionsBlocked;
-        bool HostAdmissionsBlocked => GameSession.Instance != null && GameSession.Instance.Defense != null && GameSession.Instance.Defense.RoomAdmissionsBlocked;
+        bool HostAdmissionsBlocked => idleStopAdmissions || (requestedRoomMode020==CoopRoomMode020.TowerDefense&&GameSession.Instance != null && GameSession.Instance.Defense != null && GameSession.Instance.Defense.RoomAdmissionsBlocked);
         public ulong LocalClientId => network == null ? NetworkManager.ServerClientId : network.LocalClientId;
 
         uint LocalAppearanceCode()
@@ -162,11 +162,16 @@ namespace OdysseyOracle
         {
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
+            PrepareRemotePlayerCold015();
         }
 
-        public async void CreateRoom()
+        public void CreateRoom() => CreateRoomCore(CoopRoomMode020.TowerDefense,false);
+        public void CreateSoloRoom() => CreateRoomCore(CoopRoomMode020.TowerDefense,true);
+        public void CreateRoom(CoopRoomMode020 mode) => CreateRoomCore(mode,false);
+
+        async void CreateRoomCore(CoopRoomMode020 mode,bool solo)
         {
-            if (Busy || Connected) return;
+            if(!BeginTypedRequest020(mode,true))return;
             Busy = true;
             pendingConnections++;
             int ticket = ++operation;
@@ -176,14 +181,16 @@ namespace OdysseyOracle
                 Status = "Connecting to game services...";
                 await PrepareAsync(ticket, true, attempt);
                 EnsureConnectionAttemptCurrent(ticket, attempt);
-                Status = "Creating a private game for up to " + MaximumPlayers + " players...";
+                roomPhase020=RoomConnectionPhase020.Hosting;
+                Status = solo ? "Starting a one-player tower-defense session..." : "Creating a private game for up to " + MaximumPlayers + " players...";
                 var options = new SessionOptions
                 {
-                    Name = "Oracle private co-op",
-                    MaxPlayers = MaximumPlayers,
+                    Name = mode==CoopRoomMode020.CampaignTown?"Oracle shared Campaign town":solo ? "Oracle solo tower defense" : "Oracle private co-op",
+                    MaxPlayers = solo ? 1 : CoopRoomModeRules020.SupportedMaximum(mode),
                     IsPrivate = true,
-                    Type = "odyssey-oracle-coop-v10"
+                    Type = CoopRoomModeRules020.ServiceKey(mode)
                 }.WithRelayNetwork().WithNetworkOptions(new NetworkOptions { RelayProtocol = RelayProtocol.WSS });
+                AddTypedSessionProperties020(options);
                 attempt.Phase = "creating the private room and secure game connection";
                 var created = await MultiplayerService.Instance.CreateSessionAsync(options, attempt.Token);
                 // Retain even a late returned session until our owned cleanup has left it.
@@ -195,13 +202,14 @@ namespace OdysseyOracle
             catch (Exception error)
             {
                 if (IsCurrent(ticket))
-                    await FailConnectionAsync(attempt, attempt.TimedOut ? new TimeoutException(attempt.TimeoutReason, error) : error);
+                {await FailConnectionAsync(attempt, attempt.TimedOut ? new TimeoutException(attempt.TimeoutReason, error) : error);if(IsCurrent(ticket))roomPhase020=RoomConnectionPhase020.Failed;}
                 else await DisconnectAsync();
             }
             finally { EndConnectionAttempt(attempt); }
         }
 
-        public async void JoinRoom(string roomCode)
+        public void JoinRoom(string roomCode)=>JoinRoom(roomCode,CoopRoomMode020.TowerDefense);
+        public async void JoinRoom(string roomCode,CoopRoomMode020 expectedMode)
         {
             if (Busy || Connected) return;
             string cleaned = (roomCode ?? string.Empty).Trim().ToUpperInvariant();
@@ -210,6 +218,7 @@ namespace OdysseyOracle
                 Status = "Enter the room code shown by the host.";
                 return;
             }
+            if(!BeginTypedRequest020(expectedMode,false))return;
             Busy = true;
             pendingConnections++;
             int ticket = ++operation;
@@ -219,10 +228,11 @@ namespace OdysseyOracle
                 Status = "Connecting to game services...";
                 await PrepareAsync(ticket, false, attempt);
                 EnsureConnectionAttemptCurrent(ticket, attempt);
+                roomPhase020=RoomConnectionPhase020.Joining;
                 Status = "Joining your friend's room...";
                 attempt.Phase = "joining the room and secure game connection";
                 var joined = await MultiplayerService.Instance.JoinSessionByCodeAsync(cleaned,
-                    new JoinSessionOptions { Type = "odyssey-oracle-coop-v10" }
+                    new JoinSessionOptions { Type = CoopRoomModeRules020.ServiceKey(expectedMode) }
                         .WithNetworkOptions(new NetworkOptions { RelayProtocol = RelayProtocol.WSS }), attempt.Token);
                 // Retain even a late returned session until our owned cleanup has left it.
                 session = joined;
@@ -233,7 +243,7 @@ namespace OdysseyOracle
             catch (Exception error)
             {
                 if (IsCurrent(ticket))
-                    await FailConnectionAsync(attempt, attempt.TimedOut ? new TimeoutException(attempt.TimeoutReason, error) : error);
+                {await FailConnectionAsync(attempt, attempt.TimedOut ? new TimeoutException(attempt.TimeoutReason, error) : error);if(IsCurrent(ticket))roomPhase020=RoomConnectionPhase020.Failed;}
                 else await DisconnectAsync();
             }
             finally { EndConnectionAttempt(attempt); }
@@ -241,18 +251,8 @@ namespace OdysseyOracle
 
         public async void LeaveRoom()
         {
-            if (leaving) return;
-            leaving = true;
-            Busy = true;
-            ++operation;
-            try
-            {
-                Status = "Leaving the game...";
-                await CancelAndDrainConnectionAttemptAsync();
-                string failure = await DisconnectAsync();
-                if (!destroyed) Status = failure == null ? "You left the game." : "Disconnected locally; room cleanup failed: " + failure;
-            }
-            finally { leaving = false; if (!destroyed) Busy = pendingConnections > 0; }
+            if(roomPhase020!=RoomConnectionPhase020.Canceled)roomPhase020=RoomConnectionPhase020.Leaving;
+            await LeaveRoomAsync();
         }
 
         async Task PrepareAsync(int ticket, bool hosting, RoomConnectionAttempt attempt)
@@ -260,12 +260,13 @@ namespace OdysseyOracle
             EnsureConnectionAttemptCurrent(ticket, attempt);
             // A prior loss or failed attempt must finish dismantling its owned transport
             // before another session can reuse NetworkManager.Singleton.
-            if (network != null || session != null || disconnectTask != null && !disconnectTask.IsCompleted)
+            if (network != null || session != null || pendingIdleHostDeletion != null || disconnectTask != null && !disconnectTask.IsCompleted)
             {
                 attempt.Phase = "closing the previous game connection";
                 Status = "Closing the previous game connection...";
                 await DisconnectAsync();
                 EnsureConnectionAttemptCurrent(ticket, attempt);
+                if (pendingIdleHostDeletion != null) throw new InvalidOperationException("The previous inactive room cleanup must succeed before another connection starts.");
             }
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
@@ -374,9 +375,10 @@ namespace OdysseyOracle
             priorApproval=network.NetworkConfig.ConnectionApproval;
             priorConnectionData=network.NetworkConfig.ConnectionData;
             admissions.Clear();memberIds.Clear();connectionRejection=string.Empty;
+            ResetHubSpawns();
             if(hosting&&!admissions.ReserveHost())throw new InvalidOperationException("Could not reserve the host's room slot.");
             network.NetworkConfig.ConnectionApproval=true;
-            network.NetworkConfig.ConnectionData=Utf8.GetBytes(CoopPartyCapacity.WireProtocol);
+            network.NetworkConfig.ConnectionData=Utf8.GetBytes(CoopRoomModeRules020.Protocol(requestedRoomMode020));
             network.ConnectionApprovalCallback=ApproveConnection;approvalInstalled=true;
             network.OnClientConnectedCallback += OnClientConnected;
             network.OnClientDisconnectCallback += OnClientDisconnected;
@@ -398,16 +400,23 @@ namespace OdysseyOracle
             EnsureConnectionAttemptCurrent(ticket, attempt);
             if (network == null || !network.IsListening || !network.IsConnectedClient)
                 throw new InvalidOperationException("The game transport disconnected before the room became ready.");
+            RequireTypedService020();roomPhase020=RoomConnectionPhase020.Negotiating;
             RegisterHandlers();
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown)
+            {await FinishCampaignTownRoom020(ticket,attempt);EnsureConnectionAttemptCurrent(ticket,attempt);return;}
+            await PrepareHubSpawnAsync(ticket, attempt);
+            EnsureConnectionAttemptCurrent(ticket, attempt);
             Connected = true;
             playerCount = network.IsServer ? network.ConnectedClientsIds.Count : 1;
             nextSend = 0f;
             InitializeParty();
+            InitializeRoomInactivity();
             Status = network.IsHost ? "Room connected. Share the code, then ready at the portal." : "Room connected. Complete your lessons, then ready at the portal.";
             var game = GameSession.Instance;
             if (game == null) throw new InvalidOperationException("GameSession is not available.");
-            game.BeginCoop();
-            TryApplyCampaignStart();
+            if(!CompleteSoloRestartConnection(game))game.BeginCoop();
+            if (!hubApplied) throw new InvalidOperationException("The accepted refuge spawn was not applied before arrival.");
+            TryApplyCampaignStart();PublishDefenseRoom020(ticket);
         }
 
         void Update()
@@ -421,6 +430,11 @@ namespace OdysseyOracle
                 return;
             }
             if(network.IsServer)admissions.Expire(Time.realtimeSinceStartupAsDouble);
+            if (!hubApplied) return;
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown)
+            {if(!RoomOnline020){ConnectionLost("The accepted Campaign town lease is no longer current.");return;}TickCampaignTownRoomTransport020();return;}
+            TickRoomReactionTransport();
+            TickHubSpawnDeadlines();
             TickAdmissionPhase();
             TickParty();
             if (Time.unscaledTime < nextSend) return;
@@ -453,11 +467,19 @@ namespace OdysseyOracle
         void RegisterHandlers()
         {
             if (handlersRegistered || network == null || network.CustomMessagingManager == null) return;
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown){RegisterCampaignTownRoomHandlers020();handlersRegistered=true;return;}
             var messages = network.CustomMessagingManager;
             messages.RegisterNamedMessageHandler(UploadChannel, ReceiveUpload);
             messages.RegisterNamedMessageHandler(SnapshotChannel, ReceiveSnapshot);
+            messages.RegisterNamedMessageHandler(HubSpawnChannel, ReceiveHubSpawn);
             messages.RegisterNamedMessageHandler(CampaignChannel, ReceiveCampaign);
             messages.RegisterNamedMessageHandler(ReliableChannel, ReceiveReliable);
+            messages.RegisterNamedMessageHandler(IdleChannel, ReceiveIdleFrame);
+            messages.RegisterNamedMessageHandler(SharedLabChannel, ReceiveSharedLab);
+            RegisterRoomReactionHandler();
+            RegisterArenaImpactHandler();
+            RegisterXpHandler015();
+            RegisterLaneBuildHandler015();
             handlersRegistered = true;
         }
 
@@ -467,12 +489,12 @@ namespace OdysseyOracle
             if(intentionalStop||leaving||destroyed)
             {response.Approved=false;response.Reason="This room is closing. Ask the host for a new code.";return;}
             bool local=request.ClientNetworkId==NetworkManager.ServerClientId;
-            bool compatible=local||CoopPartyCapacity.MatchesProtocol(request.Payload);
+            bool compatible=CoopRoomModeRules020.Valid(requestedRoomMode020)&&(local||CoopRoomModeRules020.MatchesPayload(requestedRoomMode020,request.Payload));
             bool open=local||!HostAdmissionsBlocked;
             bool reserved=compatible&&open&&(local?admissions.ReserveHost():admissions.Reserve(request.ClientNetworkId,Time.realtimeSinceStartupAsDouble,ConnectionDeadlineSeconds,out _));
             response.Approved=reserved;
             response.Reason=reserved?string.Empty:!compatible?"This room requires the same game and multiplayer version.":
-                !open?"A defense is in progress. Rejoin when the party returns to the refuge.":"This room already has eight connected or joining players.";
+                !open?"A defense is in progress. Rejoin when the party returns to the refuge.":"This room already has "+MaximumPlayers+" connected or joining players.";
         }
 
         void OnClientConnected(ulong clientId)
@@ -482,14 +504,25 @@ namespace OdysseyOracle
             admissions.Expire(Time.realtimeSinceStartupAsDouble);
             if(clientId!=network.LocalClientId&&HostAdmissionsBlocked)
             {admissions.Remove(clientId);network.DisconnectClient(clientId,"A defense is in progress. Rejoin at the refuge.");return;}
-            if(!admissions.Confirm(clientId))network.DisconnectClient(clientId,"Room admission expired. Rejoin using the current code.");
+            if(!admissions.Confirm(clientId)){network.DisconnectClient(clientId,"Room admission expired. Rejoin using the current code.");return;}
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown){CampaignTownRoomPeerChanged020(clientId,true);return;}
+            BeginHubSpawnDeadline(clientId);
         }
 
         void OnClientDisconnected(ulong clientId)
         {
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown)
+            {
+                admissions.Remove(clientId);poses.Remove(clientId);RemoveAvatar(clientId);
+                try{CampaignTownRoomPeerChanged020(clientId,false);}
+                finally{if(!intentionalStop&&network!=null&&clientId==network.LocalClientId)ConnectionLost("The shared Campaign town connection closed.");}
+                return;
+            }
+            ReleaseHubSpawn(clientId);
             poses.Remove(clientId);
             if(network!=null&&network.IsServer)
             {
+                if(!intentionalStop&&Connected&&clientId!=network.LocalClientId&&partyMembers.ContainsKey(clientId))UnexpectedSoloRestartPeerDeparture?.Invoke(clientId);
                 admissions.Remove(clientId);
                 if(!intentionalStop&&Connected&&partyMembers.ContainsKey(clientId))InvalidatePartyReadiness();
             }
@@ -514,6 +547,7 @@ namespace OdysseyOracle
             {
                 Pose pose = ReadPose(ref reader);
                 if (!ValidPose(pose)||!admissions.TryGetSlot(sender,out _)||!ValidateArenaPose(sender,pose.Position)) return;
+                if (!hubSpawnSlots.AcceptPose(sender,pose.Position.x,pose.Position.y,pose.Position.z)) return;
                 if (poses.TryGetValue(sender, out var previous) && !Newer(pose.Sequence, previous.Sequence)) return;
                 lastUpload[sender] = now;
                 poses[sender] = pose;
@@ -539,7 +573,7 @@ namespace OdysseyOracle
 
         void ReceiveSnapshot(ulong sender,FastBufferReader reader)
         {
-            if(network==null||network.IsServer||sender!=NetworkManager.ServerClientId||!reader.TryBeginRead(3))return;
+            if(network==null||network.IsServer||!hubApplied||sender!=NetworkManager.ServerClientId||!reader.TryBeginRead(3))return;
             try
             {
                 reader.ReadValueSafe(out byte count);reader.ReadValueSafe(out bool blocked);reader.ReadValueSafe(out byte poseCount);
@@ -568,6 +602,7 @@ namespace OdysseyOracle
 
         public void StartCampaign()
         {
+            if(requestedRoomMode020!=CoopRoomMode020.TowerDefense)return;
             if(!Connected||!IsHost){Status="Only the connected host can start the campaign.";return;}
             if(HostAdmissionsBlocked || CampaignLifecycleActive != null && CampaignLifecycleActive())return;
             ReconcileParty();
@@ -580,6 +615,7 @@ namespace OdysseyOracle
 
         void ReceiveCampaign(ulong sender,FastBufferReader reader)
         {
+            if(requestedRoomMode020!=CoopRoomMode020.TowerDefense)return;
             if(network==null||network.IsServer||sender!=NetworkManager.ServerClientId||!reader.TryBeginRead(36))return;
             try
             {
@@ -593,6 +629,7 @@ namespace OdysseyOracle
 
         void TryApplyCampaignStart()
         {
+            if(requestedRoomMode020!=CoopRoomMode020.TowerDefense)return;
             if(!Connected||!campaignPending||pendingCampaignNonce!=partyNonce||!ValidPartyToken(partyNonce)||
                 !partyMembers.TryGetValue(LocalClientId,out var local)||!local.Registered||pendingCampaignNonce==startedCampaignNonce)return;
             appliedCampaignSequence=pendingCampaignSequence;startedCampaignNonce=pendingCampaignNonce;
@@ -709,6 +746,7 @@ namespace OdysseyOracle
 
         void ResetParty()
         {
+            ResetRoomInactivity();
             partyMembers.Clear();memberIds.Clear();admissions.Clear();
             partyBudgets.Clear();
             partyNonce = partyRequest = string.Empty;
@@ -717,6 +755,7 @@ namespace OdysseyOracle
             ReadyPlayerCount = 0;remoteAdmissionsBlocked=lastHostBlocked=false;
             pendingCampaignNonce=startedCampaignNonce=string.Empty;campaignStartSequence=pendingCampaignSequence=appliedCampaignSequence=0;
             PartyReadyStatus = "Connect to a room to prepare your party.";
+            ResetHubSpawns();
         }
 
         void TickParty()
@@ -731,6 +770,7 @@ namespace OdysseyOracle
         // Readiness records portal intent, not an authentication or tutorial-proof claim.
         public void SetCoopReady(bool ready)
         {
+            if(requestedRoomMode020!=CoopRoomMode020.TowerDefense){PartyReadyStatus="Town arrival readiness is separate from tower defense.";return;}
             if (!Connected || network == null) { PartyReadyStatus = "Connect to a room before preparing your party."; return; }
             if (AdmissionsBlocked) { PartyReadyStatus = "The defense is active. Ready again at the refuge."; return; }
             var game = GameSession.Instance;
@@ -885,9 +925,10 @@ namespace OdysseyOracle
         {
             if (!partyMembers.TryGetValue(sender, out var member) || !member.Registered || !IsConnectedPeer(sender) || !Newer(serial, member.Sequence)) return;
             member.Sequence = serial;
-            if (!ready) { ResetPartyReadiness(); return; }
+            if (!ready) { RecordAcceptedPeerActivity(sender); ResetPartyReadiness(); return; }
             if (!trained) { SendPartyState(sender); return; }
             member.Ready = true;
+            RecordAcceptedPeerActivity(sender);
             RefreshPartyStatus();
             SendPartyState();
             if (AllPartyMembersReady()) StartCampaign();
@@ -1101,12 +1142,11 @@ namespace OdysseyOracle
 
         void ApplyAvatar(ulong id, Pose pose)
         {
-            if (network == null || id == network.LocalClientId) return;
+            if (network == null || !hubApplied || id == network.LocalClientId || network.IsServer && !hubSpawnSlots.Placed(id)) return;
             if (!avatars.TryGetValue(id, out var avatar) || avatar == null)
             {
-                avatar = new GameObject("Remote Oracle").AddComponent<RemoteOracleAvatar>();
-                avatar.transform.SetParent(transform, false);
-                avatar.Initialize(id, pose.Position, pose.Yaw);
+                avatar = RentRemotePlayer015(id,pose.Position,pose.Yaw);
+                if(avatar==null)return;
                 avatars[id] = avatar;
             }
             avatar.ApplyAppearance(pose.Appearance);
@@ -1117,36 +1157,17 @@ namespace OdysseyOracle
         {
             if (!avatars.TryGetValue(id, out var avatar)) return;
             avatars.Remove(id);
-            if (avatar != null) Destroy(avatar.gameObject);
+            if (avatar != null) ReturnRemotePlayer015(avatar);
         }
 
         void OnRemovedFromSession() { if (!intentionalStop) ConnectionLost("You were removed from the room, or the room closed."); }
 
-        async void ConnectionLost(string reason)
+        void ConnectionLost(string reason)
         {
             if (intentionalStop || leaving || destroyed) return;
-            ++operation;
-            leaving = Busy = true;
-            Connected = false;
-            Status = reason + " Closing the old connection...";
-            playerCount = 0;
-            var game = GameSession.Instance;
-            if (game != null) game.Pause();
-            try
-            {
-                await CancelAndDrainConnectionAttemptAsync();
-                string failure = await DisconnectAsync();
-                if (!destroyed) Status = failure == null ? reason : reason + " Room cleanup failed: " + failure;
-            }
-            catch (Exception error)
-            {
-                if (!destroyed) Status = reason + " Connection cleanup failed: " + Explain(error);
-            }
-            finally
-            {
-                leaving = false;
-                if (!destroyed) Busy = pendingConnections > 0;
-            }
+            roomPhase020=RoomConnectionPhase020.Failed;InvalidateTypedPublication020();
+            if(requestedRoomMode020==CoopRoomMode020.TowerDefense)UnexpectedSoloRestartConnectionLoss?.Invoke();
+            BeginOwnedLeave(true, false, reason);
         }
 
         async Task FailConnectionAsync(RoomConnectionAttempt attempt, Exception error)
@@ -1173,24 +1194,47 @@ namespace OdysseyOracle
 
         async Task<string> DisconnectCoreAsync()
         {
+            bool closeHostedSession = closeHostedSessionNextDisconnect;
+            closeHostedSessionNextDisconnect = false;
             intentionalStop = true;
             Connected = false;
+            var retiringTownGrant020=campaignTownRoomGrant020;campaignTownRoomGrant020=default;InvalidateTypedPublication020();
+            if(roomPhase020!=RoomConnectionPhase020.Failed&&roomPhase020!=RoomConnectionPhase020.Canceled)roomPhase020=RoomConnectionPhase020.Leaving;
             CampaignActive = campaignPending = false;
             ResetParty();
             playerCount = 0;
             sequence = 0;
             var leaving = session;
             session = null;
+            if (leaving == null && pendingIdleHostDeletion != null)
+            {
+                leaving = pendingIdleHostDeletion; pendingIdleHostDeletion = null;
+                closeHostedSession = true;
+            }
             if (leaving != null) leaving.RemovedFromSession -= OnRemovedFromSession;
             string failure = null;
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown)
+            {try{RetireCampaignTownRoomTransport020(retiringTownGrant020);}catch(Exception error){failure=Explain(error);}}
             try { DetachNetwork(); ClearAvatars(); }
-            catch (Exception error) { failure = Explain(error); }
+            catch (Exception error) { failure = failure==null?Explain(error):failure+"; "+Explain(error); }
             // MPS owns its NGO session. LeaveAsync awaits the SDK's transport stop;
             // direct Shutdown before it bypasses that lifecycle owner.
             if (leaving != null)
             {
-                try { await leaving.LeaveAsync(); }
-                catch (Exception error) { failure = Explain(error); }
+                try
+                {
+                    if (closeHostedSession)
+                    {
+                        if (!leaving.IsHost) throw new InvalidOperationException("The captured room is no longer host-owned.");
+                        await leaving.AsHost().DeleteAsync();
+                    }
+                    else await leaving.LeaveAsync();
+                }
+                catch (Exception error)
+                {
+                    if (closeHostedSession) pendingIdleHostDeletion = leaving;
+                    failure = failure==null?Explain(error):failure+"; "+Explain(error);
+                }
             }
             // An unreturned/failed session can leave an orphan manager. Only that
             // remaining transport uses the guarded, bounded direct-stop fallback.
@@ -1207,6 +1251,7 @@ namespace OdysseyOracle
                 if (!destroyed) await Awaitable.NextFrameAsync();
             }
             else network = null;
+            if(roomPhase020!=RoomConnectionPhase020.Failed&&roomPhase020!=RoomConnectionPhase020.Canceled)roomPhase020=RoomConnectionPhase020.Offline;
             return failure;
         }
 
@@ -1232,6 +1277,12 @@ namespace OdysseyOracle
 
         void DetachNetwork()
         {
+            if(requestedRoomMode020==CoopRoomMode020.CampaignTown)
+            {if(network!=null){network.OnClientConnectedCallback-=OnClientConnected;network.OnClientDisconnectCallback-=OnClientDisconnected;}handlersRegistered=false;return;}
+            ReleaseXpTransport015();
+            ReleaseLaneBuildTransport015();
+            ReleaseArenaImpactTransport();
+            ReleaseRoomReactionTransport();
             if (network == null) return;
             network.OnClientConnectedCallback -= OnClientConnected;
             network.OnClientDisconnectCallback -= OnClientDisconnected;
@@ -1239,8 +1290,16 @@ namespace OdysseyOracle
             {
                 network.CustomMessagingManager.UnregisterNamedMessageHandler(UploadChannel);
                 network.CustomMessagingManager.UnregisterNamedMessageHandler(SnapshotChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(HubSpawnChannel);
                 network.CustomMessagingManager.UnregisterNamedMessageHandler(CampaignChannel);
                 network.CustomMessagingManager.UnregisterNamedMessageHandler(ReliableChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(IdleChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(SharedLabChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(RoomReactionChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(RefugeFlameEventChannel020);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(ArenaImpactChannel);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(XpChannel015);
+                network.CustomMessagingManager.UnregisterNamedMessageHandler(LaneBuildChannel015);
             }
             handlersRegistered = false;
         }
@@ -1261,7 +1320,7 @@ namespace OdysseyOracle
 
         void ClearAvatars()
         {
-            foreach (var item in avatars) if (item.Value != null) Destroy(item.Value.gameObject);
+            foreach (var item in avatars) if (item.Value != null) ReturnRemotePlayer015(item.Value);
             avatars.Clear();
             poses.Clear();
             lastUpload.Clear();
@@ -1295,3 +1354,48 @@ namespace OdysseyOracle
 // Coordinate Space: unchanged main-thread SDK/NGO connection ownership, no spatial changes.
 // Array Formats: existing fixed8 admission/pose formats and one existing attempt lease remain unchanged.
 // Dependencies/Pointers: reject foreign active managers before taking cleanup ownership; stale tickets cannot replace status after await.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: host accepted World contacts and existing run/epoch/shot identity; no damage/HP/path permission changes.
+// Array Formats: existing bounded launch receipts add three-bit landing dedupe; fixed256B shared wire unchanged; new64B arena frame through existing NGO pipeline.
+// Dependencies/Pointers: sole host/network/audio owners retain authority, lifetime and gesture/focus policies; actual peer/audio acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original Oracle accepted world roots and camera/child-local poses only; no authority geometry changes.
+// Array Formats: Fixed31shared body slots/2prewarmed player graphs and original palette/pose/feedback buffers; no wire ABI growth.
+// Dependencies/Pointers: Player/Rooms/Combat remain sole owners; root integrates default-OFF original native player pilot and verifies real bindings/peer/clearance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authenticated service/NGO room boundary; no gameplay/root changes.
+// Array Formats: Existing fixed DTOs and same-length ASCII WireProtocol; one central0.1.1 RoomType for create/join.
+// Dependencies/Pointers: Existing approval compares exact bytes before remote reservation, party capabilities share the same constant; no new protocol owner. Native/service rejection and same-build join pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing connection teardown and accepted refuge event scope.
+// Array Formats: one extra named-handler unregister only, existing writer disposal unchanged.
+// Dependencies/Pointers: normal disconnect/reload lifetime invalidates World receipts; no new transport owner, state-frame bytes, message authority or gameplay state.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Explicit typed room destination and accepted local arrival; legacy TD2 refuge/arena semantics retained.
+// Array Formats: Existing current buffers/wire retained for TD; cold mode/cap/protocol SDK metadata and one operation-derived online publication.
+// Dependencies/Pointers: Campaign has no default destination/transport implementation and cannot fall through to BeginCoop/defense/solo recovery. Root owns full town lease/peer protocol, source import and actual two-peer proof; Quick Host stays preparing.

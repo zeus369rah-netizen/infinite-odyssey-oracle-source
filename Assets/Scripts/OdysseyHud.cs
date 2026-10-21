@@ -47,6 +47,7 @@ namespace OdysseyOracle
         private UnityEngine.UI.Image crosshair;
         private UnityEngine.UI.Text healthText;
         private UnityEngine.UI.Text chargeText;
+        private UnityEngine.UI.Text ultimateLabel020;
         private UnityEngine.UI.Text elementLabel;
         private UnityEngine.UI.Text objectiveText;
         private UnityEngine.UI.Text progressText;
@@ -64,6 +65,7 @@ namespace OdysseyOracle
         private UnityEngine.UI.Button primaryButton;
         private UnityEngine.UI.Button restartButton;
         private UnityEngine.UI.Button pauseButton;
+        private UnityEngine.UI.Text pointerButtonLabel015;
         private UnityEngine.UI.Slider sensitivitySlider;
         private RectTransform sensitivityRow;
         private UnityEngine.UI.Image[] charges;
@@ -94,6 +96,7 @@ namespace OdysseyOracle
             public UnityEngine.UI.Image[] Border;
             public UnityEngine.UI.Graphic[] Icon;
             public UnityEngine.UI.Image EmblemImage;
+            public UnityEngine.UI.Image UltimateOverlay020;
             public int DisplayState = -1, DisplayLevel = -1, DisplayCooldownTenths = -1;
             public string DisplayKey;
         }
@@ -196,10 +199,16 @@ namespace OdysseyOracle
 
         private void OnDestroy()
         {
+            DisposeCampaignBook020();
+            DisposeAchievementBadges020();
+            DisposeObjectiveCompass();
+            DisposeAnvilPreview();
+            DisposeMenuShowcase();
             DisposeCustomization();
             StopBookReveal();
             BookWritingStateChanged = null;
             if (interfacePreferences != null) interfacePreferences.Changed -= InterfacePreferencesChanged;
+            DetachDialogueSettings020();
             if (lowHealthSprite != null) Destroy(lowHealthSprite);
             if (lowHealthTexture != null) Destroy(lowHealthTexture);
         }
@@ -208,6 +217,7 @@ namespace OdysseyOracle
         {
             var location = Rect(hudRoot, "Location", new Vector2(.5f, 1), new Vector2(.5f, 1),
                 new Vector2(0, -37), new Vector2(630, 90));
+            BindTopHeading020(location);
             Label(location, "Journey", "INFINITE ODYSSEY", 13, Muted, TextAnchor.UpperCenter,
                 new Vector2(0, -2), new Vector2(620, 24), new Vector2(.5f, 1));
             Label(location, "LocationName", "THE LOWER CATACOMBS", 27, Ivory, TextAnchor.MiddleCenter,
@@ -223,8 +233,9 @@ namespace OdysseyOracle
                 new Vector2(18, -15), new Vector2(299, 22), new Vector2(0, 1));
             objectiveText = Label(objective, "Objective", "", 18, Ivory, TextAnchor.UpperLeft,
                 new Vector2(18, -45), new Vector2(299, 62), new Vector2(0, 1));
-            pauseButton = Button(hudRoot, "PauseButton", "PAUSE  [ESC]", new Vector2(1, 1), new Vector2(1, 1),
-                new Vector2(-36, -35), new Vector2(155, 43), () => session.Pause());
+            pauseButton = Button(hudRoot, "PauseButton", "PAUSE", new Vector2(1, 1), new Vector2(1, 1),
+                new Vector2(-36, -35), new Vector2(155, 43), () => {if(session.CursorFree015)session.Resume();else session.Pause();});
+            pointerButtonLabel015=pauseButton.GetComponentInChildren<UnityEngine.UI.Text>();
             Label(hudRoot, "GraphicsAPI", GraphicsLabel(), 11, Muted, TextAnchor.UpperRight,
                 new Vector2(-36, -86), new Vector2(335, 20), new Vector2(1, 1));
             shrineStatusText = Label(hudRoot, "ActiveShrineStatus", "", 12, Emerald, TextAnchor.UpperRight,
@@ -256,11 +267,16 @@ namespace OdysseyOracle
             }
             chargeText = Label(health, "ChargeValue", "0 / 4", 13, Ivory, TextAnchor.MiddleRight,
                 new Vector2(-18, -85), new Vector2(80, 22), new Vector2(1, 1));
+            BuildStamina020(health);
 
             spellRoot = Rect(hudRoot, "ElementAbilities", new Vector2(.5f, 0), new Vector2(.5f, 0),
                 new Vector2(0, 58), new Vector2(660, 164));
             spells = new SpellView[4];
             for (var i = 0; i < spells.Length; i++) spells[i] = BuildSpell(spellRoot, i);
+            ultimateLabel020 = Label(spellRoot, "UltimateAbility020", "ULTIMATE ABILITY", 22, Ivory, TextAnchor.MiddleCenter,
+                new Vector2(0, 116), new Vector2(500, 32), new Vector2(.5f, .5f));
+            ultimateLabel020.raycastTarget = false;
+            ultimateLabel020.gameObject.SetActive(false);
 
             var progress = Rect(hudRoot, "OracleExperienceSlider", new Vector2(0, 0), new Vector2(0, 0),
                 new Vector2(36, 14), new Vector2(0, 34));
@@ -312,13 +328,16 @@ namespace OdysseyOracle
             minimapOpacityGroup.blocksRaycasts = false;
             minimapTitle = Label(map, "MapTitle", "TUTORIAL ROOM · SOLO", 12, Gold, TextAnchor.MiddleCenter,
                 new Vector2(0, -16), new Vector2(207, 22), new Vector2(.5f, 1));
-            Rule(map, "MapDivider", new Vector2(0, 93.5f), new Vector2(190, 1), MutedGold);
+            mapDividerLine=Rect(map,"MapDivider",new Vector2(.5f,.5f),new Vector2(.5f,.5f),new Vector2(0,93.5f),new Vector2(190,1));
+            Paint(mapDividerLine,MutedGold);
             mapSurface = Rect(map, "ActualDungeonFootprint", new Vector2(.5f, 1), new Vector2(.5f, 1),
                 new Vector2(0, -59), new Vector2(182, 186));
             mapSurface.gameObject.AddComponent<UnityEngine.UI.RectMask2D>();
             mapLegend = Label(map, "MapLegend", "GREEN: YOU · VIOLET: PORTAL", 9, Muted, TextAnchor.MiddleCenter,
                 new Vector2(0, 5), new Vector2(214, 42), new Vector2(.5f, 0));
             TryBuildMap();
+            BuildReadinessHud();
+            BuildCampaignCycleHud020();
             ApplyMinimapPreferences();
         }
 
@@ -386,13 +405,12 @@ namespace OdysseyOracle
                     MapPosition(session.World.PortalPosition), new Vector2(8, 8));
                 portal.localRotation = Quaternion.Euler(0, 0, 45);
                 portalMarker = Paint(portal, new Color(.42f, .25f, .56f));
+                var portalGlyph=CreateMapIcon020(portal,5,Ivory,14);
+                portalGlyph.rectTransform.localRotation=Quaternion.Euler(0,0,-45);
             }
             mapPlayer = Rect(mapSurface, "PlayerPositionAndFacing", Vector2.zero, new Vector2(.5f, .5f),
                 Vector2.zero, new Vector2(10, 10));
-            Diamond(mapPlayer, "PlayerDot", Vector2.zero, 6, Emerald);
-            var facing = Rect(mapPlayer, "Facing", new Vector2(.5f, .5f), new Vector2(.5f, 0),
-                new Vector2(0, 3), new Vector2(2, 9));
-            Paint(facing, new Color(.7f, 1, .86f, .85f));
+            CreateMapIcon020(mapPlayer,6,Emerald,12);
             for (var i = 0; i < OracleCombat.MaxActiveEnemies; i++)
                 AcquireMapMarker(groundUnitMarkers, i, "LiveGroundUnit", 3.5f, new Color(.92f, .38f, .31f)).gameObject.SetActive(false);
             for (var i = 0; i < 24; i++)
@@ -467,6 +485,7 @@ namespace OdysseyOracle
                 marker.gameObject.SetActive(true);
             }
             HideUnusedMapMarkers(towerMarkers, towerIndex);
+            RefreshRefugeStationMapOverlay();
             if (mapPlayer != null && mapPlayer.GetSiblingIndex() != mapSurface.childCount - 1) mapPlayer.SetAsLastSibling();
         }
 
@@ -503,6 +522,9 @@ namespace OdysseyOracle
             view.Key = key;
             view.Background = Paint(diamond, Panel);
             view.Border = Border(diamond, MutedGold, 1.5f);
+            view.UltimateOverlay020 = Paint(Stretch(diamond, "UltimateRainbow020", 2, 2, 2, 2), Color.clear);
+            view.UltimateOverlay020.raycastTarget = false;
+            view.UltimateOverlay020.enabled = false;
             var icon = Rect(slot, "AbilitySigil", new Vector2(.5f, .5f), new Vector2(.5f, .5f),
                 new Vector2(0, 14), new Vector2(32, 32));
             var emblem = OracleElementEmblems.Get(index);
@@ -581,14 +603,18 @@ namespace OdysseyOracle
         private void Update()
         {
             if (!built || session == null) return;
+            if(UpdateCampaignBook020())return;
             FitMenuToWindow();
             UpdateMenu();
             UpdateLowHealthWarning();
             UpdateExpandedUi();
             RefreshTrainingLab();
             UpdatePartyHealth();
+            RefreshReadinessHud();
             if (!session.HasStarted) { experiencePresentationReady = false; return; }
             RefreshLocalHudHealth();
+            UpdateStamina020();
+            if(UpdateCampaignHubHud020())return;
             UpdateExperiencePresentation();
             TryBuildMap();
             RefreshMinimapContext();
@@ -709,7 +735,7 @@ namespace OdysseyOracle
                 && (session.Tutorial == null || session.Tutorial.Finished) ? session.RefugeNpcs.NextObjectives : session.Objective);
             if (session.Combat != null)
             {
-                chargeText.text = AbilityGuidePreviewIndex >= 0 ? "PREVIEW" : SelectionCountLabel(session.Combat.ConfirmedMask);
+                chargeText.text = AbilityGuidePreviewIndex >= 0 ? "PREVIEW" : session.Combat.ConfirmedMask == 15 ? "4 / 4" : SelectionCountLabel(session.Combat.ConfirmedMask);
                 interactionText.text = session.Paused || session.Victory || session.IsDead || session.IsDowned ? ""
                     : !string.IsNullOrEmpty(session.DownedHint) ? session.DownedHint
                     : session.Builder != null && session.Builder.IsPlacing ? session.Builder.Hint
@@ -732,7 +758,10 @@ namespace OdysseyOracle
             if (progression == null || combat == null) return;
             var previewIndex = AbilityGuidePreviewIndex;
             var preview = previewIndex >= 0 && previewIndex < 4;
-            var incompleteRecipe = SpellIngredientRules.Count(combat.ConfirmedMask) == 3;
+            var tripleRecipe = SpellIngredientRules.Count(combat.ConfirmedMask) == 3;
+            bool ultimate020 = !preview && combat.ConfirmedMask == 15;
+            if (ultimateLabel020 != null && ultimateLabel020.gameObject.activeSelf != ultimate020) ultimateLabel020.gameObject.SetActive(ultimate020);
+            float rainbowPhase020 = Mathf.Repeat(Time.unscaledTime * .12f, 1f);
             for (var i = 0; i < spells.Length; i++)
             {
                 var view = spells[i];
@@ -743,8 +772,16 @@ namespace OdysseyOracle
                 var cooldown = !preview && combat.ElementSwitchCooldowns != null && i < combat.ElementSwitchCooldowns.Length
                     ? Mathf.Max(0, combat.ElementSwitchCooldowns[i]) : 0;
                 var tenths = cooldown > .001f ? Mathf.CeilToInt(cooldown * 10f) : 0;
-                var state = preview ? selected ? 0 : 1 : prepared ? 2 : confirmed ? incompleteRecipe ? 6 : 3 : tenths > 0 ? 4 : 5;
-                foreach (var edge in view.Border) edge.color = prepared ? Gold : confirmed ? incompleteRecipe ? Gold : Emerald : selected ? Gold : MutedGold;
+                var state = ultimate020 ? 7 : preview ? selected ? 0 : 1 : prepared ? 2 : confirmed ? tripleRecipe ? 6 : 3 : tenths > 0 ? 4 : 5;
+                foreach (var edge in view.Border) edge.color = prepared ? Gold : confirmed ? tripleRecipe ? Gold : Emerald : selected ? Gold : MutedGold;
+                view.UltimateOverlay020.enabled = ultimate020;
+                if (ultimate020)
+                {
+                    Color rainbow020 = Color.HSVToRGB(Mathf.Repeat(rainbowPhase020 + i * .25f, 1f), .76f, 1f);
+                    foreach (var edge in view.Border) edge.color = rainbow020;
+                    rainbow020.a = .28f;
+                    view.UltimateOverlay020.color = rainbow020;
+                }
                 foreach (var icon in view.Icon) icon.color = icon == view.EmblemImage ? Color.white : Color.Lerp(color, Ivory, selected ? .22f : 0);
                 view.Background.color = selected ? new Color(.07f, .13f, .11f, .95f) : Panel;
                 view.Veil.enabled = tenths > 0;
@@ -757,7 +794,7 @@ namespace OdysseyOracle
                 {
                     view.DisplayState = state; view.DisplayLevel = progression.Levels[i];
                     var label = state == 0 ? "GUIDE PREVIEW" : state == 1 ? "AVAILABLE" : state == 2 ? "PREPARED"
-                        : state == 3 ? "CONFIRMED" : state == 4 ? "RECOVERING" : state == 6 ? "ADD FOURTH" : "READY";
+                        : state == 3 ? "CONFIRMED" : state == 4 ? "RECOVERING" : state == 6 ? "TRIPLE VOLLEY" : state == 7 ? "ULTIMATE" : "READY";
                     view.Name.text = progression.ElementNames[i] + "  Lv " + progression.Levels[i] + "\n" + label;
                 }
                 var key = AbilityBindings.GetLabel(i);
@@ -772,7 +809,7 @@ namespace OdysseyOracle
             UpdateExpandedMenu();
         }
 
-        private static string GraphicsLabel() => "PLAYTEST " + Application.version + "  ·  " + SystemInfo.graphicsDeviceType;
+        private static string GraphicsLabel() => "BETA " + Application.version + "  ·  Unity 6.6 (" + Application.unityVersion + ")  ·  " + SystemInfo.graphicsDeviceType;
 
         private static void SetFill(UnityEngine.UI.Image fill, float value)
         {
@@ -1008,3 +1045,37 @@ namespace OdysseyOracle
 // Coordinate Space: Existing Y-up refuge/Canvas and true floor contact.
 // Array Formats: Fixed activity anchors, existing bounded combat/room owners and event-only UI.
 // Dependencies/Pointers: Root-integrated tutorial activities retain the connected party and use the existing Skip/Resume authority.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing Canvas/start-card reference coordinates; additive start-only scripted visual lease; existing pointer/focus policies unchanged.
+// Array Formats: Private fixed native pose buffers and completed fences belong only to preview; no gameplay or website integration.
+// Dependencies/Pointers: Existing World/Rooms/HP/save/audio owners remain canonical; saved assets are borrowed and the isolated visual lease is privately owned.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing World/Canvas; one objective compass replaces floor-arrow publication, actual map legend retained.
+// Array Formats: one bounded HUD/native store with fenced disposal; preserved original floor recipe stays inactive.
+// Dependencies/Pointers: original tutorial/campaign/physics/input authorities unchanged; source-only integration/native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing Canvas/minimap-local readiness footer; actual accepted1/2-member state and separate8-level label.
+// Array Formats: Cold bounded cached captions and value-only view/layout; no hot allocation or native owner.
+// Dependencies/Pointers: Read-only ready/phase/remaining-seconds; existing parent/menu/map ownership and bottom-HUD fit retained; root native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing HUD/menu lifecycle; immediate hide/dispose for one private TowerAnvil atlas.
+// Array Formats: cached presentation owner only; completed native writers before hiding/disposal, no perframe resource creation.
+// Dependencies/Pointers: existing menu/input/pause/purchase/save authority unchanged; native/browser acceptance root-owned.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing HUD/start/pause label rectangles; no world or gameplay changes.
+// Array Formats: Cold-created beta/game/engine/backend caption; reads the actual Application.unityVersion.
+// Dependencies/Pointers: Game release channel is Beta; engine version is Unity 6.6 with its actual full patch identifier. No frame-loop allocation or version-setting mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing player world metres/Y-up, listener-relative audio and lower-left HUD vitals Canvas.
+// Array Formats: One scalar stamina state, cold cached UI/clip references and same four shared cue voices; no save, wire, collision or authority fields change.
+// Dependencies/Pointers: OraclePlayer owns controlled stamina transitions and existing motion smoothing. Exhaustion locks until fresh recovered press; root owns all Assets/import/runtime/browser acceptance.

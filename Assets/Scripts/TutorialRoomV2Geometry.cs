@@ -79,43 +79,35 @@ namespace OdysseyOracle
         }
         static void BuildWalls(TutorialRoomV2Layout l,ITutorialRoomV2Sink s)
         {
+            var walls=new TutorialRoomV2WallBoundary(s);
             foreach(int side in new[]{-1,1}){
                 float cursor=TutorialRoomV2Layout.StartZ;
-                foreach(float c in l.AlcoveCenters){Panel(s,0,side,side*l.HalfWidth,cursor,c-TutorialRoomV2Layout.DoorHalfWidth,0,l.CeilingY);cursor=c+TutorialRoomV2Layout.DoorHalfWidth;}
-                Panel(s,0,side,side*l.HalfWidth,cursor,TutorialRoomV2Layout.EndZ,0,l.CeilingY);
+                foreach(float c in l.AlcoveCenters){walls.Panel(0,side,side*l.HalfWidth,cursor,c-TutorialRoomV2Layout.DoorHalfWidth,0,l.CeilingY);cursor=c+TutorialRoomV2Layout.DoorHalfWidth;}
+                walls.Panel(0,side,side*l.HalfWidth,cursor,TutorialRoomV2Layout.EndZ,0,l.CeilingY);
                 foreach(float c in l.AlcoveCenters){
-                    Panel(s,0,side,side*l.HalfWidth,c-TutorialRoomV2Layout.DoorHalfWidth,c+TutorialRoomV2Layout.DoorHalfWidth,TutorialRoomV2Layout.DoorHeight,l.CeilingY);
+                    walls.Panel(0,side,side*l.HalfWidth,c-TutorialRoomV2Layout.DoorHalfWidth,c+TutorialRoomV2Layout.DoorHalfWidth,TutorialRoomV2Layout.DoorHeight,l.CeilingY);
                     float min=side<0?-l.OuterX:l.HalfWidth,max=side<0?-l.HalfWidth:l.OuterX;
-                    foreach(int end in new[]{-1,1})Panel(s,2,end,c+end*TutorialRoomV2Layout.AlcoveHalfLength,min,max,0,l.CeilingY);
-                    if(side<0)Panel(s,0,side,side*l.OuterX,c-TutorialRoomV2Layout.AlcoveHalfLength,c+TutorialRoomV2Layout.AlcoveHalfLength,0,l.CeilingY);
+                    foreach(int end in new[]{-1,1})walls.Panel(2,end,c+end*TutorialRoomV2Layout.AlcoveHalfLength,min,max,0,l.CeilingY);
+                    if(side<0)walls.Panel(0,side,side*l.OuterX,c-TutorialRoomV2Layout.AlcoveHalfLength,c+TutorialRoomV2Layout.AlcoveHalfLength,0,l.CeilingY);
                     else{
-                        Panel(s,0,1,l.OuterX,c-TutorialRoomV2Layout.AlcoveHalfLength,c-TutorialRoomV2Layout.WindowHalfWidth,0,l.CeilingY);
-                        Panel(s,0,1,l.OuterX,c+TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.AlcoveHalfLength,0,l.CeilingY);
-                        Panel(s,0,1,l.OuterX,c-TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.WindowHalfWidth,0,TutorialRoomV2Layout.WindowBottom);
-                        Panel(s,0,1,l.OuterX,c-TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.WindowHalfWidth,TutorialRoomV2Layout.WindowTop,l.CeilingY);
+                        walls.Panel(0,1,l.OuterX,c-TutorialRoomV2Layout.AlcoveHalfLength,c-TutorialRoomV2Layout.WindowHalfWidth,0,l.CeilingY);
+                        walls.Panel(0,1,l.OuterX,c+TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.AlcoveHalfLength,0,l.CeilingY);
+                        walls.Panel(0,1,l.OuterX,c-TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.WindowHalfWidth,0,TutorialRoomV2Layout.WindowBottom);
+                        walls.Panel(0,1,l.OuterX,c-TutorialRoomV2Layout.WindowHalfWidth,c+TutorialRoomV2Layout.WindowHalfWidth,TutorialRoomV2Layout.WindowTop,l.CeilingY);
                     }
                     // Framing stays outside the explicit rectangular clear aperture.
-                    foreach(int end in new[]{-1,1})s.Box(RoomV2Paint.PaleStone,new P3(side*l.HalfWidth,2.6f,c+end*2.49f),new P3(.72f,5.2f,.38f));
-                    s.Box(RoomV2Paint.PaleStone,new P3(side*l.HalfWidth,5.4f,c),new P3(.76f,.4f,4.6f));
-                    for(int step=0;step<3;step++)foreach(int end in new[]{-1,1})s.Box(RoomV2Paint.DeepStone,new P3(side*l.HalfWidth,5.8f+step*.26f,c+end*(1.7f-step*.6f)),new P3(.8f,.3f,.9f));
+                    foreach(int end in new[]{-1,1})walls.Box(RoomV2Paint.PaleStone,new P3(side*l.HalfWidth,2.6f,c+end*2.49f),new P3(.72f,5.2f,.38f));
+                    walls.Box(RoomV2Paint.PaleStone,new P3(side*l.HalfWidth,5.4f,c),new P3(.76f,.4f,4.6f));
+                    for(int step=0;step<3;step++)foreach(int end in new[]{-1,1})walls.Box(RoomV2Paint.DeepStone,new P3(side*l.HalfWidth,5.8f+step*.26f,c+end*(1.7f-step*.6f)),new P3(.8f,.3f,.9f));
                 }
             }
-            Panel(s,2,-1,-13.95f,-l.HalfWidth,l.HalfWidth,0,l.CeilingY);Panel(s,2,1,27.85f,-l.HalfWidth,l.HalfWidth,0,l.CeilingY);
+            walls.Panel(2,-1,-13.95f,-l.HalfWidth,l.HalfWidth,0,l.CeilingY);walls.Panel(2,1,27.85f,-l.HalfWidth,l.HalfWidth,0,l.CeilingY);
+            walls.Finish();
         }
-        static void Panel(ITutorialRoomV2Sink s,int axis,int sign,float plane,float min,float max,float bottom,float top)
-        {
-            if(max-min<.0001f||top-bottom<.0001f)return;
-            P3 core=Axis(axis,plane+sign*.282f,(min+max)*.5f,(bottom+top)*.5f),size=axis==0?new P3(.5f,top-bottom,max-min):new P3(max-min,top-bottom,.5f);
-            s.Box(RoomV2Paint.Stone,core,size);s.Collider("RoomV2 structural masonry",core,size);
-            for(float y=bottom;y<top-.001f;y+=.8f)for(float u=min;u<max-.001f;u+=1f){
-                float end=Math.Min(u+1,max),high=Math.Min(y+.8f,top);RoomV2Paint paint=Hash((int)(u*10),(int)(y*10),axis+sign+13)%13==0?RoomV2Paint.Moss:RoomV2Paint.Stone;
-                s.Box(paint,Axis(axis,plane+sign*.1f,(u+end)*.5f,(y+high)*.5f),axis==0?new P3(.2f,high-y-.002f,end-u-.002f):new P3(end-u-.002f,high-y-.002f,.2f));
-            }
-        }
-        static P3 Axis(int axis,float normal,float u,float y)=>axis==0?new P3(normal,y,u):new P3(u,y,normal);
         static void BuildVault(TutorialRoomV2Layout l,ITutorialRoomV2Sink s)
         {
-            foreach(R2 room in l.Rooms)s.Box(RoomV2Paint.Stone,new P3((room.MinU+room.MaxU)*.5f,l.CeilingY+.282f,(room.MinV+room.MaxV)*.5f),new P3(room.MaxU-room.MinU,.5f,room.MaxV-room.MinV));
+            var vault=new TutorialRoomV2WallBoundary(s);
+            foreach(R2 room in l.Rooms)vault.Box(RoomV2Paint.Stone,new P3((room.MinU+room.MaxU)*.5f,l.CeilingY+.282f,(room.MinV+room.MaxV)*.5f),new P3(room.MaxU-room.MinU,.5f,room.MaxV-room.MinV));
             foreach(float z in l.PierRows)foreach(int side in new[]{-1,1}){
                 float x=side*l.PierX;
                 s.Box(RoomV2Paint.Stone,new P3(x,3.95f,z),new P3(.90f,7.9f,.94f));
@@ -129,13 +121,14 @@ namespace OdysseyOracle
                 s.Box(RoomV2Paint.PaleStone,new P3(x,8.13f,z),new P3(1.48f,.24f,1.52f));
                 s.Box(RoomV2Paint.DeepStone,new P3(x-side*.48f,2.7f,z),new P3(.055f,2.8f,.4f));
                 s.Box(RoomV2Paint.Brass,new P3(x-side*.52f,3.82f,z),new P3(.055f,.07f,.5f));
-                for(int block=0;block<7;block++){float along=(l.PierX-.35f)*(1f-block/7f);float y=8.18f+block*(l.CeilingY-.35f-8.18f)/6f;s.Box(block%2==0?RoomV2Paint.Stone:RoomV2Paint.PaleStone,new P3(side*along,y,z),new P3((l.PierX-.35f)/7f+.09f,.6f,1.18f));}
+                for(int block=0;block<7;block++){float along=(l.PierX-.35f)*(1f-block/7f);float y=8.18f+block*(l.CeilingY-.35f-8.18f)/6f;vault.Box(block%2==0?RoomV2Paint.Stone:RoomV2Paint.PaleStone,new P3(side*along,y,z),new P3((l.PierX-.35f)/7f+.09f,.6f,1.18f));}
                 // Restrained moss runs cling to existing stone, avoiding the mounted fire panel.
                 for(int leaf=0;leaf<7;leaf++)s.Box(leaf%2==0?RoomV2Paint.Moss:RoomV2Paint.Green,new P3(x+side*.50f,7.0f-leaf*.42f,z+.36f),new P3(.065f,.22f,.16f),0,0,side*12f);
             }
             // Width derives from the last arch step; each supported hall width keeps a25mm overlap.
             float keyWidth=Math.Max(.85f,(l.PierX-.35f)/7f-.04f);
-            foreach(float z in l.PierRows)s.Box(RoomV2Paint.PaleStone,new P3(0,l.CeilingY-.08f,z),new P3(keyWidth,.55f,1.2f));
+            foreach(float z in l.PierRows)vault.Box(RoomV2Paint.PaleStone,new P3(0,l.CeilingY-.08f,z),new P3(keyWidth,.55f,1.2f));
+            vault.Finish();
             foreach(float z in new[]{-1.3f,10.8f,21f}){
                 float y=z>10f&&z<11f?5.7f:5.9f;
                 int links=(int)Math.Ceiling((l.CeilingY-y-.08f)/.17f)+1;
@@ -157,14 +150,14 @@ namespace OdysseyOracle
         {
             foreach(float c in l.AlcoveCenters){
                 float x=l.OuterX,mid=(TutorialRoomV2Layout.WindowBottom+TutorialRoomV2Layout.WindowTop)*.5f;
-                foreach(int side in new[]{-1,1})s.Box(RoomV2Paint.PaleStone,new P3(x-.15f,mid,c+side*1.82f),new P3(1.2f,6.2f,.16f));
-                s.Box(RoomV2Paint.PaleStone,new P3(x-.15f,1.68f,c),new P3(1.2f,.16f,3.8f));s.Box(RoomV2Paint.PaleStone,new P3(x-.15f,7.72f,c),new P3(1.2f,.16f,3.8f));
+                foreach(int side in new[]{-1,1}){P3 frame=new P3(x-.15f,mid,c+side*1.82f),size=new P3(1.2f,6.2f,.16f);s.Box(RoomV2Paint.PaleStone,frame,size);s.Collider("RoomV2 window reveal side",frame,size);}
+                foreach(float height in new[]{1.68f,7.72f}){P3 frame=new P3(x-.15f,height,c),size=new P3(1.2f,.16f,3.8f);s.Box(RoomV2Paint.PaleStone,frame,size);s.Collider("RoomV2 window reveal sill/lintel",frame,size);}
                 for(int bar=0;bar<6;bar++){
                     float z=c-1.5f+bar*.6f;P3 center=new P3(x-.22f,4.7f,z),size=new P3(.16f,5.88f,.10f);
                     s.Box(RoomV2Paint.Iron,center,size);s.Collider("RoomV2 solid window grille",center,size);
                     for(int strap=0;strap<5;strap++)s.Box(RoomV2Paint.Brass,new P3(x-.32f,2.35f+strap*1.15f,z),new P3(.035f,.075f,.075f));
                 }
-                for(int strap=0;strap<5;strap++)s.Box(RoomV2Paint.Iron,new P3(x-.27f,2.35f+strap*1.15f,c),new P3(.18f,.10f,3.48f));
+                for(int strap=0;strap<5;strap++){P3 rail=new P3(x-.27f,2.35f+strap*1.15f,c),size=new P3(.18f,.10f,3.48f);s.Box(RoomV2Paint.Iron,rail,size);s.Collider("RoomV2 solid window grille rail",rail,size);}
                 foreach(int side in new[]{-1,1})for(int vine=0;vine<8;vine++)s.Box(vine%2==0?RoomV2Paint.Moss:RoomV2Paint.Green,new P3(x-.79f,7.5f-vine*.42f,c+side*1.85f),new P3(.10f,.24f,.12f),0,side*12f,0);
                 // Cheap original dust flecks and translucent shafts; no volumetric fog/point lights.
                 for(int dust=0;dust<12;dust++)s.Box(RoomV2Paint.Azure,new P3(x-.95f-(dust%4)*.55f,1.4f+(dust%5)*.7f,c-1.1f+(dust%3)*.7f),new P3(.012f,.012f,.012f));
@@ -214,4 +207,9 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Coordinate Space: Exact existing Y-up room lattice and supported furniture bases.
 // Array Formats: Cold room mesh recipes; borrowed saved geometry and fixed colliders.
-// Dependencies/Pointers: DungeonWorld owns render resources; visible skins stand 30mm before backing, never coplanar.
+// Dependencies/Pointers: DungeonWorld owns render resources; Wall render slabs emit one exposed union boundary; exact original core colliders/floors retained. No global overlap/CSG guarantee.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Exact current RoomV2 roof/arch/key solids; only exposed union faces replace overlapping coplanar surfaces.
+// Array Formats: Existing bounded97cold solid records in TutorialRoomV2WallBoundary; original geometry/material definitions and every collider call retained.
+// Dependencies/Pointers: Existing sink/boundary/resource owners; no legacy arch, layout, wall/window/floor/dressing/light/profile/save or gameplay-authority changes. Root verifies actual mesh/render captures.

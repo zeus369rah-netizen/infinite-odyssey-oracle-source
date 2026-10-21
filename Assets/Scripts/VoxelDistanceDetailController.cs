@@ -133,6 +133,7 @@ namespace OdysseyOracle
         private void BeginCamera(ScriptableRenderContext context, Camera camera)
         {
             EndScope(); // Other cameras never inherit the local camera's render flags or fog.
+            if(session!=null&&session.World!=null&&session.World.Mode020==WorldMode020.CampaignHub)return;
             if (!isActiveAndEnabled || session == null || session.Player == null || camera != session.Player.ViewCamera || camera.cameraType != CameraType.Game) return;
             if (world != session.World || arena != (session.World != null && session.World.IsCoopArena)) RefreshWorld();
             Vector3 position = camera.transform.position;

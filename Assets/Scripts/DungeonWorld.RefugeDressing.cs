@@ -33,6 +33,7 @@ namespace OdysseyOracle
             if (tutorialRefuge == null || refugeCollectDressing) return;
             if ((geometryRoot.lossyScale - Vector3.one).sqrMagnitude > 1e-8f || Vector3.Dot(geometryRoot.up, Vector3.up) < .99999f)
                 throw new InvalidOperationException("Refuge dressing requires a Y-up, yaw-only, unit-scale geometry root.");
+            LaneVignetteRenderer.RefreshWeatherSettings015();
             refugeSoftMaterial = MakeRefugePresentationMaterial("OracleRefugeSoftDressing", "Oracle/Presentation/SoftDressingCandidate");
             refugeMoteMaterial = MakeRefugePresentationMaterial("OracleRefugeCrystalMotes", "Oracle/Presentation/CrystalMotesCandidate");
             refugeRaykonMaterial = MakeRefugePresentationMaterial("OracleRefugeRaykon", "Oracle/Presentation/RaykonRigidCandidate");
@@ -68,7 +69,7 @@ namespace OdysseyOracle
                 float z = (row - 2.5f) * patchSize * .12f;
                 refugeGrass[id] = new GrassSeed {
                     RootLocal = new Vector3(requestedFloor.x + x, requestedFloor.y, requestedFloor.z + z),
-                    YawRadians = id * 2.39996323f, Height = patchSize * (.24f + (id % 5) * .035f),
+                    YawRadians = id * 2.39996323f, Height = Mathf.Min(.72f,patchSize * (.36f + (id % 5) * .045f)),
                     Width = .022f + (id % 3) * .004f, PhaseRadians = id * .73f,
                     Rgba = (id & 1) == 0 ? 0xff3d783du : 0xff498a4cu };
                 ++refugeGrassCount;
@@ -160,15 +161,19 @@ namespace OdysseyOracle
             }
             // All Unity Object calls are outside the numeric support/seed loops and after their fence.
             if (refugeGrassCount != 0) AttachRefugeDressingBatch("Supported soft 3D grass", DressingMeshBuilder.Grass(new ArraySegment<GrassSeed>(refugeGrass, 0, refugeGrassCount)), refugeSoftMaterial);
-            if (refugeCandleCount != 0) AttachRefugeDressingBatch("Batched living candle flames", DressingMeshBuilder.CandleFlames(new ArraySegment<CandleFlameSeed>(refugeCandles, 0, refugeCandleCount)), refugeSoftMaterial);
+            if (refugeCandleCount != 0){var renderer=AttachRefugeDressingBatch("Batched living candle flames", DressingMeshBuilder.CandleFlames(new ArraySegment<CandleFlameSeed>(refugeCandles, 0, refugeCandleCount)), refugeSoftMaterial);RegisterRoomReactionCandles(renderer,refugeCandles,refugeCandleCount);}
             if (refugeCrystalCount != 0) AttachRefugeDressingBatch("Batched amethyst motes", DressingMeshBuilder.CrystalMotes(new ArraySegment<CrystalEmitterSeed>(refugeCrystals, 0, refugeCrystalCount)), refugeMoteMaterial);
             RefugeGrassBladeCount = refugeGrassCount; RefugeCandleFlameCount = refugeCandleCount; RefugeCrystalEmitterCount = refugeCrystalCount;
             if (raykonSupported && refugeRaykonMaterial != null)
             {
                 BuildRefugeRaykon(raykonFeet);
+                try{BuildRoomReactionDiscoveries(raykonFeet);}catch(System.InvalidOperationException rejectedSite){Debug.LogWarning("Optional elemental discoveries omitted: "+rejectedSite.Message);}
                 try { BuildRefugeAlchemyTable(raykonFeet); }
                 catch (System.InvalidOperationException rejectedSite)
                 { Debug.LogWarning("Optional alchemy table omitted: " + rejectedSite.Message); }
+                try { BuildRefugeRaykonAlcove(raykonFeet); }
+                catch (System.InvalidOperationException rejectedSite)
+                { Debug.LogWarning("Optional Raykon library alcove omitted: " + rejectedSite.Message); }
             }
             refugeGrass = null; refugeCandles = null; refugeCrystals = null;
         }
@@ -179,7 +184,7 @@ namespace OdysseyOracle
                 HalfFootprintXZ = new float2(halfFootprint), Flags = RefugeFloorSupportMath.CheckFootprintCorners, QueryId = id };
         }
 
-        private void AttachRefugeDressingBatch(string label, Mesh mesh, Material material)
+        private MeshRenderer AttachRefugeDressingBatch(string label, Mesh mesh, Material material)
         {
             resources.Add(mesh); // Current World owns the mesh/material until its existing OnDestroy.
             var go = new GameObject(label, typeof(MeshFilter), typeof(MeshRenderer));
@@ -187,6 +192,7 @@ namespace OdysseyOracle
             go.GetComponent<MeshFilter>().sharedMesh = mesh;
             MeshRenderer renderer = go.GetComponent<MeshRenderer>(); renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off; renderer.receiveShadows = false;
+            return renderer;
         }
 
         private void BuildRefugeRaykon(Vector3 supportedFeet)
@@ -221,6 +227,7 @@ namespace OdysseyOracle
         {
             if (!IsTutorialRefuge || refugeRaykon == null) return;
             refugeRaykonTalkStart = Time.unscaledTime; refugeRaykonTalking = true; refugeRaykon.TalkBlend = 0f;
+            refugeRaykon.NotifyAcceptedTalk009();
         }
         public void EndRaykonTalk()
         {
@@ -238,6 +245,7 @@ namespace OdysseyOracle
         }
         private void DisposeRefugeDressing()
         {
+            DisposeRefugeRaykonAlcove();
             refugeRaykonTalking = false; refugeCollectDressing = false; refugeRaykonInteractionRoot=null;
             refugeRaykon?.Dispose(); refugeRaykon = null; // Mesh lease owns only Raykon's three meshes.
             refugeGrass = null; refugeCandles = null; refugeCrystals = null;
@@ -250,6 +258,16 @@ namespace OdysseyOracle
 // Array Formats: Cold fixed seed arrays grass512/candles256/crystals8, <=3 dressing batch renderers; TempJob rect float4[7]/query32/result32[<=513]/Morton occupancy ulong[1024], completed and disposed before mesh binding.
 // Dependencies/Pointers: Existing World owns dressing meshes/materials/children, Raykon lease owns its3 meshes; borrowed Resources assets/catalogs untouched. Foundation.World cold jobs are numeric only. No actor Objects inside jobs, no extra Lights, health/quest/SpatialGrid/target/projectile authority remains existing owners. Full structural/prop-overlap gate is pending root acceptance.
 // # ARCHITECTURE SNAPSHOT
-// World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
-// Bounded cached collider/root references only; no new economy/native buffers or quest bits.
-// Root owns Unity integration and native acceptance; this is a guarded work candidate.
+// Coordinate Space: World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
+// Array Formats: Bounded cached roots plus optional two-case recipe; no new economy/native hot buffers or quest bits.
+// Dependencies/Pointers: World alone binds/disposes the supported original library alcove and existing light factory; root accepts native clearance/visuals.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing supported Y-up refuge local/unit-yaw and arena-world/chunk anchor contract; no root/floor/actor/pivot change.
+// Array Formats: Existing immutable vertex/normal/UV streams and32B grass seeds; shared bounded shader wind,16original3x trees, unchanged counts/resources.
+// Dependencies/Pointers: Existing World owns cold materials/meshes; LaneVignetteRenderer publishes weather policy. No new Update/CPU spatial loop/compute dependency; root native/GPU/browser acceptance pending.

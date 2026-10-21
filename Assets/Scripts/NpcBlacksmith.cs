@@ -26,8 +26,6 @@ namespace OdysseyOracle
         GameObject visual;
         Transform breathing,head,hammerArm;
         Material emberPaint;
-        Vector3 headAngles;
-        float age;
 
         public Transform InteractionAnchor {get;private set;}
         public Transform CampfireAnchor {get;private set;}
@@ -37,7 +35,7 @@ namespace OdysseyOracle
 
         public void Initialize(OraclePlayer owner)
         {
-            Retire();player=owner;age=0f;headAngles=Vector3.zero;
+            Retire();player=owner;InitializeFluidSmith009();
             visual=new GameObject("Original voxel blacksmith and forge");
             visual.transform.SetParent(transform,false);
             var hide=Pattern("Smith original hammered grain",32,0);
@@ -74,33 +72,11 @@ namespace OdysseyOracle
                 towerAnvilCollider=AddCollider("Anvil solid base",new Vector3(1.10f,.43f,.12f),new Vector3(.64f,.86f,.56f));
                 AddCollider("Coal forge solid base",new Vector3(1.06f,.29f,1.15f),new Vector3(.86f,.58f,.72f));
                 CampfireAnchor=Child("Forge ember audio anchor",visual.transform,new Vector3(1.06f,.68f,1.15f));
+                BuildSmallRefugeFurnace(paints);
             }
         }
 
-        void LateUpdate()
-        {
-            if(visual==null)return;
-            var session=GameSession.Instance;
-            if(session!=null && (!session.HasStarted || session.Paused || session.Victory || session.IsDead))return;
-            float dt=Mathf.Min(Time.deltaTime,.05f);age+=dt;
-            float breath=Mathf.Sin(age*1.55f+.73f);
-            breathing.localPosition=new Vector3(0f,1.01f+breath*.0025f,0f);
-            breathing.localScale=new Vector3(1f,1f+breath*.004f,1f+breath*.002f);
-            // The entire closed hand and hammer move together, preserving contact.
-            hammerArm.localRotation=Quaternion.Euler(Mathf.Sin(age*.87f)*.35f,0f,Mathf.Sin(age*.71f)*.50f);
-            Vector3 target=Vector3.zero;
-            if(player!=null) {
-                Vector3 eye=player.ViewCamera!=null?player.ViewCamera.transform.position:player.transform.position+Vector3.up*1.65f;
-                Vector3 toward=transform.InverseTransformPoint(eye)-new Vector3(0f,1.66f,0f);
-                if(toward.z>.15f && toward.sqrMagnitude<49f) {
-                    target.y=Mathf.Clamp(Mathf.Atan2(toward.x,toward.z)*Mathf.Rad2Deg,-21f,21f);
-                    target.x=Mathf.Clamp(-Mathf.Atan2(toward.y,new Vector2(toward.x,toward.z).magnitude)*Mathf.Rad2Deg,-9f,9f);
-                }
-            }
-            headAngles=Vector3.Lerp(headAngles,target,1f-Mathf.Exp(-dt*3f));
-            head.localRotation=Quaternion.Euler(headAngles+new Vector3(Mathf.Sin(age*.63f)*.35f,0f,0f));
-            SetGlow(.94f+Mathf.Sin(age*1.7f)*.06f);
-        }
+        void LateUpdate(){TickFluidSmith009();TickSmithFurnace015();}
 
         void BuildLegsAndApronSkirt(Model s)
         {
@@ -355,9 +331,12 @@ namespace OdysseyOracle
         void OnDestroy(){Retire();}
         void Retire()
         {
+            DisposeSmithFurnace015();
+            DisposeFluidSmith009();
             if(visual!=null) {visual.SetActive(false);Release(visual);}
             for(int i=resources.Count-1;i>=0;i--)if(resources[i]!=null)Release(resources[i]);
             resources.Clear();visual=null;InteractionAnchor=null;CampfireAnchor=null;towerAnvilCollider=null;
+            SmallFurnaceReady=SmallFurnaceFlameReady=false;SmallFurnaceQuadCount=0;
             breathing=null;head=null;hammerArm=null;emberPaint=null;
         }
         static void Release(Object value)
@@ -441,3 +420,8 @@ namespace OdysseyOracle
 // World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
 // Bounded cached collider/root references only; no new economy/native buffers or quest bits.
 // Root owns Unity integration and native acceptance; this is a guarded work candidate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original supported Smith pose/anvil retained; full-height furnace uses cold certified east-alcove position.
+// Array Formats: One cold greedy mesh, one static solid and inherited bounded flame; no active-frame allocation additions.
+// Dependencies/Pointers: Existing resources/Retire owns furnace geometry and its new ambient record; NPC motion/voice/input/economy remain canonical.

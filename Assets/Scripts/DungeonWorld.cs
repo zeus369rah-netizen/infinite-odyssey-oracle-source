@@ -14,7 +14,7 @@ namespace OdysseyOracle
         public Vector3[] EnemySpawns { get; private set; } = MakeEnemySpawns();
         public Vector3 PortalPosition { get; private set; } = new Vector3(0f, 0.68f, 25.2f);
         public Vector3[] InvasionPortals { get; private set; } = new Vector3[0];
-        public bool IsCoopArena { get; private set; }
+        public bool IsCoopArena => worldMode020==WorldMode020.DefenseArena;
         public Vector3[] TowerBuildPads { get; private set; } = new Vector3[0];
         public TowerPlatformGeometry TowerPlatforms { get; private set; }
         public Vector3 MatchForgePosition => TowerPlatformGeometry.MatchForgePosition;
@@ -26,7 +26,7 @@ namespace OdysseyOracle
         public float ArenaMaximumChunkSpan { get; private set; }
         public string[] LaneThemes { get; } = new[] { "Fire", "Fire", "Earth", "Earth", "Water", "Water", "Air", "Air" };
         public Vector3[] LanePlatformPositions { get; private set; } = new Vector3[0];
-        // Rect.x is world X, Rect.y is world Z. These are the actual walkable room footprints.
+        // Rect.x is world X, Rect.y is world Z. Legacy rooms use floor footprints; CampaignHub rectangles are drawing bounds only.
         public Rect[] MapRooms { get; private set; } = new[]
         {
             new Rect(-5.6f, -14f, 11.2f, 42f),
@@ -70,15 +70,17 @@ namespace OdysseyOracle
 
         public void Build()
         {
+            if(GameSession.Instance!=null&&GameSession.Instance.World==this)GameSession.Instance.SharedTrainingLab?.StopContext();
+            worldPublicationReady020=false;HideCampaignHubMode020();
             ConfigureContinuousNightSky(true);
             if (built)
             {
-                if (IsCoopArena)
+                if (worldMode020!=WorldMode020.TutorialRefuge)
                 {
                     if (arenaRoot != null) arenaRoot.gameObject.SetActive(false);
                     tutorialRoot.gameObject.SetActive(true);
                     geometryRoot = tutorialRoot;
-                    IsCoopArena = false;
+                    worldMode020=WorldMode020.TutorialRefuge;
                     ShrinePosition = new Vector3(0, 0, 2);
                     PlayerSpawn = new Vector3(0, .2f, -10);
                     PortalPosition = new Vector3(0, .68f, 25.2f);
@@ -92,9 +94,11 @@ namespace OdysseyOracle
                     MapBoundary = new Vector2[0];
                     LockPortal();
                 }
+                GameSession.Instance?.Audio?.RebuildAcousticWorld015(transform);
+                RebuildXpClearance015();PublishWorldMode020();
                 return;
             }
-            built = true;
+            built = true;worldMode020=WorldMode020.TutorialRefuge;
             geometryRoot = new GameObject("Tutorial catacomb environment").transform;
             geometryRoot.SetParent(transform, false);
             tutorialRoot = geometryRoot;
@@ -121,10 +125,13 @@ namespace OdysseyOracle
             foreach (KeyValuePair<Surface, Batch> pair in batches)
                 if (pair.Value.Vertices.Count > 0) FinishTutorialBatch(pair.Key, pair.Value);
             if(windowBeams!=null)FinishBatch("Cool moonlit window shafts",windowBeams,geometryRoot,false);
+            GameSession.Instance?.Audio?.RebuildAcousticWorld015(transform);
+            RebuildXpClearance015();PublishWorldMode020();
         }
 
         public void UnlockPortal()
         {
+            bool becameReady009=!portalUnlocked;
             portalUnlocked = true;
             if (portalSeal != null) portalSeal.SetActive(false);
             if (portalMaterial != null)
@@ -133,6 +140,7 @@ namespace OdysseyOracle
                 portalMaterial.SetColor("_EmissionColor", new Color(0.62f, 0.025f, 1.4f));
             }
             if (portalCrystalMaterial != null) portalCrystalMaterial.SetColor("_EmissionColor", new Color(1.5f, 0.12f, 2.8f));
+            if(becameReady009)GameSession.Instance?.Audio?.NotifyPortalReady009(this);
         }
 
         public void LockPortal()
@@ -162,11 +170,13 @@ namespace OdysseyOracle
 
         public void BuildCoopArena()
         {
+            if(GameSession.Instance!=null&&GameSession.Instance.World==this)GameSession.Instance.SharedTrainingLab?.StopContext();
             if (!built) Build();
             if (IsCoopArena && arenaRoot != null) return;
+            worldPublicationReady020=false;HideCampaignHubMode020();
             ConfigureContinuousNightSky(false);
             tutorialRoot.gameObject.SetActive(false);
-            IsCoopArena = true;
+            worldMode020=WorldMode020.DefenseArena;
             ShrinePosition = Vector3.zero;
             PlayerSpawn = new Vector3(0, .2f, -6.7f);
             PortalPosition = new Vector3(0, 0, ArenaRingRadius);
@@ -200,17 +210,20 @@ namespace OdysseyOracle
                 portalCrystalMaterial.SetColor("_EmissionColor", new Color(1.5f,.12f,2.8f));
                 portalMaterial.SetColor("_EmissionColor", new Color(.62f,.025f,1.4f));
                 ResetArenaLaneGeometry();
+                GameSession.Instance?.Audio?.RebuildAcousticWorld015(transform);
+                RebuildXpClearance015();PublishWorldMode020();
                 return;
             }
             geometryRoot = new GameObject("Cooperative elemental wheel environment").transform;
             geometryRoot.SetParent(transform, false);
             arenaRoot = geometryRoot;
+            BeginLaneBuild015();
             buildingSpatialChunks = true;
             try
             {
             vignetteKeepouts.Clear();vignetteKeepoutOverflow=false;captureVignetteKeepouts=true;
             BuildArenaGround();
-            BuildArenaPaths();
+            laneRoadCapture015=true;BuildArenaPaths();laneRoadCapture015=false;
             TowerPlatforms = new TowerPlatformGeometry(geometryRoot,TowerBuildPads);
             BuildArenaTowerPads();
             BuildArenaBiomes();
@@ -220,19 +233,26 @@ namespace OdysseyOracle
                 BuildArenaInvasionGate(lane,LanePlatformPositions[lane],90f-lane*45f);
             invasionGateLights[4]=PointLight("West invasion amethyst glow", new Vector3(-ArenaPortalRadius+1.2f,2.3f,0),new Color(.65f,.14f,1f),13f,12f,false);
             invasionGateLights[0]=PointLight("East invasion amethyst glow", new Vector3(ArenaPortalRadius-1.2f,2.3f,0),new Color(.65f,.14f,1f),13f,12f,false);
-            foreach (float x in new[] { -36f, 36f })
-            foreach (float z in new[] { -36f, 36f })
-                PointLight("Ruined court brazier glow",new Vector3(x,2.5f,z),new Color(1f,.61f,.27f),18f,10f,false);
+            for(int index=0;index<4;index++)
+            {
+                Vector3 p=ArenaCampfirePosition020(index);
+                if(!ArenaPositionReserved(p,ArenaCampfireRadius020))
+                    PointLight("Ruined court brazier glow",p+Vector3.up*2.5f,new Color(1f,.61f,.27f),18f,10f,false);
+            }
             PointLight("Open sky soft fill",new Vector3(0,24f,0),new Color(.67f,.85f,.76f),112f,60f,false);
             FinishSpatialChunks();
             if(laneVignetteRenderer!=null){ArenaChunkMeshCount+=laneVignetteRenderer.MeshCount;ArenaVertexCount+=laneVignetteRenderer.VertexCount;
                 ArenaMaximumChunkSpan=Mathf.Max(ArenaMaximumChunkSpan,laneVignetteRenderer.MaximumChunkSpan);}
             BuildInactiveLaneBarriers();
+            FinishLaneBuild015();
+            BuildOuterIslands020();
             }
             finally { captureVignetteKeepouts=false;vignetteKeepouts.Clear();buildingSpatialChunks=false;spatialBatches.Clear(); }
             portalCrystalMaterial.SetColor("_EmissionColor", new Color(1.5f,.12f,2.8f));
             portalMaterial.SetColor("_EmissionColor", new Color(.62f,.025f,1.4f));
             ResetArenaLaneGeometry();
+            GameSession.Instance?.Audio?.RebuildAcousticWorld015(transform);
+            RebuildXpClearance015();PublishWorldMode020();
         }
 
         // Canonical mask/admission/drain API is in DungeonWorld.Lanes.cs.
@@ -249,14 +269,16 @@ namespace OdysseyOracle
         private void BuildInactiveLaneBarriers()
         {
             Shader shader=Resources.Load<Shader>("Shaders/LaneGateGrid")??Shader.Find("OdysseyOracle/LaneGateGrid");
-            bool fallback=shader==null;
+            bool fallback=shader==null||!shader.isSupported;
             if(fallback)shader=Shader.Find("Universal Render Pipeline/Unlit");
             Material grid=new Material(shader){name="Inactive elemental corridor red grid"};
-            grid.SetColor("_BaseColor",new Color(.8f,.015f,.008f,.15f));
+            grid.SetColor("_BaseColor",new Color(.72f,.018f,.045f,.45f));
             if(!fallback)
             {
-                grid.SetColor("_GridColor",new Color(1.4f,.045f,.025f,.72f));
+                grid.SetColor("_GridColor",new Color(1.8f,.055f,.12f,.78f));
+                grid.SetFloat("_BarrierEffect",1f);grid.SetColor("_ProximityColor",new Color(3.2f,.12f,.20f,.90f));
                 grid.SetFloat("_GridSpacing",.7f);grid.SetFloat("_LineWidth",.025f);
+                grid.SetFloat("_ProximityFar",6f);grid.SetFloat("_ProximityNear",1.5f);grid.SetFloat("_PulseSpeed",3.5f);
             }
             else
             {
@@ -1030,14 +1052,25 @@ namespace OdysseyOracle
             foreach (float x in new[] { -2.15f, 2.15f })
             {
                 Cube(Surface.PaleStone, new Vector3(x, 2.2f, -13.75f), new Vector3(0.75f, 4.4f, 0.6f));
+                BoxCollider("Arrival gate stone post", new Vector3(x, 2.2f, -13.75f), new Vector3(0.75f, 4.4f, 0.6f));
                 Cube(Surface.DarkStone, new Vector3(x, 0.24f, -13.48f), new Vector3(1f, 0.48f, 1f));
+                BoxCollider("Arrival gate supported plinth", new Vector3(x, 0.24f, -13.48f), new Vector3(1f, 0.48f, 1f));
             }
+            // This rear gate is static and visibly closed; collision follows each visible part.
             Cube(Surface.Wood, new Vector3(0, 2.25f, -13.82f), new Vector3(3.5f, 4.5f, 0.2f));
+            BoxCollider("Arrival gate closed wood", new Vector3(0, 2.25f, -13.82f), new Vector3(3.5f, 4.5f, 0.2f));
             for (int i = -3; i <= 3; i++)
+            {
                 Cube(Surface.Iron, new Vector3(i * 0.51f, 2.25f, -13.66f), new Vector3(0.055f, 4.5f, 0.07f));
+                BoxCollider("Arrival gate upright bar", new Vector3(i * 0.51f, 2.25f, -13.66f), new Vector3(0.055f, 4.5f, 0.07f));
+            }
             foreach (float y in new[] { 0.7f, 2.2f, 3.75f })
+            {
                 Cube(Surface.Iron, new Vector3(0, y, -13.57f), new Vector3(3.6f, 0.15f, 0.11f));
+                BoxCollider("Arrival gate cross strap", new Vector3(0, y, -13.57f), new Vector3(3.6f, 0.15f, 0.11f));
+            }
             Cube(Surface.Brass, new Vector3(0.3f, 1.8f, -13.47f), new Vector3(0.18f, 0.25f, 0.08f));
+            BoxCollider("Arrival gate handle", new Vector3(0.3f, 1.8f, -13.47f), new Vector3(0.18f, 0.25f, 0.08f));
             Crate(new Vector3(-4.1f, 0, -10.2f), new Vector3(1.03f, 1.0f, 1.0f), 0f);
             Crate(new Vector3(-4.22f, 1.02f, -10.15f), new Vector3(0.8f, 0.75f, 0.82f), 7f);
             Barrel(new Vector3(3.7f, 0, -10.45f), 0.53f, 1.28f);
@@ -1046,22 +1079,7 @@ namespace OdysseyOracle
 
         private void BuildTutorialApproach()
         {
-            // A restrained green approach line makes the living shrine readable from the arrival door.
-            for (int i = 0; i < 10; i++)
-            {
-                float z = -8.7f + i * 0.82f;
-                foreach (float side in new[] { -1f, 1f })
-                {
-                    Cube(Surface.Brass, new Vector3(side * 1.88f, 0.018f, z), new Vector3(0.14f, 0.025f, 0.48f));
-                    Cube(Surface.RuneGreen, new Vector3(side * 1.88f, 0.037f, z), new Vector3(0.055f, 0.015f, 0.26f));
-                }
-            }
-            foreach (float z in new[] { -5.4f, -2.5f })
-            {
-                Cube(Surface.Brass, new Vector3(0, 0.016f, z), new Vector3(0.85f, 0.025f, 0.09f));
-                foreach (float side in new[] { -1f, 1f })
-                    Cube(Surface.RuneGreen, new Vector3(side * 0.24f, 0.033f, z - 0.08f), new Vector3(0.08f, 0.018f, 0.38f), Quaternion.Euler(0, side * 45f, 0));
-            }
+            // One top compass now owns objective direction; retain only original supported flora here.
             foreach (float side in new[] { -1f, 1f })
             {
                 Fern(new Vector3(side * 3.65f, 0.02f, -0.65f), 0.85f);
@@ -1071,15 +1089,17 @@ namespace OdysseyOracle
 
         private void BuildSanctum()
         {
-            // Real shallow steps with solid colliders are traversable by the standard player controller.
+            // The same six solids expose one boundary; trim owns each shared top plane once.
+            var stairs = new TutorialRoomV2WallBoundary(new RefugeWorldSink(this));
             for (int n = 0; n < 3; n++)
             {
                 float front = 21.9f + n * 0.7f;
                 float height = (n + 1) * 0.22f;
-                Cube(n == 2 ? Surface.Stone : Surface.DarkStone, new Vector3(0, height * 0.5f, (front + 27.8f) * 0.5f), new Vector3(7.15f, height, 27.8f - front));
-                Cube(Surface.PaleStone, new Vector3(0, height - 0.045f, front + 0.09f), new Vector3(7.3f, 0.09f, 0.2f));
+                stairs.Box(RoomV2Paint.PaleStone, new TutorialRoomV2Layout.P3(0, height - 0.045f, front + 0.09f), new TutorialRoomV2Layout.P3(7.3f, 0.09f, 0.2f));
+                stairs.Box(n == 2 ? RoomV2Paint.Stone : RoomV2Paint.DeepStone, new TutorialRoomV2Layout.P3(0, height * 0.5f, (front + 27.8f) * 0.5f), new TutorialRoomV2Layout.P3(7.15f, height, 27.8f - front));
                 BoxCollider("Sanctum step", new Vector3(0, height * 0.5f, (front + 27.8f) * 0.5f), new Vector3(7.15f, height, 27.8f - front));
             }
+            stairs.Finish();
             for (int x = -3; x <= 3; x++)
             for (int z = 24; z < 28; z++)
                 Cube(Surface.Floor, new Vector3(x, 0.665f, z + 0.3f), new Vector3(0.994f, 0.025f, 0.994f));
@@ -1297,8 +1317,13 @@ namespace OdysseyOracle
 
         private void Banner(float x, float z, bool alongWall, float top, bool violetBanner = false)
         {
+            if(IsTutorialRefuge&&!TryResolveRefugeBannerClearance(x,ref z,alongWall))return;
             Quaternion q = Quaternion.Euler(0, alongWall ? (x < 0 ? -90f : 90f) : 0f, 0);
             Vector3 p = new Vector3(x, top, z);
+            if(IsTutorialRefuge){
+                BuildRefugeBannerSupport(p,q,alongWall);
+                if(violetBanner&&TryBuildRefugePortalBanner(p,q))return;
+            }
             Surface cloth = violetBanner ? Surface.PortalCloth : Surface.Cloth;
             Cube(Surface.Iron, p, new Vector3(1.55f, 0.09f, 0.11f), q);
             Cube(cloth, p + Vector3.down * 1.06f, new Vector3(1.12f, 2.10f, 0.08f), q);
@@ -1375,7 +1400,11 @@ namespace OdysseyOracle
             Cube(Surface.Wood, p + new Vector3(0, 0.15f, 0), new Vector3(0.94f, 0.18f, 0.16f), Quaternion.Euler(0, 35f, 0));
             Cube(Surface.Wood, p + new Vector3(0, 0.21f, 0), new Vector3(0.94f, 0.18f, 0.16f), Quaternion.Euler(0, -35f, 0));
             if (!buildingSpatialChunks)
-                AttachVoxelFire("Living campfire flame and stepped smoke", p + Vector3.up * .22f, .78f, true);
+            {
+                if (LivingCampfirePresentation.TryCreate(geometryRoot,p+Vector3.up*.22f,.78f,out var campfire))
+                    RegisterRoomReactionLiving(campfire,p+Vector3.up*.22f,.78f);
+                else AttachVoxelFire("Living campfire flame and stepped smoke",p+Vector3.up*.22f,.78f,true);
+            }
             else
                 for (int i = 0; i < 7; i++)
                     Fire(p + new Vector3(Range(-.24f, .24f), .22f, Range(-.24f, .24f)), Range(.45f, .78f));
@@ -1437,7 +1466,8 @@ namespace OdysseyOracle
             GameObject go = new GameObject(label);
             go.transform.SetParent(geometryRoot, false);
             go.transform.localPosition = basePoint;
-            go.AddComponent<VoxelFireEffect>().Initialize(batches[Surface.Flame].Material, batches[Surface.FlameCore].Material, height, smoke);
+            var fire=go.AddComponent<VoxelFireEffect>();fire.Initialize(batches[Surface.Flame].Material, batches[Surface.FlameCore].Material, height, smoke);
+            RegisterRoomReactionVoxel(fire,basePoint,height);
         }
 
         private void BuildLighting()
@@ -1480,6 +1510,7 @@ namespace OdysseyOracle
             light.shadowNormalBias = 0.12f;
             light.renderMode = LightRenderMode.ForcePixel;
             light.bounceIntensity = 0f;
+            RegisterRoomReactionPointLight(light,p);
             RegisterSpatialLightPulse(light, p);
             return light;
         }
@@ -1487,16 +1518,19 @@ namespace OdysseyOracle
         private void Update()
         {
             if (!built) return;
+            TickPassiveWind015();
             float time = Time.time;
             TickRefugeRaykonTalk(time);
+            TickRaykonAttention009();
             TickRefugeMentorVisibility();
+            TickElementalRoomReactions();
             TickSpatialLightPulse();
-            if (!IsCoopArena && portalUnlocked && portalMaterial != null)
+            if (worldMode020==WorldMode020.TutorialRefuge && portalUnlocked && portalMaterial != null)
             {
                 float pulse = SpatialLightPulseRules.Evaluate(SpatialLightPulseKind.Violet, SpatialLightPulseTime, 0f);
                 portalMaterial.SetColor("_EmissionColor", new Color(0.62f, 0.025f, 1.4f) * pulse);
             }
-            if (!IsCoopArena && portalSpiral != null) portalSpiral.localRotation = Quaternion.Euler(0, 0, -time * (portalUnlocked ? 16f : 7f));
+            if (worldMode020==WorldMode020.TutorialRefuge && portalSpiral != null) portalSpiral.localRotation = Quaternion.Euler(0, 0, -time * (portalUnlocked ? 16f : 7f));
             if(IsCoopArena)foreach(Transform spiral in invasionSpirals)if(spiral!=null&&spiral.gameObject.activeInHierarchy)spiral.localRotation=Quaternion.Euler(0,0,-time*18f);
         }
 
@@ -1505,6 +1539,7 @@ namespace OdysseyOracle
         private void Cube(Surface surface, Vector3 p, Vector3 size, Quaternion rotation)
         {
             CaptureVignetteKeepout(p,size,rotation);
+            if(laneRoadCapture015)RecordLaneStamp015(p,size,rotation,OdysseyOracle.Foundation.World.LaneBuildMath015.Road);
             Batch batch=GetGeometryBatch(surface,p,out Vector3 origin);
             batch.Box(p-origin,size,rotation);
         }
@@ -1578,6 +1613,7 @@ namespace OdysseyOracle
             go.transform.localRotation = rotation;
             UnityEngine.BoxCollider collider = go.AddComponent<UnityEngine.BoxCollider>();
             collider.size = size;
+            if(laneCapturing015&&label=="Continuous arena foundation")laneFoundation015=collider;
         }
 
         private void FinishTutorialBatch(Surface surface,Batch batch)
@@ -1621,6 +1657,11 @@ namespace OdysseyOracle
 
         private void OnDestroy()
         {
+            DisposeWorldMode020();
+            ResetPassiveWind015();
+            DisposeLaneBuild015();
+            DisposeXpClearance015();
+            DisposeRoomReactionNative();
             DisposeRefugeDressing();
             if(RenderSettings.skybox==nightSkybox || tutorialSkybox!=null && RenderSettings.skybox==tutorialSkybox)RenderSettings.skybox=previousSkybox;
             foreach (UnityEngine.Object resource in resources)
@@ -1722,3 +1763,57 @@ namespace OdysseyOracle
         }
     }
 }
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing tutorial campfire base/log/floor local Y-up remains unchanged; new optional flame presentation at the same .22 m intentional fire base.
+// Array Formats: One fixed424-vertex presentation mesh per tutorial campfire; arena spatial-chunk path and existing wall-torch effect unchanged.
+// Dependencies/Pointers: Existing World still owns stones/logs/collision/light/audio. Original shader unavailable -> explicit legacy fallback, not refined-animation acceptance. Root alone integrates and verifies native visuals.
+
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Actual refuge/world audio anchors only; no geometry/gameplay mutation.
+// Array Formats: O(1) read-only cauldron frame,2 cold sources, existing4 ambient voices; cached narration bool.
+// Dependencies/Pointers: Existing Audio/World/Activity lifetimes/accepted state remain canonical; work-only SFX integration, native/listening pending.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space:Unity World listener/emitter metres; existing settings use local uGUI.
+// Array Formats:Existing pools remain fixed;8voice leases/2queries/16hits per ray; audio-local Morton refresh keys.
+// Dependencies/Pointers:Audio owns native reader fences/low-pass/backend leases; accepted World/tower lifetime hooks invalidate acoustic revisions. No narration/gameplay authority replaced.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current world solid AABB supersets and original XP anchors; floor and complete rotating/bobbing octahedron envelope included.
+// Array Formats: Fixed4104 native solids/Morton grid and4095 source-pair certificates; independent world/source generations.
+// Dependencies/Pointers: World and source owners complete readers before mutation/dispose. Existing claims/recipient masks/range/LOS and XP arithmetic remain canonical; native real merges/performance pending root.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing anchored presentation receives the same bounded passive world-XZ field; geometry/physics/accepted room fuel stay canonical.
+// Array Formats: existing fixed mesh/vertex/material owner and one shared float4; no hot collections, per-window objects or mutable gameplay alias.
+// Dependencies/Pointers: work-only shared-breeze adaptation; original shaders and fallback lifetimes remain. Root alone imports/tests actual native/WebGL visuals, culling, allocation and lifecycle.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing gameplay arena root; six separated nonwalkable outer solids are built once after original geometry and lane stores.
+// Array Formats: one additional immutable mesh/material/renderer; cold numeric bounds reduction and mesh build only, original frame/gameplay stores unchanged.
+// Dependencies/Pointers: existing World resource/root lifetime owns all new resources. No collider/path/bridge, lane admission, spawn, map boundary, support or route change; actual native and browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing arena world metres/Y-up/XZ; eight radial lane strips and four signed brazier identities.
+// Array Formats: Four cold scalar anchors, one conservative footprint radius; existing material/mesh/light stores unchanged.
+// Dependencies/Pointers: World geometry and brazier lights consume the same guarded anchor; no admission/geometry-mask, actor, reward, protocol or runtime pool owner changes. Native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing closed-lane material; per-camera world-space shader proximity only.
+// Array Formats: No new meshes, materials, tick owners or colliders.
+// Dependencies/Pointers: Explicit barrier flag preserves window-shaft shader behavior; lane authority remains unchanged.

@@ -6,7 +6,7 @@ using UnityEngine.Rendering.Universal;
 namespace OdysseyOracle
 {
     [DefaultExecutionOrder(-100)]
-    public sealed class GameSession : MonoBehaviour
+    public sealed partial class GameSession : MonoBehaviour
     {
         public static GameSession Instance { get; private set; }
         [SerializeField] private PassiveNodeIconLibrary passiveNodeIconCatalog;
@@ -50,6 +50,7 @@ namespace OdysseyOracle
         public LoreLibrary Books;
         public RefugeActivityDirector RefugeActivities;
         public TrainingLabDirector TrainingLab;
+        public CoopTrainingLabDirector SharedTrainingLab;
         public CampfireOpening Opening;
         public OracleRevival Revival;
         public OracleTownShop Shop;
@@ -78,13 +79,15 @@ namespace OdysseyOracle
         public bool Victory;
         public bool AwaitingBrowserPointerCapture { get; private set; }
         int pointerCaptureGuardFrame = -1;
+        CursorMenuState015 cursorMenu015;
+        public bool CursorFree015=>cursorMenu015.Active;
         public float HP = 125f, MaxHP = 125f;
         public float Experience;
         public int Wave = 1, Defeated, Goal = 4;
         public string Objective = "Begin your Oracle training.";
-        public bool IsDead => Combat != null && Combat.Shrine != null && Combat.Shrine.IsDestroyed;
-        public bool IsPlaying => HasStarted && !Paused && Time.frameCount > pointerCaptureGuardFrame && !Victory && !IsDead && !IsDowned && (Loading == null || !Loading.IsLoading) && (Opening == null || (!Opening.IsTransitioning && !Opening.IsIntroPlaying));
-        public bool SimulationActive => HasStarted && !Victory && !IsDead && (!Paused || (CoopMode && Defense != null && Defense.Running && Rooms != null && Rooms.IsHost));
+        public bool IsDead => LegacyCombatWorld020 && Combat != null && Combat.Shrine != null && Combat.Shrine.IsDestroyed;
+        public bool IsPlaying => HasStarted && WorldControlReady020 && !Paused && !CursorFree015 && !AltPressed020 && Time.frameCount > pointerCaptureGuardFrame && !Victory && !IsDead && !IsDowned && (Loading == null || !Loading.IsLoading) && (Opening == null || (!Opening.IsTransitioning && !Opening.IsIntroPlaying));
+        public bool SimulationActive => !soloRestartSimulationHold && HasStarted && WorldControlReady020 && !Victory && !IsDead && (!Paused || (CoopMode && Defense != null && Defense.Running && Rooms != null && Rooms.IsHost) || (SharedTrainingLab != null && SharedTrainingLab.HostSimulationActive));
         bool outcomeHandled;
         bool portalPrompted, pendingCoopStart;
         AudioSource ambience;
@@ -111,6 +114,8 @@ namespace OdysseyOracle
         void OnDisable()
         {
             if (!ReferenceEquals(Instance, this)) return;
+            RetireNibwick020();RetireCampaignHubAtmosphere020();
+            CancelExitRequest020();CancelAltMouse020();
             Instance = null;
             ReleasePointer();
         }
@@ -179,6 +184,7 @@ namespace OdysseyOracle
             Defense.Initialize(this);
             Builder.Initialize(this);
             TrainingLab=gameObject.AddComponent<TrainingLabDirector>();TrainingLab.Initialize(this);Hud.InitializeTrainingLab();
+            SharedTrainingLab=gameObject.AddComponent<CoopTrainingLabDirector>();SharedTrainingLab.Initialize(this);
             Books = gameObject.AddComponent<LoreLibrary>();
             Books.Initialize(this);
             RefugeActivities=gameObject.AddComponent<RefugeActivityDirector>();
@@ -209,18 +215,15 @@ namespace OdysseyOracle
             Hud.BindCampaignUi(campaign);
             RefugeNpcs.SetQuestBridge(new CampaignNpcQuestBridge010(campaign),campaign);
             Rooms.CampaignStarted += BeginSharedCampaign;
+            InitializeCampaignHubRouting020();
             ReleasePointer();
         }
 
         void Update()
         {
-            if (HasStarted && !Victory && !IsDead && Keyboard.current != null &&
-                Keyboard.current.escapeKey.wasPressedThisFrame)
-            {
-                if (Builder != null && Builder.IsPlacing) Builder.CancelPlacement();
-                else if (!Paused || AwaitingBrowserPointerCapture) Pause();
-                // Resume is deliberately a visible button, giving browser pointer lock a user gesture.
-            }
+            UpdateSessionInactivity();
+            UpdateMenuInput020();
+            TickCampaignHubMode020();
             if (IsPlaying && (CombatUnlocked||CoopCampaignDirector.IsRefugeSession(this)) && Keyboard.current != null && Keyboard.current[GameActionBindings.GetKey("SkillTree")].wasPressedThisFrame && !AbilityBindings.IsRebinding) OpenSkillTree();
             if (Progression != null) Experience = Progression.Experience01;
             if (pendingCoopStart && Rooms.Connected)
@@ -229,7 +232,7 @@ namespace OdysseyOracle
                 Rooms.SetCoopReady(true);
             }
             else if (pendingCoopStart && !Rooms.Busy) pendingCoopStart = false;
-            if (HasStarted && !World.IsCoopArena)
+            if (HasStarted && World.Mode020==WorldMode020.TutorialRefuge)
             {
                 float distance = Vector3.Distance(Player.transform.position, World.PortalPosition);
                 if (distance > 5f) portalPrompted = false;
@@ -238,13 +241,13 @@ namespace OdysseyOracle
                     else portalPrompted=Hud.ShowTutorialPortalSkip();
                 }
             }
-            if ((Victory || IsDead) && !outcomeHandled)
+            if (!soloRestartSimulationHold && (Victory || IsDead) && !outcomeHandled)
             {
                 outcomeHandled = true;
                 Paused = true;
                 ReleasePointer();
                 if (IsDead) FailureReason = Combat != null && Combat.Shrine != null && Combat.Shrine.IsDestroyed ? "The green shrine was destroyed." : "The Oracle has fallen.";
-                if (Victory) Objective = CoopMode ? "The shrine endures. Ten-minute defense complete." : "Oracle's trial is complete.";
+                if (Victory) Objective = CoopMode ? "The shrine endures. Defense complete." : "Oracle's trial is complete.";
             }
         }
 
@@ -255,7 +258,7 @@ namespace OdysseyOracle
 
         public void SkipTutorialToHub()
         {
-            if (World.IsCoopArena || (Loading != null && Loading.IsLoading)) return;
+            if (World.Mode020!=WorldMode020.TutorialRefuge || (Loading != null && Loading.IsLoading)) return;
             if (!HasStarted)
             {
                 // A connected party must keep its existing room and admission.
@@ -277,6 +280,7 @@ namespace OdysseyOracle
         public void BeginCampaign()
         {
             if (Opening != null && Opening.IsIntroPlaying) { Opening.SkipIntro(); return; }
+            ResetCampaignHubSession020();
             Loading.Cancel();
             Revival.ResetState();
             Rooms.LeaveRoom();
@@ -284,7 +288,7 @@ namespace OdysseyOracle
             Progression.ResetProgression();
             Defense.ResetDefense();
             Builder.ResetBuildings();
-            if (World.IsCoopArena) World.Build();
+            if (World.Mode020!=WorldMode020.TutorialRefuge) World.Build();
             Combat.ResetEncounter();
             Player.Teleport(World.PlayerSpawn);
             HP = MaxHP;
@@ -296,33 +300,42 @@ namespace OdysseyOracle
             Opening.BeginArrival();
             Tutorial.StartTutorial();
             Objective = "Complete your movement lessons, then approach the green shrine.";
-            if (Tutorial == null || !Tutorial.HasPendingInstruction) Resume();
+            if (Tutorial == null || !Tutorial.InstructionMenuBlocksGameplay015) Resume();
             Audio.StartAudioFromGesture();
             Audio.SetGameplayMix(true);
         }
 
         public void BeginCoop()
         {
-            if (Opening != null && Opening.IsIntroPlaying) { Opening.SkipIntro(); return; }
+            ResetCampaignHubSession020();
             Loading.Cancel();
             Revival.ResetState();
             CoopMode = true;
-            bool trained = Tutorial.Finished;
             World.Build();
             Combat.ResetEncounter();
-            Player.Teleport(World.PlayerSpawn);
+            if (Rooms != null && Rooms.Connected)
+            {
+                if (!Rooms.TryGetLocalHubSpawn(out Vector3 acceptedFeet, out float acceptedYaw))
+                    throw new System.InvalidOperationException("The host's supported refuge spawn is not ready.");
+                if (!Rooms.IsHost) Player.Teleport(acceptedFeet, acceptedYaw);
+                Rooms.CommitLocalHubSpawn();
+            }
+            else Player.Teleport(World.PlayerSpawn);
             HasStarted = true;
-            CombatUnlocked = trained;
-            Opening.BeginArrival();
-            if (trained) { Tutorial.EndTutorial(); World.UnlockPortal(); }
-            else Tutorial.StartTutorial();
-            Objective = "Shared tutorial hub · Meet your teammate, then walk to the violet portal to choose co-op.";
-            if (Tutorial == null || !Tutorial.HasPendingInstruction) Resume();
+            CombatUnlocked = true;
+            // Explicit free practice: clears owned lessons/voice without practice credit or persistence.
+            Tutorial.SkipTutorial();
+            Opening.EnterGameplayDirect();
+            Objective = "Shared refuge · Explore together, visit the NPCs, or ready up at the violet portal.";
+            Hud.ClosePanels();
+            Resume();
             Audio.StartAudioFromGesture();
+            Audio.SetGameplayMix(true);
         }
 
         void BeginSharedCampaign()
         {
+            if(!LegacyCombatWorld020)return;
             Loading.Begin(PrepareSharedArena, BeginPreparedDefense);
         }
 
@@ -334,14 +347,12 @@ namespace OdysseyOracle
             Tutorial.EndTutorial();
             if (breakableWall != null) breakableWall.gameObject.SetActive(false);
             World.BuildCoopArena();
+            Books?.PrepareArenaDiscoveryBooks();
             Combat.ResetEncounter();
             var activeCampaign=GetComponent<CoopCampaignDirector>();
             if(activeCampaign!=null&&activeCampaign.Active)
             {
-                int stage=activeCampaign.StageNumber,mask=0;
-                foreach(ulong id in Rooms.ConnectedClientIds)
-                    if(Rooms.TryGetAdmissionSlot(id,out int stableSlot))
-                        mask|=1<<CampaignStagePacing.LaneForAdmissionSlot(stableSlot,stage);
+                int stage=activeCampaign.StageNumber,mask=CampaignStagePacing.ActiveLaneMask(stage);
                 if(!CoopPartyCapacity.ValidLaneMask(mask))
                     throw new System.InvalidOperationException("The campaign road roster is not ready.");
                 World.ConfigureActiveLaneMask(mask);
@@ -365,17 +376,18 @@ namespace OdysseyOracle
             Objective = "Defend the green shrine · Hold your road and protect the towers";
         }
 
-        public void OpenSkillTree() { if (!CombatUnlocked&&!CoopCampaignDirector.IsRefugeSession(this)) return; Hud.ShowSkillTree(false); }
+        public void OpenSkillTree() { if (!LegacyCombatWorld020||!CombatUnlocked&&!CoopCampaignDirector.IsRefugeSession(this)) return; Hud.ShowSkillTree(false); }
 
         public void EnterPortal()
         {
-            if (World.IsCoopArena || !Tutorial.Finished) return;
+            if (World.Mode020!=WorldMode020.TutorialRefuge || !Tutorial.Finished) return;
             portalPrompted = true;
             Hud.ShowPortalChoices();
         }
 
         public void StartCoopFromPortal()
         {
+            if(World==null||World.Mode020!=WorldMode020.TutorialRefuge)return;
             if(CampaignBootstrap.TrySetReady(this,true))return;
             if (Rooms.Connected) { Rooms.SetCoopReady(true); return; }
             pendingCoopStart = true;
@@ -384,7 +396,7 @@ namespace OdysseyOracle
 
         public void CompleteStage()
         {
-            if (!IsPlaying || Defeated < Goal) return;
+            if (!IsPlaying || World.Mode020!=WorldMode020.TutorialRefuge || Defeated < Goal) return;
             if (CoopMode) return;
             Wave++;
             Defeated = 0;
@@ -399,8 +411,8 @@ namespace OdysseyOracle
         public void Pause()
         {
             if (!HasStarted) return;
-            Paused = true;
-            ReleasePointer();
+            Paused = true;CancelAltMouse020();
+            ReleasePointer();cursorMenu015.RecordPause020(Time.frameCount);
         }
 
         public void FailArenaPreparation(string reason)
@@ -423,7 +435,9 @@ namespace OdysseyOracle
         public void Resume()
         {
             if(CampaignBootstrap.IsTerminal(this))return;
-            if (!HasStarted || Victory || IsDead || !string.IsNullOrEmpty(FailureReason)) return;
+            if(!TryArmSoloRestartResume())return;
+            if (!HasStarted || !WorldControlReady020 || Victory || IsDead || !string.IsNullOrEmpty(FailureReason)) return;
+            cursorMenu015.Reset();
 #if UNITY_WEBGL && !UNITY_EDITOR
             if (!Paused && Cursor.lockState == CursorLockMode.Locked) return;
             // This merely arms capture. Only a subsequent trusted DOM gesture
@@ -434,6 +448,16 @@ namespace OdysseyOracle
 #else
             pointerCaptureGuardFrame = Time.frameCount + 1;
             Paused = false;
+            CompleteSoloRestartResume();
+#if UNITY_EDITOR
+            // Batch test workers advance the genuine public start path without desktop capture.
+            if (Application.isBatchMode)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                return;
+            }
+#endif
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 #endif
@@ -444,13 +468,14 @@ namespace OdysseyOracle
         public void BrowserPointerCaptured()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (!AwaitingBrowserPointerCapture || !Application.isFocused || !HasStarted ||
+            if (!AwaitingBrowserPointerCapture || !Application.isFocused || !HasStarted || !WorldControlReady020 ||
                 Victory || IsDead || CampaignBootstrap.IsTerminal(this) || !string.IsNullOrEmpty(FailureReason) ||
                 Loading != null && Loading.IsLoading)
-            { ReleasePointer(); return; }
+            { var cursorState=cursorMenu015;ReleasePointer();cursorMenu015=cursorState;return; }
             AwaitingBrowserPointerCapture = false;
             pointerCaptureGuardFrame = Time.frameCount + 1;
             Paused = false;
+            CompleteSoloRestartResume();
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 #endif
@@ -459,8 +484,8 @@ namespace OdysseyOracle
         public void BrowserPointerLost()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            // Escape, tab hiding and browser blur cancel an outstanding arm as
-            // well as a granted lock. Regaining focus never resumes or captures.
+            // A focused release reveals the existing HUD; blur still fully pauses.
+            // Both paths disarm pending grants. Focus return never captures.
             if (HasStarted) Pause();
             else ReleasePointer();
 #endif
@@ -468,6 +493,8 @@ namespace OdysseyOracle
 
         public void Restart()
         {
+            ResetCampaignHubSession020();
+            CancelExitRequest020();CancelAltMouse020();
             Loading.Cancel();
             Revival.ResetState();
             Paused = true;
@@ -490,7 +517,7 @@ namespace OdysseyOracle
             Progression.ResetProgression();
             Hud.ClosePanels();
             ReleasePointer();
-            if (World.IsCoopArena) World.Build();
+            if (World.Mode020!=WorldMode020.TutorialRefuge) World.Build();
             RenderSettings.fogDensity = .012f;
             Player.ViewCamera.farClipPlane = 90f;
             Opening.ReturnToMenu();
@@ -504,6 +531,7 @@ namespace OdysseyOracle
 
         public void TakeDamage(float amount)
         {
+            if(!LegacyCombatWorld020)return;
             // Promote only with the complete007 enemy/projectile/authority bundle.
             if(CoopMode&&Defense!=null&&Defense.PeerHealthAuthoritative)return;
             if (!SimulationActive || IsDowned || (Revival != null && Revival.Invulnerable) || amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount)) return;
@@ -514,6 +542,7 @@ namespace OdysseyOracle
 
         void ResetBreakableWall()
         {
+            World.ResolveBreakableCryptPose015(breakableWall,out Vector3 lower,out Quaternion rotation);
             if (breakableStone == null)
             {
                 breakableStone = new Material(Shader.Find("Universal Render Pipeline/Lit"));
@@ -525,15 +554,19 @@ namespace OdysseyOracle
             {
                 var panel = new GameObject("Breakable crypt masonry");
                 panel.transform.SetParent(World.transform, false);
-                panel.transform.rotation = Quaternion.Euler(0, -90, 0);
+                panel.transform.rotation = rotation;
                 breakableWall = panel.AddComponent<BreakableVoxelWall>();
             }
-            breakableWall.Initialize(new Vector3(9.55f, .05f, -4f), new Vector3Int(8, 6, 2), .25f, breakableStone);
+            breakableWall.transform.rotation = rotation;
+            breakableWall.Initialize(lower, new Vector3Int(8, 6, 2), .25f, breakableStone);
             breakableWall.gameObject.SetActive(true);
+            Audio?.RefreshAcousticCollider015(breakableWall.GetComponent<MeshCollider>());
+            World.RebuildXpClearance015();
         }
 
         public void AddKill()
         {
+            if(!LegacyCombatWorld020)return;
             if (!SimulationActive) return;
             Defeated++;
             if (CoopMode) return;
@@ -545,8 +578,21 @@ namespace OdysseyOracle
             else Objective = $"Defeat the guardians · {Defeated}/{Goal}";
         }
 
+        public bool TryShowMouse015()=>TryShowMouse015(false);
+        public bool ReturnToGuideControls015()=>TryShowMouse015(true);
+        bool TryShowMouse015(bool guideReturn)
+        {
+            if(!Application.isFocused||!HasStarted||Paused&&!AwaitingBrowserPointerCapture&&!guideReturn||Victory||IsDead||IsDowned||SoloRestartHoldsSimulation||
+                !string.IsNullOrEmpty(FailureReason)||Loading!=null&&Loading.IsLoading||
+                Opening!=null&&(Opening.IsTransitioning||Opening.IsIntroPlaying)||Hud==null||!Hud.CanShowMouse015)return false;
+            if(cursorMenu015.Active)return true;
+            ReleasePointer();
+            Paused=false;cursorMenu015.Release(Time.frameCount);return true;
+        }
+
         public void ReleasePointer()
         {
+            cursorMenu015.Reset();
             AwaitingBrowserPointerCapture = false;
             OracleBrowserPointerCapture.SetWanted(false);
             Cursor.lockState = CursorLockMode.None;
@@ -567,7 +613,7 @@ namespace OdysseyOracle
             data.SetRenderer(SystemInfo.supportsComputeShaders ? 0 : 1);
         }
 
-        static void ConfigureAtmosphere()
+        void ConfigureAtmosphere()
         {
             RenderSettings.skybox = null;
             RenderSettings.ambientMode = AmbientMode.Trilight;
@@ -581,7 +627,8 @@ namespace OdysseyOracle
             RenderSettings.fogMode = FogMode.ExponentialSquared;
             RenderSettings.fogColor = new Color(.075f, .10f, .14f);
             RenderSettings.fogDensity = .012f;
-            var moon = new GameObject("Moonlight").AddComponent<Light>();
+            campaignDirectionalLight020 = new GameObject("Moonlight").AddComponent<Light>();
+            var moon = campaignDirectionalLight020;
             moon.type = LightType.Directional;
             moon.color = new Color(.52f, .69f, 1f);
             moon.intensity = .32f;
@@ -634,7 +681,7 @@ namespace OdysseyOracle
             ambience.volume = .18f;
         }
 
-        void OnApplicationFocus(bool focused) { if (!focused && HasStarted) Pause(); }
+        void OnApplicationFocus(bool focused) { NotifyIdleForeground(focused); if (!focused && HasStarted) Pause(); }
         void LateUpdate()
         {
             if (listenerPoint == null || Player == null) return;
@@ -643,6 +690,8 @@ namespace OdysseyOracle
         }
         void OnDestroy()
         {
+            DisposeCampaignHubRouting020();
+            CancelIdleShutdown();CancelExitRequest020();CancelAltMouse020();
             if (breakableStone != null) Destroy(breakableStone);
             if (Rooms != null) Rooms.CampaignStarted -= BeginSharedCampaign;
             if (ambience != null && ambience.clip != null) Destroy(ambience.clip);
@@ -665,3 +714,33 @@ namespace OdysseyOracle
 // Coordinate Space: Existing Y-up refuge/Canvas and true floor contact.
 // Array Formats: Fixed activity anchors, existing bounded combat/room owners and event-only UI.
 // Dependencies/Pointers: Root-integrated tutorial activities retain the connected party and use the existing Skip/Resume authority.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge world metres/Y-up; host-owned shared lab, model local+Z.
+// Array Formats: Two native peer records and bounded fixed frames; inherited48 projectile pool and two real actors.
+// Dependencies/Pointers: Dedicated shared owner validates requests/fences; guests remote-only; no rewards, migration or narrator; root integrates complete slice.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing World/Canvas; one objective compass replaces floor-arrow publication, actual map legend retained.
+// Array Formats: one bounded HUD/native store with fenced disposal; preserved original floor recipe stays inactive.
+// Dependencies/Pointers: original tutorial/campaign/physics/input authorities unchanged; source-only integration/native/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing supported refuge World/Y-up crypt panel reset; exact south-edge lower corner and native floor proof clear the furnace bay.
+// Array Formats: Same96breakable cells and retained mesh/collider/material; cold32Bpose plus bounded solid/floor job buffers, no hot owner changes.
+// Dependencies/Pointers: Existing reset/arena visibility/damage lifetime retained; cold certification precedes publication, post-activation acoustic/XP geometry refresh is null-safe during Awake. Furnace node, discovery rewards and all saves unchanged.
+
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Real main-thread input edges, current menu/canvas owner, and the one session-owned directional key.
+// Array Formats: Scalar duplicate-Pause frame and Alt/exit command state; one retained Light reference; no hot collections.
+// Dependencies/Pointers: ConfigureAtmosphere runs once from guarded Awake, constructs the existing directional key once, and retains it for a read-only atmosphere borrow; no other Light, shadow, or render-settings owner is added.

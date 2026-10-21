@@ -18,20 +18,25 @@ Shader "Oracle/Presentation/CrystalMotesCandidate"
             CBUFFER_END
             struct Attributes {float3 root:POSITION;float4 data:TEXCOORD0;float4 settings:TEXCOORD1;};
             struct Varyings {float4 positionCS:SV_POSITION;float2 uv:TEXCOORD0;half fade:TEXCOORD1;};
+            float MoteLifeEnvelope(float age)
+            {
+                return saturate(smoothstep(0,.12,age)*(1-smoothstep(.62,.96,age)));
+            }
             Varyings Vert(Attributes v)
             {
                 Varyings o;float age=frac(_Time.y*v.settings.w+v.data.z);
                 float angle=v.data.w+_Time.y*.7;
                 float3 p=v.root+float3(cos(angle)*v.settings.x,age*v.settings.y,sin(angle)*v.settings.x);
                 float3 view=TransformWorldToView(TransformObjectToWorld(p));
-                view.xy+=v.data.xy*v.settings.z;
+                float fade=MoteLifeEnvelope(age);
+                view.xy+=v.data.xy*v.settings.z*fade;
                 o.positionCS=mul(UNITY_MATRIX_P,float4(view,1));o.uv=v.data.xy;
-                o.fade=sin(age*PI);return o;
+                o.fade=fade;return o;
             }
             half4 Frag(Varyings i):SV_Target
             {
                 half radial=saturate(1-dot(i.uv,i.uv));
-                return half4(_Tint.rgb,radial*radial*i.fade*_Tint.a);
+                return half4(max(_Tint.rgb,0),saturate(radial*radial*i.fade*_Tint.a));
             }
             ENDHLSL
         }

@@ -1,17 +1,19 @@
-# The Oracle's Return — selected code view
+# Infinite Odyssey: The Oracle's Return — public WebGPU code
 
-This is a deliberately narrowed source-only snapshot from commit `22c485eef3b2ac60682270c4f54226b22e2528a9`. It contains selected project-specific C#, custom shaders, procedural recipe code and dependency/assembly metadata. It includes no internal documentation, architecture blueprints, Git history or game media.
+A public development project by **ZeusRa**, shared as part of the Handshake challenge. This is **source-available, not open source**.
 
-The298 committed files retain their exact bytes and names:284 C# files,9 shaders,1 HLSL library,2 Foundation assembly definitions and2 Packages metadata files. Five additional public records describe this code-only scope, rights, dependencies and hashes. `SOURCE_MANIFEST.json` pins the files; its own hash is recorded separately in the export receipt.
+You may use, adapt, compile and share the original covered code for **noncommercial purposes with attribution to ZeusRa**, an origin link, retained notices and a description of material changes. **Commercial use requires a separate written license**: [business@zeusra.com](mailto:business@zeusra.com). Read [LICENSE](LICENSE) and [RIGHTS.md](RIGHTS.md) for the exact scope and conditions.
 
-## Inspection only; not a runnable full game
+The project uses shared mathematical methods, open-source development methodologies and separately licensed dependencies. Standard formulas, algorithms and third-party technology are not claimed as exclusively owned. Third-party works retain their own copyright, license and commercial-use permissions; see [notices](THIRD_PARTY_NOTICES.md).
 
-Scenes, prefabs, catalogs, ScriptableObjects, materials, textures, models, fonts, audio, animation clips, .meta GUID bindings, ProjectSettings and service configuration are excluded. Code can refer to omitted assets. Original procedural recipe/baker source is present, but no complete safe-asset bootstrap, clean-project reconstruction, dependency install, compile or launch has been verified for this stripped snapshot. Do not replace an existing Unity project with it.
+For questions about the development process, collaboration or licensing, contact [business@zeusra.com](mailto:business@zeusra.com).
 
-The selected code was developed under human direction with substantial OpenAI Codex assistance. It uses standard mathematics, game mechanics, Unity APIs and external packages. This is not a claim of exclusive originality, ownership of standard algorithms or third-party technology, legal clearance, a completed game release, whole-game zero-GC, browser performance or multiplayer acceptance.
+## Snapshot scope
 
-## Rights and dependencies
+This reviewed code-only refresh selects **623 source/dependency-reference files**, including **583 C# files** and **36 shader/compute/HLSL files**, from project revision `91c30d1910696faccbf3c7a542c683d30e38a4cf`. [SOURCE_MANIFEST.json](SOURCE_MANIFEST.json) records exact exported SHA-256 hashes. The621 Assets source files retain committed bytes. The two Packages JSON files retain the canonical working tree's CRLF endings; their remaining contents match that revision. Additional files contain the license, rights, scope and original dependency notices.
 
-This is a source view with rights reserved, not an MIT/CC0 or other open-source release. See `RIGHTS_RESERVED.txt` and `THIRD_PARTY_NOTICES.txt`. Applicable law, platform terms and explicit existing third-party notices remain relevant. Package implementations must be obtained separately under their own terms.
+The full Unity workspace and its private history remain private. This public snapshot excludes game media, audio, images, models, reference sheets, scenes, prefabs, materials, fonts, animation clips, .meta bindings, Editor/internal tools, provider credentials and preserved unverified assets. The official game and its noncode assets are outside this code grant. Recipients may compile their own noncommercial uses of covered code under LICENSE; that is distinct from redistributing the official game builds.
 
-All provider-generated media, preserved uncertain assets, raw licensed media and private provenance/evidence records remain excluded. A commercial entitlement to use audio in a game does not itself establish permission to redistribute raw media. No architecture document is published by this snapshot.
+This is not a runnable whole-game Unity package. Source can refer to omitted assets and services. Standalone reconstruction, dependency installation, compilation, browser playback and performance have not been verified for this stripped snapshot. Packages must be obtained separately under their own terms. [Installed-package notices](Documentation/ThirdParty/THIRD-PARTY-NOTICES.md) distinguish available license texts from missing local evidence.
+
+The code was developed under human direction with substantial OpenAI Codex assistance. Source publication is not a game release, independent originality/legal certification, whole-game zero-GC proof or performance benchmark. Current compilation/native evidence belongs to the full private project, not an asserted test of this stripped export.

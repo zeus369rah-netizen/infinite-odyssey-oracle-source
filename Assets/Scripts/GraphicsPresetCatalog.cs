@@ -24,9 +24,9 @@ namespace OdysseyOracle
     /// <summary>Pure preset/migration policy; one block remains one metre in the separate distance stage.</summary>
     public static class GraphicsPresetCatalog
     {
-        public const int SchemaVersion = 2, Count = 4, DefaultPreset = 0;
+        public const int SchemaVersion = 2, Count = 5, DefaultPreset = 0;
         public const float DefaultVerticalFieldOfView = 79f;
-        public static readonly string[] Names = { "Ultra", "Medium", "Low", "Very Low" };
+        public static readonly string[] Names = { "Ultra", "Medium", "Low", "Very Low", "Ultra (Beta)" };
         public static int Clamp(int preset) => Math.Max(0, Math.Min(Count - 1, preset));
         public static GraphicsPresetSpec Get(int preset)
         {
@@ -35,6 +35,7 @@ namespace OdysseyOracle
                 case 0: return new GraphicsPresetSpec("Ultra", 1f, 40f, 4, 2048, 2048, 8, true, 2, 1f, 150f);
                 case 1: return new GraphicsPresetSpec("Medium", .85f, 25f, 2, 1024, 1024, 8, true, 1, .65f, 100f);
                 case 2: return new GraphicsPresetSpec("Low", .65f, 12f, 1, 512, 512, 8, false, 0, .35f, 75f);
+                case 4: return new GraphicsPresetSpec("Ultra (Beta)", 1f, 40f, 4, 2048, 2048, 8, true, 2, 1f, 150f);
                 default: return new GraphicsPresetSpec("Very Low", .5f, 0f, 1, 256, 256, 8, false, 0, .15f, 60f);
             }
         }

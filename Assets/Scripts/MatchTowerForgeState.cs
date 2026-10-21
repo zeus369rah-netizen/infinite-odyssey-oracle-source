@@ -57,7 +57,7 @@ namespace OdysseyOracle
         { RequestId = requestId; Outcome = outcome; State = state; Replayed = replayed; }
     }
 
-    public sealed class MatchTowerForgeAccount
+    public sealed partial class MatchTowerForgeAccount
     {
         // This run-long tombstone outlives the existing live128-drop presentation cache.
         // Its fixed512 bytes prevent retired/re-registered IDs crediting the bank again.
@@ -77,7 +77,7 @@ namespace OdysseyOracle
         // There is intentionally no public Grant(amount), Restore or save-load method.
         public bool TryCreditAcceptedDrop(int dropId)
         {
-            if (dropId < 1 || dropId > MatchTowerForgeRules.MaximumDropId) return false;
+            if (dropId < 1 || dropId > MatchTowerForgeRules.MaximumDropId || dropId <= soloRecoverySuppressThroughDropId) return false;
             int bit = dropId - 1, word = bit >> 6;
             ulong mask = 1UL << (bit & 63);
             if ((creditedDrops[word] & mask) != 0 || balance >= MatchTowerForgeRules.MaximumBalance
@@ -124,7 +124,7 @@ namespace OdysseyOracle
 
     // UI cache only. It never debits money or changes a rank on button press.
     // Director must authenticate host/run before forwarding snapshots/receipts here.
-    public sealed class MatchTowerForgeClientState
+    public sealed partial class MatchTowerForgeClientState
     {
         private MatchForgeSnapshot accepted;
         private uint nextRequest, pendingRequest;

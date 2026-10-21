@@ -8,11 +8,12 @@ namespace OdysseyOracle
     // Four towers are shared; this module assigns no per-lane tower entitlement.
     public static class CoopPartyCapacity
     {
-        public const int MaximumPlayers=8, MaximumTowers=4;
+        public const int MaximumPlayers=2, MaximumLanes=8, MaximumTowers=4;
         public const int PoseBytes=36, PoseEntryBytes=44, PoseHeaderBytes=3;
         public const int MaximumPoseSnapshotBytes=PoseHeaderBytes+MaximumPlayers*PoseEntryBytes;
         public const int AllLaneMask=255;
-        public const string WireProtocol="oracle-008-p8-d3003-n5-f2-h1-c11-a1";
+        public const string RoomType="odyssey-oracle-coop-v13-core020";
+        public const string WireProtocol="oracle-020-p2-d3003-n5-f2-h1-c12-a1-sp1-id1-tl3-er1-sr1-lv8-ls1-bi1-w40-xp25-d15-xb2-co4-rc1-tb7-lb1-fl1";
         public static bool MatchesProtocol(byte[] data)
         {
             if(data==null||data.Length!=WireProtocol.Length)return false;
@@ -27,9 +28,9 @@ namespace OdysseyOracle
         public static int MaskForCount(int count)
         {int mask=0;for(int i=0;i<Math.Min(MaximumPlayers,Math.Max(0,count));i++)mask|=1<<LaneForAdmissionSlot(i);return mask;}
         public static int LaneCount(int mask)
-        {int count=0;for(int i=0;i<MaximumPlayers;i++)count+=(mask>>i)&1;return count;}
+        {int count=0;for(int i=0;i<MaximumLanes;i++)count+=(mask>>i)&1;return count;}
         public static bool ValidLaneMask(int mask)=>mask>0&&(mask&~AllLaneMask)==0;
-        public static bool LaneActive(int mask,int lane)=>lane>=0&&lane<MaximumPlayers&&(mask&(1<<lane))!=0;
+        public static bool LaneActive(int mask,int lane)=>lane>=0&&lane<MaximumLanes&&(mask&(1<<lane))!=0;
         public static bool ValidPoseHeader(int members,int count,int remaining)=>members>=1&&members<=MaximumPlayers&&
             count>=0&&count<=members&&remaining>=count*PoseEntryBytes;
         public static bool Newer(uint incoming,uint previous)=>unchecked((int)(incoming-previous))>0;
@@ -93,3 +94,33 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: authenticated existing NGO room and Y-up lab world; no new physics or gameplay authority.
+// Array Formats: fixed256-byte LabVersion2 frame, word224 LiveStatus only on State; fixed64-byte arena impact event.
+// Dependencies/Pointers: exact room tl2/ls1/bi1 capability gate and v2 lab channel reject older peers; requests and Impact require zero LiveStatus; root native/two-peer acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Accepted parent/wave/owner/run identities and original source positions; literal claim-time catch-up children.
+// Array Formats: Existing4096source64 ledger,905entitlement32 sidecars/dirty words,4096readonly projection, exact128BVersion2 frames.
+// Dependencies/Pointers: Root composes structural clearance and these guarded owner hooks; base-onlyForge, no doublebonus, native/peer/carry/visual/performance acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authenticated service/NGO room boundary; no gameplay/root changes.
+// Array Formats: Existing fixed DTOs and same-length ASCII WireProtocol; one central0.1.1 RoomType for create/join.
+// Dependencies/Pointers: Existing approval compares exact bytes before remote reservation, party capabilities share the same constant; no new protocol owner. Native/service rejection and same-build join pending.

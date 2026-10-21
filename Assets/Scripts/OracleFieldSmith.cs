@@ -6,7 +6,7 @@ namespace OdysseyOracle
 {
     // # ARCHITECTURE SNAPSHOT
     // Field presentation/interaction owner, never an economy authority. One original
-    // Smith belongs to the actual arena/run; one existing HUD menu reads a match-only
+    // Smith is borrowed from the refuge; arenas never create a shop NPC. One HUD menu reads a match-only
     // adapter. Range/LOS and visible context are local gates; Director independently
     // validates host pose/run/requests. No town-save fallback, rewards or new E poll
     // in HUD. World provides the reserved site; no old six/24-pad coordinates.
@@ -23,7 +23,7 @@ namespace OdysseyOracle
         bool cachedSight,cachedLook;
         float nextPrepare,nextRefresh;
         public bool Visible=>session!=null&&session.Hud!=null&&session.Hud.IsFieldTowerForgeVisible;
-        public string Status {get;private set;}="Field forge is available during a connected defense.";
+        public string Status {get;private set;}="Tower Anvil upgrades are available in the refuge between cleared levels.";
         public ITowerForgeModeAdapter ForgeAdapter=>adapter;
         public bool StateReady=>ForgeActive&&session.Defense.ForgeStateReady;
         public MatchForgeOutcome LastOutcome=>session!=null&&session.Defense!=null?session.Defense.LastForgeOutcome:MatchForgeOutcome.None;
@@ -40,9 +40,7 @@ namespace OdysseyOracle
                 return hint;
             }
         }
-        bool RunActive=>initialized&&session!=null&&session.HasStarted&&session.CoopMode&&session.World!=null&&session.World.IsCoopArena&&
-            session.Rooms!=null&&session.Rooms.Connected&&session.Defense!=null&&session.Defense.Running&&session.Defense.ArenaReady&&
-            !string.IsNullOrEmpty(session.Defense.ForgeRunId);
+        bool RunActive=>InCampaignRefuge;
         bool LocalEligible=>ForgeActive&&preparedRun==session.Defense.ForgeRunId&&smith!=null&&!session.IsDead&&!session.IsDowned&&!session.Victory&&
             !AbilityBindings.IsRebinding&&(session.Revival==null||!session.Revival.IsHelping)&&
             (session.Builder==null||!session.Builder.IsPlacing);
@@ -87,23 +85,8 @@ namespace OdysseyOracle
         }
         void PrepareRun()
         {
-            if(InCampaignRefuge){PrepareRefugeForge();return;}
-            Vector3 site=session.World.MatchForgePosition;
-            if(!Finite(site.x)||!Finite(site.y)||!Finite(site.z)||!Finite(session.World.MatchForgeYaw))
-            {Status="Field forge site is invalid; no station was created.";failedRun=session.Defense.ForgeRunId;return;}
-            if(!Physics.Raycast(site+Vector3.up*2f,Vector3.down,out RaycastHit floor,4f,~(1<<2),QueryTriggerInteraction.Ignore)||
-                floor.normal.y<.9f||Mathf.Abs(floor.point.y-site.y)>.2f)
-            {Status="Field forge needs its actual walkable floor; station setup is waiting.";return;}
-            actorRoot=new GameObject("Defense Smith — original shared NPC recipe");
-            actorRoot.transform.SetParent(transform,false);
-            actorRoot.transform.SetPositionAndRotation(new Vector3(site.x,floor.point.y,site.z),Quaternion.Euler(0,session.World.MatchForgeYaw,0));
-            smith=actorRoot.AddComponent<NpcBlacksmith>();smith.BuildWorkstation=true;smith.Initialize(session.Player);
-            session.Defense.ConfigureMatchForgeStation(smith);stationConfigured=true;
-            adapter=session.Defense.CreateMatchForgeAdapter(CanTransact);
-            if(adapter==null||adapter.Mode!=TowerForgeMode.CoopMatch)
-            {Status="Field forge requires a host-accepted match adapter.";RetireRun();failedRun=session.Defense.ForgeRunId;return;}
-            preparedRun=session.Defense.ForgeRunId;sightFrame=lookFrame=-1;
-            Status="Forge charge is match-only. Tier-one blueprints are included; upgrades are optional.";
+            if(!InCampaignRefuge){RetireRun();Status="Return to the refuge Tower Anvil between cleared levels.";return;}
+            PrepareRefugeForge();
         }
         public bool TryInteract()
         {
@@ -114,6 +97,7 @@ namespace OdysseyOracle
             openedFrame=Time.frameCount;wasVisible=true;autoRun=preparedRun;pendingAutoRestore=false;autoOwned=priorAuto;
             if(priorAuto)session.Combat.SetAutoFire(false);
             RecordRefugeSmithVisit();
+            smith?.NotifyAcceptedTalk009();session.RefugeActivities?.TryPlayNpcGreeting009(1,this,2);
             session.Audio?.PlayUi();return true;
         }
         public TowerForgeSubmission Submit(int type)=>CanTransact()&&adapter!=null&&!adapter.Pending&&TowerForgeDefinitions.ValidType(type)
@@ -189,3 +173,8 @@ namespace OdysseyOracle
 // World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
 // Bounded cached collider/root references only; no new economy/native buffers or quest bits.
 // Root owns Unity integration and native acceptance; this is a guarded work candidate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Actual cleared-level monster portal world anchors and refuge-only Smith; stable same-party campaign identity.
+// Array Formats: Bounded cold8-point reach job and existing phase/ready/Forge stores; no new visual/actor/wire field.
+// Dependencies/Pointers: Existing host phase/epoch/pose/LOS and interlevel visits/readiness own progression; no midwave exit, battlefield shop or SDK session reset.

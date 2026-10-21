@@ -29,10 +29,13 @@ namespace OdysseyOracle
         static readonly int[] SmokeHigh = Indices(4,4), SmokeLow = Indices(4,2), Empty = new int[0];
         readonly Vector3[] vertices = new Vector3[Bits*VerticesPerBit];
         Mesh mesh;
+        [SerializeField] float roomReactionFuel=1f;
+        public void SetRoomReactionFuel(float value){value=float.IsNaN(value)||float.IsInfinity(value)?0:Mathf.Clamp01(value);if(roomReactionFuel==value)return;roomReactionFuel=value;if(mesh!=null)Animate();}
         MeshRenderer meshRenderer;
         float height = .65f, clock, phase;
         int quality = -1, lastFrame = -1;
         bool smoke, ownsSmoke;
+        Vector2 passiveWindOffset015;
 
         /// <summary>Caller supplies the existing shared fire materials. Transform is the local flame base.</summary>
         public void Initialize(Material orange, Material hotCore, float flameHeight, bool emitSmoke = true)
@@ -94,14 +97,18 @@ namespace OdysseyOracle
             var session=GameSession.Instance;
             if(session!=null&&session.Graphics!=null)SetQuality(session.Graphics.ParticleQuality);
             // Fire is alive in the lobby, then freezes in an explicit gameplay pause.
-            if(session!=null&&session.HasStarted&&session.Paused)return;
-            clock+=Mathf.Min(Time.deltaTime,.1f);
+            if(!Application.isFocused||OracleBookAccessibility.PrefersReducedMotion||session!=null&&session.HasStarted&&session.Paused)return;
+            clock+=Mathf.Min(Time.unscaledDeltaTime,.1f);
             int frame=Mathf.FloorToInt(clock*(quality==0?8f:12f));
             if(frame==lastFrame)return;
             lastFrame=frame;Animate();
         }
         void Animate()
         {
+            var owner=GameSession.Instance;Vector4 field=owner!=null&&owner.World!=null?owner.World.PassiveWindField015:Vector4.zero;
+            Vector3 localVelocity=transform.worldToLocalMatrix.MultiplyVector(new Vector3(field.x,0,field.y));
+            var bend=OdysseyOracle.Foundation.World.PassiveWindMath015.Offset(new Unity.Mathematics.float2(localVelocity.x,localVelocity.z),field.z,field.w,phase,height*.08f);
+            passiveWindOffset015=new Vector2(bend.x,bend.y);
             float t=Mathf.Floor(clock*(quality==0?8f:12f))/(quality==0?8f:12f);
             float flicker=1f+Step(Mathf.Sin(t*11f+phase)*.15f,.05f);
             Write(0,new Vector3(0,height*.31f,0),new Vector3(height*.49f,height*.64f*flicker,height*.46f));
@@ -123,8 +130,8 @@ namespace OdysseyOracle
         }
         void Write(int bit,Vector3 center,Vector3 size)
         {
-            Vector3 half=size*.5f;
-            for(int i=0;i<VerticesPerBit;i++)vertices[bit*VerticesPerBit+i]=center+Vector3.Scale(Corners[i],half);
+            center*=roomReactionFuel;Vector3 half=size*(.5f*roomReactionFuel);
+            for(int i=0;i<VerticesPerBit;i++){Vector3 point=center+Vector3.Scale(Corners[i],half);float q=Mathf.Clamp01((point.y-height*.02f)/Mathf.Max(height*.98f,.01f));point.x+=passiveWindOffset015.x*q*q;point.z+=passiveWindOffset015.y*q*q;vertices[bit*VerticesPerBit+i]=point;}
         }
         static float Step(float value,float step)=>Mathf.Round(value/step)*step;
         static int[] Indices(int first,int count)
@@ -143,3 +150,13 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing anchored presentation receives the same bounded passive world-XZ field; geometry/physics/accepted room fuel stay canonical.
+// Array Formats: existing fixed mesh/vertex/material owner and one shared float4; no hot collections, per-window objects or mutable gameplay alias.
+// Dependencies/Pointers: work-only shared-breeze adaptation; original shaders and fallback lifetimes remain. Root alone imports/tests actual native/WebGL visuals, culling, allocation and lifecycle.

@@ -5,11 +5,26 @@ using UnityEngine.Rendering;
 namespace OdysseyOracle.VisualDressing
 {
     // Explicit cold visual lease, not an NPC/talk/simulation component.
-    public sealed class RaykonPresentation : IDisposable
+    public sealed partial class RaykonPresentation : IDisposable
     {
         private GameObject visualRoot;
         private RaykonMeshes meshes;
-        private MeshRenderer staffRenderer;
+        private MeshRenderer staffRenderer,bodyRenderer;
+        private readonly MaterialPropertyBlock bodyBlock=new MaterialPropertyBlock();
+        private float speaking;
+        private static readonly int SpeakingId=Shader.PropertyToID("_Speaking");
+        public float Speaking
+        {
+            get=>speaking;
+            set
+            {
+                if(float.IsNaN(value)||float.IsInfinity(value))throw new ArgumentException("Finite speaking amount required.");
+                float next=Mathf.Clamp01(value);if(next==speaking)return;speaking=next;
+                if(bodyRenderer!=null){bodyBlock.SetFloat(SpeakingId,speaking);bodyRenderer.SetPropertyBlock(bodyBlock);}
+            }
+        }
+        private RaykonPurpleWispPresentation smoke;
+        public bool SmokeReady=>smoke!=null&&smoke.IsReady;
         private readonly MaterialPropertyBlock staffBlock=new MaterialPropertyBlock();
         private float talkBlend;
         private static readonly int StaffModeId=Shader.PropertyToID("_StaffMode"),TalkId=Shader.PropertyToID("_TalkBlend");
@@ -32,7 +47,9 @@ namespace OdysseyOracle.VisualDressing
             {
                 owner.meshes=RaykonModelBuilder.Build(palette);
                 owner.visualRoot=new GameObject("Original Raykon rigid presentation");owner.visualRoot.transform.SetParent(logicalOwner,false);
-                Attach(owner.visualRoot.transform,"Raykon original body",owner.meshes.Body,borrowedShaderMaterial);
+                owner.bodyRenderer=Attach(owner.visualRoot.transform,"Raykon original body",owner.meshes.Body,borrowedShaderMaterial);
+                owner.bodyBlock.SetFloat(SpeakingId,0f);owner.bodyRenderer.SetPropertyBlock(owner.bodyBlock);
+                owner.InitializeAttention009(logicalOwner);
                 owner.staffRenderer=Attach(owner.visualRoot.transform,"Raykon shader staff",owner.meshes.Staff,borrowedShaderMaterial);
                 Attach(owner.visualRoot.transform,"Raykon cauldron",owner.meshes.Cauldron,borrowedShaderMaterial);
                 owner.staffBlock.SetFloat(StaffModeId,1f);owner.staffBlock.SetFloat(TalkId,0f);
@@ -40,6 +57,7 @@ namespace OdysseyOracle.VisualDressing
                 Vector3 tip=owner.meshes.SlamSupportLocal;
                 owner.staffBlock.SetVector("_TipAndSupport",new Vector4(tip.x,tip.y,tip.z,supportWorldY));
                 owner.staffRenderer.SetPropertyBlock(owner.staffBlock);
+                owner.smoke=RaykonPurpleWispPresentation.CreateOptional(owner.visualRoot.transform);
                 return owner;
             }
             catch{owner.Dispose();throw;}
@@ -57,13 +75,15 @@ namespace OdysseyOracle.VisualDressing
         }
         public void Dispose()
         {
+            DisposeAttention009();
+            smoke?.Dispose();smoke=null;
             if(visualRoot!=null){visualRoot.SetActive(false);if(Application.isPlaying)UnityEngine.Object.Destroy(visualRoot);else UnityEngine.Object.DestroyImmediate(visualRoot);visualRoot=null;}
-            staffRenderer=null;meshes?.Dispose();meshes=null;
+            staffRenderer=null;bodyRenderer=null;meshes?.Dispose();meshes=null;
         }
     }
 }
 
 // # ARCHITECTURE SNAPSHOT
 // Coordinate Space:borrowed logical owner at root-approved support,local+Z/Y-up,unit-scale/yaw-only;slam floor uses supplied world Y.
-// Array Formats:fixed3 renderer references/owned meshes,one cached MPB;TalkBlend scalar0..1 drives vertex shader, no vertex CPU loop.
-// Dependencies/Pointers:borrows material/parent/collider,owns visual children+meshes only;root alone owns dialogue/input/health/World collision authority.
+// Array Formats:Three original mesh owners, cached body/staff MPBs, one owned six-quad smoke lease; TalkBlend/Speaking0..1, no vertex CPU loop. Speaking is an approximate source-state envelope.
+// Dependencies/Pointers:Borrows original material/parent/collider; owns visual meshes/children and disposable smoke material/mesh. Root alone owns dialogue/input/health/collision.

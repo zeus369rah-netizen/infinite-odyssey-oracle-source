@@ -40,6 +40,9 @@ namespace OdysseyOracle
         // Camera-nearest selection now controls only the existing four crackle audio records.
         [SerializeField] Light[] lights = new Light[FireLightSelector.MaximumLights];
         [SerializeField] Light[] fixtureLights = new Light[FireLightSelector.MaximumEmitters];
+        [SerializeField] float[] roomReactionFuel;
+        void EnsureRoomReactionFuel(){if(roomReactionFuel!=null&&roomReactionFuel.Length==FireLightSelector.MaximumEmitters)return;roomReactionFuel=new float[FireLightSelector.MaximumEmitters];for(int i=0;i<roomReactionFuel.Length;i++)roomReactionFuel[i]=1;}
+        public void SetRoomReactionFuel(int index,float gain){EnsureRoomReactionFuel();if(index<0||index>=count)return;gain=float.IsNaN(gain)||float.IsInfinity(gain)?0:Mathf.Clamp01(gain);roomReactionFuel[index]=gain;if(fixtureLights[index]!=null)fixtureLights[index].intensity=registry[index].Intensity*gain;}
         const string FixturePrefix = "Permanent tutorial fire spill ";
         [SerializeField] Emitter[] registry = new Emitter[FireLightSelector.MaximumEmitters];
         [SerializeField] Transform geometry;
@@ -171,6 +174,7 @@ namespace OdysseyOracle
         {
             count = 0;
             if (registry != null) Array.Clear(registry, 0, registry.Length);
+            if (roomReactionFuel != null) for (int i = 0; i < roomReactionFuel.Length; i++) roomReactionFuel[i] = 1f;
             if (slots.IsCreated && ranked.IsCreated) for (int i = 0; i < 4; i++) slots[i] = ranked[i] = -1;
             DisableLights(); DisablePermanentLights(); SilenceAudio(); nextSelection = 0f;
         }
@@ -240,7 +244,7 @@ namespace OdysseyOracle
                 light.intensity = 0f;
                 light.enabled = false;
                 FireLightCandidate world = candidates[index];
-                WriteAudio(slot, new Vector3(world.X, world.Y, world.Z), emitter.CrackleRange, emitter.CrackleGain);
+                WriteAudio(slot, new Vector3(world.X, world.Y, world.Z), emitter.CrackleRange, emitter.CrackleGain*roomReactionFuel[index]);
             }
         }
 
@@ -254,7 +258,7 @@ namespace OdysseyOracle
                 if (light == null || !light.isActiveAndEnabled) continue;
                 Emitter emitter = registry[i];
                 light.intensity = emitter.Intensity * SpatialLightPulseRules.Evaluate(SpatialLightPulseKind.Warm,
-                    seconds, SpatialLightPulseRules.WarmPhase(emitter.FlickerGroup));
+                    seconds, SpatialLightPulseRules.WarmPhase(emitter.FlickerGroup))*roomReactionFuel[i];
             }
         }
 
@@ -314,7 +318,7 @@ namespace OdysseyOracle
         void EnsurePermanentLight(int index)
         {
             if(geometry==null || index<0 || index>=count)return;
-            EnsurePermanentArray();
+            EnsurePermanentArray();EnsureRoomReactionFuel();
             Light light=fixtureLights[index];
             for(int earlier=0;earlier<index;earlier++)if(light==fixtureLights[earlier])light=null;
             if(light==null) {
@@ -332,8 +336,9 @@ namespace OdysseyOracle
             light.transform.localPosition=emitter.LocalPosition;
             light.type=LightType.Point;light.shadows=LightShadows.None;
             light.renderMode=LightRenderMode.Auto;light.bounceIntensity=0f;
-            light.range=emitter.Range;light.color=emitter.Color;light.intensity=emitter.Intensity;
+            light.range=emitter.Range;light.color=emitter.Color;light.intensity=emitter.Intensity*roomReactionFuel[index];
             light.enabled=isActiveAndEnabled;
+            session?.World?.RegisterRoomReactionFixture(index,emitter.LocalPosition);
         }
         void DisablePermanentLights() => LightPoolLifecycle.Disable(fixtureLights);
 
@@ -359,3 +364,8 @@ namespace OdysseyOracle
 // Serialized Light references survive reload; Prepare/OnDisable disables, Restore re-enables at
 // original positions. Four old detail slots remain disabled for reload migration compatibility.
 // Native nearest-four selection now serves bounded crackle audio only; no new runtime allocation.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.

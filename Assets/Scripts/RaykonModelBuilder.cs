@@ -56,12 +56,14 @@ namespace OdysseyOracle.VisualDressing
                     body.Box(new Vector3(side*.075f,1.89f,.205f),new Vector3(.035f,.035f,.015f),p.Rune,1);
                 }
                 body.Box(new Vector3(0,1.80f,.216f),new Vector3(.065f,.10f,.07f),p.Bone);
-                body.Box(new Vector3(0,1.63f,.20f),new Vector3(.30f,.23f,.12f),p.Bone);
+                // Original dark cavity is hidden behind the closed rigid beard/jaw.
+                body.Box(new Vector3(0,1.725f,.205f),new Vector3(.18f,.045f,.03f),Color.Lerp(p.Metal,Color.black,.85f));
+                body.Box(new Vector3(0,1.63f,.20f),new Vector3(.30f,.23f,.12f),p.Bone,0,3f);
                 for(int strand=0;strand<5;strand++)
-                    body.Box(new Vector3((strand-2)*.052f,1.49f+(strand%2)*.025f,.23f),new Vector3(.042f,.16f,.055f),p.Bone);
+                    body.Box(new Vector3((strand-2)*.052f,1.49f+(strand%2)*.025f,.23f),new Vector3(.042f,.16f,.055f),p.Bone,0,3f);
                 for(int panel=0;panel<5;panel++)
                     body.Box(new Vector3((panel-2)*.13f,.43f,.24f),new Vector3(.085f,.64f,.035f),panel%2==0?p.Metal:p.Robe);
-                owner.Body=body.Finish("Original Raykon layered robe hood and beard",.02f);
+                owner.Body=body.Finish("Original Raykon layered robe hood and beard",.48f);
 
                 var staff=new Model();
                 Color wood=Color.Lerp(p.Robe,p.Metal,.45f);
@@ -150,6 +152,6 @@ namespace OdysseyOracle.VisualDressing
 
 // # ARCHITECTURE SNAPSHOT
 // Coordinate Space: original local+Z front,+Y up/metres, supported floorY0, yaw-only unit-scale root.
-// Array Formats:3 cold combined meshes,<=96 boxes/mesh,24 vertices/12 triangles per box; vertex COLOR,UV0(glow,effect0ordinary/1brew/2bubble),cauldron-only UV1(centerXYZ,phase);body/staff streams unchanged.
+// Array Formats:3 cold combined meshes,<=96 boxes/mesh,24 vertices/12 triangles per box; vertex COLOR,UV0(glow,effect0ordinary/1brew/2bubble/3rigidJaw),cauldron-only UV1(centerXYZ,phase);body/staff streams unchanged.
 // Dependencies/Pointers:root supplies borrowed palette values/material, owns talk/physics/scene; no SkinnedMeshRenderer/Update/quest authority.
 

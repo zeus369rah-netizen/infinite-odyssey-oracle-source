@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using OdysseyOracle.Foundation.World;
 
 namespace OdysseyOracle
 {
@@ -15,7 +16,9 @@ namespace OdysseyOracle
         const string MotionKey = "Oracle.World.WeatherMotion";
         const int MaximumBuckets = 192;
         static readonly int WeatherId = Shader.PropertyToID("_OracleLaneWeather");
-        static Vector2 windDirection = new Vector2(.82f,.57f);
+        static Vector2 windDirection = new Vector2(-.82f,.57f);
+        static Vector4 passiveWindDescriptor015=new Vector4(-.82f,.57f,.72f,1f);
+        public static Vector4 PassiveWindDescriptor015=>passiveWindDescriptor015;
         static float windStrength = .72f;
         readonly Dictionary<Key, Data> batches = new Dictionary<Key, Data>();
         // Preserve ownership references across supported Unity serialization/reload paths.
@@ -40,8 +43,13 @@ namespace OdysseyOracle
             windDirection=direction.sqrMagnitude>.0001f?direction.normalized:Vector2.right;
             windStrength=Mathf.Clamp01(strength); ApplyWeather();
         }
-        static void ApplyWeather() => Shader.SetGlobalVector(WeatherId,
-            new Vector4(windDirection.x,windDirection.y,windStrength,WorldMotionEnabled?1f:0f));
+        // Cold build/settings boundary; no preference write or per-frame owner.
+        public static void RefreshWeatherSettings015() => ApplyWeather();
+        static void ApplyWeather()
+        {
+            passiveWindDescriptor015=new Vector4(windDirection.x,windDirection.y,windStrength,WorldMotionEnabled?1f:0f);
+            Shader.SetGlobalVector(WeatherId,passiveWindDescriptor015);
+        }
 
         public void Initialize()
         {
@@ -85,6 +93,22 @@ namespace OdysseyOracle
             else data.Face(center,q,Vector3.forward,new Vector3(-size.x/2,-size.y/2,0),new Vector3(size.x/2,-size.y/2,0),
                 new Vector3(size.x/2,size.y/2,0),new Vector3(-size.x/2,size.y/2,0),Vector4.zero,Color.white,true);
         }
+        // Completed external greedy leaf faces reuse this exact existing weather/bucket owner.
+        public void AppendTreeFace(BlossomTreeQuad64 face,BlossomTreeSeed96 seed,Color tint)
+        {
+            if(!ShaderReady||face.Surface<3||face.Surface>5)throw new InvalidOperationException("Completed leaf face and existing shader required.");
+            Vector3 a=TreeV(face.A),b=TreeV(face.B),c=TreeV(face.C),d=TreeV(face.D),center=(a+b+c+d)*.25f;
+            var key=new Key(Mathf.FloorToInt(center.x/10f),Mathf.FloorToInt(center.z/10f),0);
+            if(!batches.TryGetValue(key,out Data data))
+            {
+                if(batches.Count>=MaximumBuckets)throw new InvalidOperationException("Vignette renderer bucket cap exceeded.");
+                data=new Data();batches.Add(key,data);
+            }
+            Vector3 origin=new Vector3(key.X*10,0,key.Z*10);
+            var anchor=new Vector4(seed.LocalToWorld.c3.x,0,seed.LocalToWorld.c3.z,seed.Theme==5?0:seed.Height*BlossomTreeMath.Scale);
+            data.Face(Vector3.zero,Quaternion.identity,TreeV(face.Normal),a-origin,b-origin,c-origin,d-origin,anchor,tint,false);
+        }
+        static Vector3 TreeV(Unity.Mathematics.float3 p)=>new Vector3(p.x,p.y,p.z);
         public void Finish()
         {
             foreach(var pair in batches)
@@ -147,3 +171,23 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: completed arena-local greedy leaf vertices rebased into existing10m weather chunks; original anchor-height semantics/0.8mwind bounds unchanged.
+// Array Formats: existing shared3material/bucket mesh lists receive cold value quads; no percellObject, new material, Update or extra resource lifetime.
+// Dependencies/Pointers: caller completes isolated Burst writer first and retains temp buffers until copied; original Finish/OnDestroy retains all finalmesh/material cleanup. Native browser visual/performance acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing supported Y-up refuge local/unit-yaw and arena-world/chunk anchor contract; no root/floor/actor/pivot change.
+// Array Formats: Existing immutable vertex/normal/UV streams and32B grass seeds; shared bounded shader wind,16original3x trees, unchanged counts/resources.
+// Dependencies/Pointers: Existing World owns cold materials/meshes; LaneVignetteRenderer publishes weather policy. No new Update/CPU spatial loop/compute dependency; root native/GPU/browser acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing anchored presentation receives the same bounded passive world-XZ field; geometry/physics/accepted room fuel stay canonical.
+// Array Formats: existing fixed mesh/vertex/material owner and one shared float4; no hot collections, per-window objects or mutable gameplay alias.
+// Dependencies/Pointers: work-only shared-breeze adaptation; original shaders and fallback lifetimes remain. Root alone imports/tests actual native/WebGL visuals, culling, allocation and lifecycle.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: existing8appearance regions and one3xTRS; original root/grass/proxy/culling envelopes unchanged, stone-theme5crown is presentation-rigid.
+// Array Formats: unchanged fixed tree plans/native slabs/greedy faces and mesh COLOR/UV1 streams; cold scalar TreePalette is shared by trees and grass, no new light/material/texture/particle owner.
+// Dependencies/Pointers: original bounded wind/shader alpha emission and World shared materials; prior trunk widening composed once. Root checks actual current-arena colors/fallback and later rebakes menu catalog; source-only evidence is not pixel/performance acceptance.

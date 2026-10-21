@@ -16,7 +16,7 @@ namespace OdysseyOracle
         {
             if (mask < 1 || mask > 15) return false;
             int rest = mask & (mask - 1);
-            return rest == 0 || (rest & (rest - 1)) == 0;
+            return mask == 15 || rest == 0 || (rest & (rest - 1)) == 0;
         }
 
         public static bool HasLiveChain(float seconds) => seconds > 0f &&
@@ -51,3 +51,8 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: cosmetic value-state, four ingredient bits;1/2/4 confirmed masks accepted and3 rejected, matching existing combat policy.
+// Array Formats: unchanged scalar masks and accepted-own Nova observation; no heap/clock/Unity references.
+// Dependencies/Pointers: presentation validity only; cannot commit recovery, launch a projectile, change host state or grant Nova.

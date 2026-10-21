@@ -14,8 +14,8 @@ namespace OdysseyOracle
         public static readonly string[] TowerNames = { "Fire Tower", "Water Tower", "Earth Tower", "Air Spire" };
         public static readonly string[] TowerDescriptions =
         {
-            "Burns ground and flying foes within 9 metres.",
-            "Slows ground and flying foes within 9 metres.",
+            "Burns ground foes within 9 metres; cannot target flyers.",
+            "Slows flying foes within 9 metres; cannot target ground foes.",
             "Staggers ground foes within 9 metres; cannot target flyers.",
             "Repels flying foes within 9 metres; cannot target ground foes."
         };
@@ -40,9 +40,8 @@ namespace OdysseyOracle
         public string ModelStatus{get;private set;}="Tower building is unavailable.";
         public string ModelDiagnostic{get;private set;}="Not initialized.";
         public int HoveredBuildPadIndex=>hoveredPad;
-        public bool CanOpenHoveredBuildPad=>Available&&ModelsReady&&hoveredAvailable&&hoveredPad>=0;
-        public bool BuildMenuContextValid=>Available&&ModelsReady&&menuPad>=0&&menuPad<BuildPads.Length&&
-            menuPlatforms==session.World.TowerPlatforms&&menuRun==session.Defense.ForgeRunId&&session.World.IsBuildPadActive(BuildPads[menuPad]);
+        public bool CanOpenHoveredBuildPad=>Available&&ModelsReady&&(laneOpening015||LaneBuildContextValid015);
+        public bool BuildMenuContextValid=>LaneBuildContextValid015;
         private Material green, gold, ghostMaterial;
         private GameObject ghost, contextMarker;
         private Vector3 placementPosition;
@@ -98,6 +97,7 @@ namespace OdysseyOracle
                 markerRenderer.receiveShadows = false;
                 contextMarker.SetActive(false);
             }
+            InitializeLaneBuilding015();InitializeWorkshop015();
             CancelPlacement();
         }
 
@@ -106,6 +106,8 @@ namespace OdysseyOracle
         private void Update()
         {
             if (session == null) return;
+            TickWorkshop015();
+            if(UpdateLaneBuilding015())return;
             if (IsPlacing && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 CancelPlacement();
@@ -144,15 +146,7 @@ namespace OdysseyOracle
         public void SelectShrine(int element){TrySelectShrine(element);}
 
         public bool TrySelectShrine(int element)
-        {
-            if(!BuildMenuContextValid||element<0||element>=TowerTypeCount)return false;
-            if(!ValidatePlacementFrom(session.Player.transform.position,BuildPads[menuPad],out string reason))
-            {Hint=reason;return false;}
-            if(session.Defense.LocalBuildTokens<=0){Hint="You have used all three tower tokens.";return false;}
-            selectedElement=element;IsPlacing=true;validPreview=false;suppressThroughFrame=Time.frameCount+1;
-            Hint="Aim at a raised tower platform. "+GameActionBindings.GetLabel("Interact")+" / Right-click places; Escape cancels.";
-            return true;
-        }
+        {return TrySelectLaneType015(element);}
 
         private void UpdatePreview()
         {
@@ -207,54 +201,25 @@ namespace OdysseyOracle
 
         public bool ValidatePlacement(Vector3 position,out string reason)
         {
-            reason=string.Empty;
-            if(!Available||!ModelsReady){reason="Tower building is unavailable.";return false;}
-            if(!session.World.TowerPlatforms.TryGetCanonical(position,out Vector3 canonical,out int pad)||!session.World.IsBuildPadActive(canonical))
-            {reason="Choose one of the active raised platforms.";return false;}
-            if(PlacedCount>=MaximumBuildings){reason="All four platforms are occupied.";return false;}
-            int lane=GetLane(canonical),count=0;
-            foreach(var tower in placed.Values)if(tower!=null&&!tower.IsDestroyed)
-            {
-                if(XZSquared(tower.Position,canonical)<4f){reason="This platform is occupied.";return false;}
-                if(GetLane(tower.Position)==lane)count++;
-            }
-            //007 four shared pads have no admission-lane or x-sign ownership cap.
-            if(!session.World.TowerPlatforms.TryGetTopSurface(pad,out _)){reason="The platform top is obstructed.";return false;}
-            return true;
+            if(session==null||session.Player==null){reason=LaneReasonText015(OdysseyOracle.Foundation.World.LaneBuildReason015.Unavailable);return false;}
+            return ValidatePlacementFrom(session.Player.transform.position,position,out reason);
         }
 
         public bool ValidatePlacementFrom(Vector3 feet,Vector3 position,out string reason)
         {
-            if(!ValidatePlacement(position,out reason)||!Finite(feet))return false;
-            if(!session.World.TowerPlatforms.TryGetCanonical(position,out Vector3 canonical,out int pad))return false;
-            Vector3 origin=feet+Vector3.up*1.65f,target=canonical,ray=target-origin;
-            if((feet-canonical).sqrMagnitude>BuildReach*BuildReach||ray.sqrMagnitude>BuildReach*BuildReach||ray.sqrMagnitude<.001f)
-            {reason="Stand within 25 metres of the platform.";return false;}
-            float distance=ray.magnitude;
-            int hits=Physics.RaycastNonAlloc(origin,ray/distance,groundHits,distance+.025f,~(1<<2),QueryTriggerInteraction.Ignore);
-            if(hits==groundHits.Length){reason="The platform view is crowded.";return false;}
-            int nearest=-1;float limit=float.PositiveInfinity;
-            for(int i=0;i<hits;i++)
-            {
-                Collider c=groundHits[i].collider;if(c==null||groundHits[i].distance>=limit)continue;
-                // Host knows its own collider; remote pose actors have no gameplay body collider.
-                if(session.Player!=null&&c.GetComponentInParent<OraclePlayer>()==session.Player)continue;
-                nearest=i;limit=groundHits[i].distance;
-            }
-            if(nearest<0||!session.World.TowerPlatforms.IsPadCollider(pad,groundHits[nearest].collider)||groundHits[nearest].normal.y<=.8f||
-                Mathf.Abs(groundHits[nearest].point.y-canonical.y)>.025f)
-            {reason="Look at an unobstructed platform top.";return false;}
-            return true;
+            reason=LaneReasonText015(OdysseyOracle.Foundation.World.LaneBuildReason015.Unavailable);if(!Available||!ModelsReady)return false;
+            int lane=LaneBuildContextValid015?laneLocked015:OdysseyOracle.Foundation.World.LaneBuildMath015.NearestLane(new Unity.Mathematics.float3(feet.x,feet.y,feet.z),session.World.AdmissionLaneMask);
+            bool valid=session.World.EvaluateLaneBuild015(position,feet,lane,selectedElement,laneOwned015,false,out var result);reason=LaneReasonText015(result);return valid;
         }
 
-        public void ApplyPlacedShrine(int id,int element,Vector3 position,int acceptedTier=1,int acceptedRevision=0)
-        {TryApplyPlacedShrine(id,element,position,acceptedTier,acceptedRevision);}
+        public void ApplyPlacedShrine(int id,int element,Vector3 position,int acceptedTier=1,int acceptedRevision=0,int acceptedLane=-1)
+        {TryApplyPlacedShrine(id,element,position,acceptedTier,acceptedRevision,acceptedLane);}
 
-        public bool TryApplyPlacedShrine(int id,int element,Vector3 position,int acceptedTier=1,int acceptedRevision=0)
+        public bool TryApplyPlacedShrine(int id,int element,Vector3 position,int acceptedTier=1,int acceptedRevision=0,int acceptedLane=-1)
         {
-            if(!ModelsReady||session==null||session.World==null||session.World.TowerPlatforms==null||id<1||
+            if(!ModelsReady||session==null||session.World==null||id<1||
                 !TowerForgeDefinitions.ValidType(element)||!MatchTowerForgeRules.ValidTier(acceptedTier)||acceptedRevision<0||acceptedRevision>MatchTowerForgeRules.MaximumRevision)return false;
-            if(!session.World.TowerPlatforms.TryGetCanonical(position,out Vector3 canonical,out _)||!session.World.IsBuildPadActive(canonical))return false;
+            if(!CanonicalLanePosition015(position,out Vector3 canonical))return false;
             if(placed.TryGetValue(id,out var existing))
             {
                 if(existing==null||existing.Element!=element||(existing.Position-canonical).sqrMagnitude>.001f)return false;
@@ -262,10 +227,7 @@ namespace OdysseyOracle
             }
             if(PlacedCount>=MaximumBuildings)return false;
             foreach(var other in placed.Values)if(other!=null&&!other.IsDestroyed&&XZSquared(other.Position,canonical)<4f)return false;
-            var go=new GameObject(TowerNames[element]+" "+id);go.transform.SetParent(session.World.transform,false);go.transform.position=canonical;
-            var tower=go.AddComponent<PlacedElementShrine>();
-            tower.Initialize(session,id,element,green,gold,elementMaterials[element],towerModelLibrary,acceptedTier,acceptedRevision);
-            placed.Add(id,tower);return true;
+            return TryInstallLaneTower015(0,id,element,canonical,acceptedTier,acceptedRevision,acceptedLane);
         }
 
         void UpdatePadHighlights()
@@ -285,6 +247,8 @@ namespace OdysseyOracle
 
         public void CancelPlacement()
         {
+            CloseLaneContext015();
+            session?.Hud?.HideBuildMenu();
             IsPlacing = validPreview = false;hoveredPad=menuPad=-1;hoveredAvailable=false;menuPlatforms=null;menuRun=string.Empty;
             Hint = "";
             if (ghost != null) ghost.SetActive(false);
@@ -294,14 +258,14 @@ namespace OdysseyOracle
         public bool RemovePlacedShrine(int id)
         {
             if (!placed.TryGetValue(id, out PlacedElementShrine shrine)) return false;
-            placed.Remove(id);
+            RemoveWorkshop015(id);placed.Remove(id);
             if (shrine != null) { shrine.gameObject.SetActive(false); Destroy(shrine.gameObject); }
             return true;
         }
 
         public void ResetBuildings()
         {
-            CancelPlacement();
+            ClearWorkshop015();CancelPlacement();
             ReleaseTutorialPracticeTower(tutorialPracticeTower);
             foreach (PlacedElementShrine shrine in placed.Values)
                 if (shrine != null) { shrine.gameObject.SetActive(false); Destroy(shrine.gameObject); }
@@ -352,7 +316,7 @@ namespace OdysseyOracle
 
         private void OnDestroy()
         {
-            ResetBuildings();padHighlights?.Dispose();padHighlights=null;
+            ResetBuildings();DisposeWorkshop015();DisposeLaneBuilding015();padHighlights?.Dispose();padHighlights=null;
             towerModelLibrary?.Dispose();towerModelLibrary=null;
             if (ghost != null) Destroy(ghost);
             if (contextMarker != null) Destroy(contextMarker);
@@ -371,3 +335,18 @@ namespace OdysseyOracle
 // Existing Y-up world/tower anchors, real native enemy HP and sole shot/cooldown owners remain unchanged.
 // One separate tutorial tower field never enters player placed counts; reset/destruction release before model-library disposal.
 // No rewards, quest completion, save state, currency or worker/native ownership changes.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted metre/Y-up/XZ support roots and HUD Canvas; cosmetic floor boxes do not establish build permission.
+// Array Formats: Existing fixed8192 preview records, one ray job, four cached original tower choices, unchanged Frame64 pending/replay transaction.
+// Dependencies/Pointers: Local picker owns no pause/cursor/economy; accepted host result alone closes successful transaction. Normal input/native/Web rendering remain separate acceptance gates.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Accepted global waves1..40, tiers1..3 and existing Y-up/XZ tower roots; exact bound lesson/lab adapters remain separate.
+// Array Formats: Existing fixed4 towers and unchanged host snapshots plus cached scalar policy tier/wave/maximum; no ABI, save, cost, damage, enemy-aggression or hot allocation change.
+// Dependencies/Pointers: CampaignBalance015 owns target groups/capacity/additive4percent rate and durability math. Host alone accepts context; monotonic policy rebases preserve damaged fraction, repeated contexts are inert, and dead towers stay dead.

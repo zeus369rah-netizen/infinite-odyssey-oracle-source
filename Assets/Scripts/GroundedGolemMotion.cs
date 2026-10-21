@@ -5,14 +5,17 @@ namespace OdysseyOracle
     // # ARCHITECTURE SNAPSHOT
     // Main-thread presentation adapter: world-metre floor probes and root delta,
     // actor-local rigid block poses. Cached mesh Bounds and eight ray slots are
-    // allocated once per actor. No Animator/Avatar or clip compatibility is claimed.
+    // allocated once per actor. The verified default-OFF native pilot is optional.
     // This class never selects a victim, changes HP, fires a shot or advances an
     // attack clock. Only the existing host simulation may correct foot-root Y.
     internal sealed class GroundedGolemMotion
     {
-        readonly Transform root, body, leftLeg, rightLeg, leftArm, rightArm;
+        readonly Transform root, body, leftArm, rightArm;
+        readonly RigidPoseAnimation015 clip015;
+        Transform leftLeg, rightLeg;
         readonly Transform spine, head;
-        readonly Bounds leftBounds, rightBounds;
+        Bounds leftBounds, rightBounds;
+        readonly MonsterPooledView015 pooledView015;
         readonly MonsterVoxelCosmetics.Lease cosmeticParts;
         readonly RaycastHit[] groundHits = new RaycastHit[8];
         Vector3 previous;
@@ -20,15 +23,19 @@ namespace OdysseyOracle
         GroundedFloorSample floor;
 
         internal GroundedGolemMotion(Transform root, Transform body, Transform leftLeg,
-            Transform rightLeg, Transform leftArm, Transform rightArm, MonsterVoxelCosmetics.Lease cosmeticParts = null)
+            Transform rightLeg, Transform leftArm, Transform rightArm, MonsterVoxelCosmetics.Lease cosmeticParts = null, MonsterPooledView015 pooledView015 = null)
         {
             this.root = root; this.body = body; this.leftLeg = leftLeg; this.rightLeg = rightLeg;
-            this.cosmeticParts = cosmeticParts;
+            this.cosmeticParts = cosmeticParts; this.pooledView015 = pooledView015;
             this.leftArm = leftArm; this.rightArm = rightArm;
+            if (pooledView015 != null)
+            {
+                spine = pooledView015.Spine; head = pooledView015.Head; RebindPooled015(); clip015=RigidPoseAnimation015.TryCreate(root.GetComponent<OracleEnemy>(),body); return;
+            }
             leftBounds = leftLeg.GetComponent<MeshFilter>().sharedMesh.bounds;
             rightBounds = rightLeg.GetComponent<MeshFilter>().sharedMesh.bounds;
-            if (cosmeticParts != null && cosmeticParts.SpiderLegs != null)
-            { previous = root.position; return; } // Eight-leg model has no biped spine/head owner.
+            if (IsSpider015)
+            { previous = root.position; clip015=RigidPoseAnimation015.TryCreate(root.GetComponent<OracleEnemy>(),body); return; } // Eight-leg model has no biped spine/head owner.
             spine = Pivot(body, "Procedural torso pivot", new Vector3(0f, .65f, 0f));
             head = Pivot(spine, "Procedural head pivot", body.TransformPoint(new Vector3(0f, 1.48f, 0f)), true);
             // Original rigid pieces/colors stay intact; only their parents change.
@@ -37,6 +44,31 @@ namespace OdysseyOracle
             Reparent(body, head, "Left rune eye"); Reparent(body, head, "Right rune eye");
             Reparent(body, head, "Shade crown");
             previous = root.position;
+            clip015=RigidPoseAnimation015.TryCreate(root.GetComponent<OracleEnemy>(),body);
+        }
+
+        internal bool NativePoseActive015=>clip015!=null&&clip015.Active;
+        internal bool NativeShadePose015=>clip015!=null&&clip015.IsShadeProfile;
+        internal bool NativeSpiderPose015=>clip015!=null&&clip015.IsSpiderProfile;
+        internal ulong NativePoseEvaluations015=>clip015!=null?clip015.EvaluationCount:0ul;
+        internal uint NativePoseGeneration015=>clip015!=null?clip015.Generation:0u;
+        internal void SynchronizeNativeOwner015(){clip015?.SynchronizeOwner();}
+        internal void ResetNativePose015(uint generation){clip015?.ResetForLife(generation);if(IsSpider015)SetNativeSpiderSole015();previous=root.position;gait=weight=0f;}
+        internal void DisposeNativePose015(){clip015?.Dispose();}
+
+        bool IsSpider015 => pooledView015 != null ? pooledView015.IsSpider : cosmeticParts != null && cosmeticParts.SpiderLegs != null;
+        void PoseSpider015(float value, float blend, bool flying)
+        { if (pooledView015 != null) pooledView015.PoseSpider(value, blend, flying); else cosmeticParts.PoseSpider(value, blend, flying); }
+        void SetNativeSpiderSole015()
+        {if(pooledView015!=null)pooledView015.SetNativeSpiderSole015();else cosmeticParts?.SetNativeSpiderSole015();}
+        float LowestSpiderSole015() => pooledView015 != null ? pooledView015.LowestSpiderSole : cosmeticParts.LowestSpiderSole();
+        internal void RebindPooled015()
+        {
+            if (pooledView015 == null) return;
+            leftLeg = pooledView015.LeftLeg; rightLeg = pooledView015.RightLeg;
+            leftBounds = pooledView015.LeftBounds; rightBounds = pooledView015.RightBounds;
+            previous = root.position; gait = weight = nextProbe = deathTime = 0f; floor = default;
+            spine.localRotation = head.localRotation = Quaternion.identity;
         }
 
         internal void Tick(float dt, bool alive, bool flying, bool dormant, bool authoritative,
@@ -61,7 +93,7 @@ namespace OdysseyOracle
             {
                 // Keep the authored seated articulation, but plant its actual
                 // soles as well. No gait or attack clocks advance in this path.
-                if (!flying) SupportFeet(dt, authoritative, cosmeticParts != null && cosmeticParts.SpiderLegs != null);
+                if (!flying) SupportFeet(dt, authoritative, IsSpider015);
                 return;
             }
             float distance = delta.magnitude;
@@ -73,36 +105,47 @@ namespace OdysseyOracle
                 phase == OracleEnemy.GuardianAttackPhase.Strike ? Mathf.Lerp(-11f, 2f, progress) : -3f * weight;
             float recoil = hurt > 0f ? Mathf.Clamp01(hurt / .15f) : 0f;
             body.localRotation = Quaternion.identity;
-            bool spider = cosmeticParts != null && cosmeticParts.SpiderLegs != null;
-            if (!spider)
+            bool spider = IsSpider015;
+            bool nativePose=NativePoseActive015;
+            if (!spider && !nativePose)
             {
                 spine.localRotation = Quaternion.Euler(lean + recoil * 5f, 0f, -stride * 1.2f);
                 head.localRotation = Quaternion.Euler(-lean * .35f, -stride * 2f, 0f);
             }
             body.localPosition = new Vector3(0f, 0f, -recoil * .022f);
-            if (!authoritative && (phase == OracleEnemy.GuardianAttackPhase.Windup || phase == OracleEnemy.GuardianAttackPhase.Strike))
+            if (!nativePose && !authoritative && (phase == OracleEnemy.GuardianAttackPhase.Windup || phase == OracleEnemy.GuardianAttackPhase.Strike))
             {
                 float angle = phase == OracleEnemy.GuardianAttackPhase.Windup ? -105f * progress : Mathf.Lerp(-105f, 35f, progress);
                 leftArm.localRotation = rightArm.localRotation = Quaternion.Euler(angle, 0f, 0f);
             }
             if (spider)
             {
-                cosmeticParts.PoseSpider(gait, weight, flying);
+                if(nativePose&&NativeSpiderPose015&&!flying)
+                {clip015.Evaluate(dt,weight,gait/(Mathf.PI*2f),phase,progress);SetNativeSpiderSole015();}
+                else PoseSpider015(gait, weight, flying);
                 if (!flying) SupportFeet(dt, authoritative, true);
                 return;
             }
             if (flying)
             {
-                spine.localRotation = head.localRotation = Quaternion.identity;
-                leftLeg.localRotation = rightLeg.localRotation = Quaternion.Euler(-48f, 0f, 0f);
-                return;
+                if(nativePose)clip015.Evaluate(dt,weight,gait/(Mathf.PI*2f),phase,progress);
+                else
+                {
+                    spine.localRotation = head.localRotation = Quaternion.identity;
+                    leftLeg.localRotation = rightLeg.localRotation = Quaternion.Euler(-48f, 0f, 0f);
+                }
+                return; // Existing host/peer root hover owns altitude; no grounded sole correction in flight.
             }
-            PoseLeg(leftLeg, -.23f, stride, lean);
-            PoseLeg(rightLeg, .23f, -stride, lean);
-            if (phase == OracleEnemy.GuardianAttackPhase.Ready || phase == OracleEnemy.GuardianAttackPhase.Recovery)
+            if(nativePose)clip015.Evaluate(dt,weight,gait/(Mathf.PI*2f),phase,progress);
+            else
             {
-                leftArm.localRotation = Quaternion.Euler(-stride * 16f, 0f, 0f);
-                rightArm.localRotation = Quaternion.Euler(stride * 16f, 0f, 0f);
+                PoseLeg(leftLeg, -.23f, stride, lean);
+                PoseLeg(rightLeg, .23f, -stride, lean);
+                if (phase == OracleEnemy.GuardianAttackPhase.Ready || phase == OracleEnemy.GuardianAttackPhase.Recovery)
+                {
+                    leftArm.localRotation = Quaternion.Euler(-stride * 16f, 0f, 0f);
+                    rightArm.localRotation = Quaternion.Euler(stride * 16f, 0f, 0f);
+                }
             }
             SupportFeet(dt, authoritative, false);
         }
@@ -121,7 +164,7 @@ namespace OdysseyOracle
             {
                 Vector3 p = rootPosition; p.y = floor.Height; root.position = p; previous = p;
             }
-            float sole = spider ? cosmeticParts.LowestSpiderSole() : Mathf.Min(Sole(leftLeg, leftBounds), Sole(rightLeg, rightBounds));
+            float sole = spider ? LowestSpiderSole015() : Mathf.Min(Sole(leftLeg, leftBounds), Sole(rightLeg, rightBounds));
             float up = root.TransformVector(Vector3.up).y;
             if (Mathf.Abs(up) > .001f)
                 body.localPosition += Vector3.up * ((floor.Height + .004f - sole) / up);
@@ -168,3 +211,14 @@ namespace OdysseyOracle
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world metres and original actor-local+Z/Y-up; pooled lifetime only.
+// Array Formats: Exactly48 persistent actor slots/four retained original templates/17 reusable part slots per actor.
+// Dependencies/Pointers: Existing HP/projectile/attack owners remain; root integrates guarded hunks; native/Burst/memory acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current world-root authority and six original body-local pivots; native pilot remains OFF by default.
+// Array Formats: Existing support buffers and pool caches; at most two owned graphs, no new per-frame allocation.
+// Dependencies/Pointers: Current pool/XP/health/death/reward owners unchanged; graph evaluation precedes original SupportFeet and pool generation resets.
+

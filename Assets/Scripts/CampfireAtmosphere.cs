@@ -9,6 +9,8 @@ namespace OdysseyOracle
         Material flame, smoke;
         GameSession session;
         Transform effects;
+        readonly ParticleSystem[] roomReactionParticles=new ParticleSystem[2];
+        int roomReactionParticleCount;float roomReactionLastFuel=-1;
         public void Initialize(GameSession owner)
         {
             session = owner;
@@ -38,6 +40,7 @@ namespace OdysseyOracle
             var go = new GameObject(label);
             go.transform.SetParent(effects, false);
             var particles = go.AddComponent<ParticleSystem>();
+            roomReactionParticles[roomReactionParticleCount++]=particles;
             particles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             var main = particles.main;
             main.loop = true;
@@ -63,7 +66,31 @@ namespace OdysseyOracle
             renderer.renderMode = ParticleSystemRenderMode.Billboard;
             particles.Play();
         }
-        void Update() { if (session != null && effects != null) effects.gameObject.SetActive(!session.World.IsCoopArena); }
+        void Update()
+        {
+            if (session == null || effects == null) return;
+            bool tutorial=session.World!=null&&session.World.Mode020==WorldMode020.TutorialRefuge;
+            if(effects.gameObject.activeSelf!=tutorial)effects.gameObject.SetActive(tutorial);
+            if(!tutorial)return;
+            float fuel = session.World.CampfireReactionFuel;
+            float factor = session.Graphics != null ? session.Graphics.EffectiveParticleFactor : 1f;
+            bool extinguishing = fuel <= .001f && roomReactionLastFuel > .001f;
+            roomReactionLastFuel = fuel;
+            for (int i = 0; i < roomReactionParticleCount; i++)
+            {
+                var particles = roomReactionParticles[i];
+                var emission = particles.emission;
+                float rate = (i == 0 ? 10f : 4f) * fuel * factor;
+                // A settings refresh can rewrite emission even when fuel is unchanged.
+                if (!Mathf.Approximately(emission.rateOverTimeMultiplier, rate)) emission.rateOverTime = rate;
+                if (extinguishing) particles.Clear(true);
+            }
+        }
         void OnDestroy() { if (flame != null) Destroy(flame); if (smoke != null) Destroy(smoke); }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing refuge geometry/world axes and support pivots unchanged; elemental numeric state applies only to the supported refuge.
+// Array Formats: Existing owner arrays remain canonical; fixed512-node/8word reaction state supplies bounded scalar presentation gains.
+// Dependencies/Pointers: Host accepted single Fire/Earth/Wind shots only; existing Object adapters retain materials/lights/lifetime, no rewards/saves or shrine/portal gameplay mutation.

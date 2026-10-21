@@ -76,8 +76,9 @@ namespace OdysseyOracle
         {
             partyHealthRoot=Frame(hudRoot,"AcceptedPartyHealth",new Vector2(0,1),new Vector2(0,1),
                 new Vector2(300,-148),new Vector2(270,30+8*34),Panel,MutedGold);
-            Label(partyHealthRoot,"AcceptedPartyHealthHeading","PARTY VITALS",17,Gold,TextAnchor.MiddleLeft,
+            partyDisclosureLabel015=Label(partyHealthRoot,"AcceptedPartyHealthHeading","▸ PARTY VITALS · EXPAND",14,Gold,TextAnchor.MiddleLeft,
                 new Vector2(10,-3),new Vector2(250,25),new Vector2(0,1));
+            var disclosure=partyHealthRoot.gameObject.AddComponent<UnityEngine.UI.Button>();disclosure.targetGraphic=partyHealthRoot.GetComponent<UnityEngine.UI.Image>();disclosure.targetGraphic.raycastTarget=true;disclosure.onClick.AddListener(TogglePartyVitals015);
             for(int slot=0;slot<partyHealthRows.Length;slot++)
             {
                 var row=partyHealthRows[slot]=new PartyHealthRow{SlotLabel="ORACLE "+(slot+1),OwnLabel="YOU | "+(slot+1)};
@@ -124,7 +125,7 @@ namespace OdysseyOracle
                     row.Name.text=local?row.OwnLabel:row.SlotLabel;row.Value.text="HP UNKNOWN";row.Value.color=Muted;row.Fill.enabled=false;
                 }
                 bool known=session.TryGetPeerHealth(peer,out var hp)&&ValidPartyHealth(hp,peer);
-                UpdatePartyHealthRow(row,known,hp);row.Root.gameObject.SetActive(true);
+                UpdatePartyHealthRow(row,known,hp);row.Root.gameObject.SetActive(partyVitalsExpanded015);
             }
             for(int i=0;i<partyHealthRows.Length;i++)if(!partyHealthRows[i].Seen)ClearPartyHealthRow(partyHealthRows[i]);
             FitPartyHealth();
@@ -154,25 +155,23 @@ namespace OdysseyOracle
         private void FitPartyHealth()
         {
             if(minimapRoot==null||hudRoot==null){partyLayoutAvailable=false;return;}
-            minimapRoot.GetWorldCorners(partyMapCorners);
-            Vector3 mapRight=hudRoot.InverseTransformPoint(partyMapCorners[2]);
-            Vector3 mapBottom=hudRoot.InverseTransformPoint(partyMapCorners[0]);
+            var anchor=readinessHudRoot!=null&&readinessHudRoot.gameObject.activeInHierarchy?readinessHudRoot:minimapRoot;
+            anchor.GetWorldCorners(partyMapCorners);
+            Vector3 bottom=hudRoot.InverseTransformPoint(partyMapCorners[0]);
             float width=hudRoot.rect.width,height=hudRoot.rect.height;
-            float left=mapRight.x-hudRoot.rect.xMin+16,top=148;
-            // Fixed slots remain fixed even if a middle member leaves. The layout
-            // reserves all8 rows and never overlaps reticle, title or bottom vitals.
-            float panelHeight=30+8*34;
-            partyLayoutAvailable=left+270<=width*.5f-72&&top+panelHeight<=height-280;
-            if(partyLayoutAvailable)
-            {
-                var position=new Vector2(left,-top);
-                if((partyHealthRoot.anchoredPosition-position).sqrMagnitude>.01f)partyHealthRoot.anchoredPosition=position;
-            }
-            float noticeTop=hudRoot.rect.yMax-mapBottom.y+(session.Graphics!=null&&session.Graphics.PerformanceOverlayVisible?104:16);
-            partyNoticeAvailable=noticeTop+24<=height-280;
-            var noticePosition=new Vector2(36,-noticeTop);
-            if((partyLayoutNotice.rectTransform.anchoredPosition-noticePosition).sqrMagnitude>.01f)
-                partyLayoutNotice.rectTransform.anchoredPosition=noticePosition;
+            float left=bottom.x-hudRoot.rect.xMin,top=hudRoot.rect.yMax-bottom.y+8;
+            int rows=0;for(int i=0;i<partyHealthRows.Length;i++)if(partyHealthRows[i].Seen)rows++;
+            float panelHeight=30+(partyVitalsExpanded015?rows*34:0);
+            partyHealthRoot.sizeDelta=new Vector2(270,panelHeight);
+            partyLayoutAvailable=left>=0&&left+270<=width-24&&top+panelHeight<=height-200;
+            if(partyLayoutAvailable)partyHealthRoot.anchoredPosition=new Vector2(left,-top);
+            partyNoticeAvailable=top+24<=height-200;
+            partyLayoutNotice.rectTransform.anchoredPosition=new Vector2(Mathf.Max(16,left),-top);
         }
     }
 }
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing guide/menu Canvas and accepted real tutorial/world/session owners.
+// Array Formats: Cold fixed presentation stores and cached labels; no new gameplay/native memory ownership.
+// Dependencies/Pointers: Work-only original UI packet; real pointer/audio/practice/reward/network authorities retained. Native/browser acceptance pending.

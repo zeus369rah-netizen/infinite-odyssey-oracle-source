@@ -43,7 +43,7 @@ namespace OdysseyOracle
             customizationOpenedFrame=Time.frameCount;SetPanel(JourneyPanel.Customize);customizationControls.Refresh();
         }
         void CloseCustomization()
-        {OracleAvatarLocalAppearance.Save();SetPanel(session!=null&&session.HasStarted?customizationReturn:JourneyPanel.Start);}
+        {OracleAvatarLocalAppearance.Save();SetPanel(customizationReturn);}
         void SetCustomizationVisible(bool visible)
         {
             if(customizationControls!=null)customizationControls.enabled=visible&&customizationInitialized;

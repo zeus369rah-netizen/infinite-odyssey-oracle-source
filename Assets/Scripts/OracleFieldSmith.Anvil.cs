@@ -7,7 +7,7 @@ namespace OdysseyOracle
     {
         int anvilLookFrame=-1;
         bool anvilLook;
-        const string AnvilGuide="TOWER ANVIL\nThe four tier-one tower blueprints are included in a connected campaign. Opening the anvil records the Smith visit after the host confirms your reach; no purchase is required.\n\nEarn Forge charge during the stage. Return here after stage one or two to buy an optional tower upgrade using carried campaign charge. Upgrade purchases stay locked before stage one and throughout the arena.\n\nThis anvil never spends your permanent town wallet. Talk to the Smith himself to browse the separate solo town shop.";
+        const string AnvilGuide="TOWER ANVIL\nThe four tier-one tower blueprints are included in a connected campaign. Opening the anvil records the Smith visit after the host confirms your reach; no purchase is required.\n\nEarn Forge charge during the stage. Return here between cleared levels to buy an optional tower upgrade using carried campaign charge. Upgrade purchases stay locked before stage one and throughout the arena.\n\nThis anvil never spends your permanent town wallet. Talk to the Smith himself to browse the separate solo town shop.";
         bool AnvilContext=>initialized&&session!=null&&session.HasStarted&&session.World!=null&&session.World.IsTutorialRefuge&&
             !session.World.IsCoopArena&&!session.IsDead&&!session.IsDowned&&!session.Victory&&
             (session.Defense==null||!session.Defense.Running)&&session.Player!=null&&session.Shop!=null&&session.Shop.Blacksmith!=null&&
@@ -33,7 +33,9 @@ namespace OdysseyOracle
         bool TryOpenAnvilGuidance()
         {
             if(Time.frameCount==openedFrame||!CanOpenAnvilGuidance)return false;
-            if(!session.Hud.TryShowRefugeNpcConversation(this,"Tower Anvil · Between-stage Forge",AnvilGuide))return false;
+            bool firstUpgrade=session.RefugeActivities!=null&&session.RefugeActivities.FirstTowerUpgradeAccepted;
+            string lesson=firstUpgrade?"\n\nFirst tower upgrade · COMPLETE for this profile. Current campaign charge and ranks still belong only to that campaign.":"\n\nFirst tower upgrade · OPTIONAL. Only a real host-accepted tower rank upgrade between stages completes this lesson. Reading or sending a request does not. No extra reward, fee or purchase is required to leave.";
+            if(!session.Hud.TryShowRefugeNpcConversation(this,"Tower Anvil · Between-stage Forge",AnvilGuide+lesson))return false;
             openedFrame=Time.frameCount;session.Audio?.PlayUi();return true;
         }
         void TickAnvilGuidance()
@@ -54,3 +56,8 @@ namespace OdysseyOracle
 // Coordinate Space: Existing grounded original anvil local(1.10,0,.12) -> world metres/Y-up; actual collider gates the sole interaction.
 // Array Formats: Static guide text and borrowed references; one bounded main-thread ray, no per-frame text construction/native allocations.
 // Dependencies/Pointers: FieldSmith alone polls anvil E; original TownShop body remains separate. Existing adapter/host phase fence alone spends charge; guidance writes no account/save/quest state.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.

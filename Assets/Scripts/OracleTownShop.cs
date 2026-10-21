@@ -126,7 +126,7 @@ namespace OdysseyOracle
             if(Time.frameCount==lastInteractFrame || !CanOpen() || !IsLookingAtSmith())return false;
             lastInteractFrame=Time.frameCount;openedFrame=Time.frameCount;
             uiRoot.SetAsLastSibling();panel.ShowShop();
-            if(Visible)session.Audio?.PlayUi();
+            if(Visible){smith.NotifyAcceptedTalk009();session.RefugeActivities?.TryPlayNpcGreeting009(1,this,3);session.Audio?.PlayUi();}
             return Visible;
         }
 
@@ -145,9 +145,9 @@ namespace OdysseyOracle
             if(accepted)
             {
                 HighlightedAbility="";
-                PlayerPrefs.DeleteKey(ElementProgression.TutorialXpClaimKey);
-                PlayerPrefs.DeleteKey(ElementProgression.TutorialHeartstoneClaimKey);
-                PlayerPrefs.Save();
+                OracleProgressPrefs015.DeleteKey(ElementProgression.TutorialXpClaimKey);
+                OracleProgressPrefs015.DeleteKey(ElementProgression.TutorialHeartstoneClaimKey);
+                OracleProgressPrefs015.Save();
             }
             return accepted;
         }
@@ -158,25 +158,32 @@ namespace OdysseyOracle
         public bool IsPassiveUnlocked(int element,int node) => model.IsPassiveUnlocked(element,node);
         public int GetCombinedPassiveMask(int runMask) => (runMask|model.PassiveMask)&4095;
 
+        // Cosmetics follow Commit; a feedback failure never changes a successful saved transaction.
+        void NotifyCommittedElementUpgrade011(int element)
+        {
+            try{panel?.ShowAcceptedElementUpgrade011(element);}catch(Exception){ }
+            try{if(session.Audio!=null&&!session.Audio.TryPlayElementUpgrade011(element))session.Audio.PlayUi();}catch(Exception){ }
+        }
+
         public bool TryPurchaseWand(int element)
         {
             if(!CanTransact() || !CheckLineOfSight())return false;
             bool accepted=Commit(candidate=>candidate.TryBuyWand(element,true));
-            if(accepted){HighlightedAbility=Names[element]+" wand level "+model.GetWandLevel(element);session.Audio?.PlayUi();}
+            if(accepted){HighlightedAbility=Names[element]+" wand level "+model.GetWandLevel(element);NotifyCommittedElementUpgrade011(element);}
             return accepted;
         }
         public bool TryPurchasePassive(int element,int node)
         {
             if(!CanTransact() || !CheckLineOfSight())return false;
             bool accepted=Commit(candidate=>candidate.TryUnlockPassive(element,node,true));
-            if(accepted){HighlightedAbility=PassiveNames[element,node];session.Audio?.PlayUi();}
+            if(accepted){HighlightedAbility=PassiveNames[element,node];NotifyCommittedElementUpgrade011(element);}
             return accepted;
         }
 
         bool TownContext() => initialized && session!=null && session.HasStarted &&
             (session.FieldSmith==null||!session.FieldSmith.CampaignSaveFence) &&
             !session.IsDead && !session.IsDowned && !session.Victory && session.World!=null &&
-            !session.World.IsCoopArena && (session.Defense==null || !session.Defense.Running) &&
+            session.World.Mode020==WorldMode020.TutorialRefuge && (session.Defense==null || !session.Defense.Running) &&
             (session.Opening==null || (!session.Opening.IsTransitioning && !session.Opening.IsIntroPlaying));
         bool CanOpen() => TownContext() && !Visible && session.IsPlaying &&
             (session.FieldSmith==null||!session.FieldSmith.ClaimsAnvilInteraction) &&
@@ -213,8 +220,7 @@ namespace OdysseyOracle
         }
         void UpdateVisibility()
         {
-            bool town=session.World!=null && !session.World.IsCoopArena;
-            town = town && session.Tutorial != null && (session.Tutorial.Finished || session.Tutorial.CurrentLesson==TutorialDirector.Lesson.Shop);
+            bool town=session.World!=null && session.World.Mode020==WorldMode020.TutorialRefuge;
             if(smithRoot!=null && smithRoot.activeSelf!=town)smithRoot.SetActive(town);
         }
         void SetModalPause(bool paused)
@@ -259,12 +265,12 @@ namespace OdysseyOracle
                 envelope.checksum=Checksum(envelope.revision,payload);
                 string serialized=JsonUtility.ToJson(envelope);
                 if(serialized.Length>MaxSaveLength)return false;
-                string oldPrimary=PlayerPrefs.GetString(SaveKey,""),oldBackup=PlayerPrefs.GetString(BackupKey,"");
+                string oldPrimary=OracleProgressPrefs015.GetString(SaveKey,""),oldBackup=OracleProgressPrefs015.GetString(BackupKey,"");
                 try
                 {
-                    if(reset)PlayerPrefs.SetString(BackupKey,serialized);
-                    else if(!string.IsNullOrEmpty(lastGoodSave))PlayerPrefs.SetString(BackupKey,lastGoodSave);
-                    PlayerPrefs.SetString(SaveKey,serialized);PlayerPrefs.Save();
+                    if(reset)OracleProgressPrefs015.SetString(BackupKey,serialized);
+                    else if(!string.IsNullOrEmpty(lastGoodSave))OracleProgressPrefs015.SetString(BackupKey,lastGoodSave);
+                    OracleProgressPrefs015.SetString(SaveKey,serialized);OracleProgressPrefs015.Save();
                 }
                 catch(Exception)
                 {
@@ -293,7 +299,7 @@ namespace OdysseyOracle
         void LoadLocal()
         {
             string primary,backup;
-            try{primary=PlayerPrefs.GetString(SaveKey,"");backup=PlayerPrefs.GetString(BackupKey,"");}
+            try{primary=OracleProgressPrefs015.GetString(SaveKey,"");backup=OracleProgressPrefs015.GetString(BackupKey,"");}
             catch(Exception)
             {
                 saveBlocked=true;saveStatus="Local storage is unavailable. Purchases are unavailable; existing records were kept.";return;
@@ -335,7 +341,7 @@ namespace OdysseyOracle
         }
         static void RestorePreference(string key,string oldValue)
         {
-            if(string.IsNullOrEmpty(oldValue))PlayerPrefs.DeleteKey(key);else PlayerPrefs.SetString(key,oldValue);
+            if(string.IsNullOrEmpty(oldValue))OracleProgressPrefs015.DeleteKey(key);else OracleProgressPrefs015.SetString(key,oldValue);
         }
         void OnDisable()
         {
@@ -358,3 +364,7 @@ namespace OdysseyOracle
 // World metres/Y-up/XZ; existing station mesh/pivots and canonical host roles remain.
 // Bounded cached collider/root references only; no new economy/native buffers or quest bits.
 // Root owns Unity integration and native acceptance; this is a guarded work candidate.
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted elemental shop/UI/listener or cosmetic atlas space; no authority or saved-key changes.
+// Array Formats: Four bounded clip/image identities and accepted-element bits; existing12models/fourcuevoices and workshop mesh.
+// Dependencies/Pointers: Root follow-up imports four retained generated cues; baseline/replay/request failure stays silent, no hot loads/new audio sources or media/provider work here.

@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using OdysseyOracle.Foundation.Pools015;
 
 namespace OdysseyOracle
 {
     // The connected host owns stage time, enemy admissions, damage simulation and building.
-    // Clients render accepted snapshots; campaign stages use the bounded150s/100-admission plan.
+    // Clients render accepted snapshots; eight milestones contain forty quota-and-clear waves.
     // # ARCHITECTURE SNAPSHOT
     // Director owns the confirmed run, admission/geometry masks and packet validation.
     // Peer health owns fixed host records/tickets; combat owns main-thread collision.
@@ -32,30 +33,30 @@ namespace OdysseyOracle
         public int AdmissionLaneMask=>admissionLaneMask;
         public int AdmissionLaneCount=>CoopPartyCapacity.LaneCount(admissionLaneMask);
         public int DrainingLaneCount=>CoopPartyCapacity.LaneCount(activeLaneMask&~admissionLaneMask);
-        public const int PartyProtocolVersion=7;
+        public const int PartyProtocolVersion=8;
         public bool IsAuthority => rooms != null && rooms.Connected && rooms.IsHost;
         public float RemainingSeconds { get; private set; } = CampaignStagePacing.StageSeconds;
         float DefenseDurationSeconds=>CampaignActive?CampaignStagePacing.StageSeconds:(float)CurrentDefensePacing.StageSeconds;
-        const string CampaignDurationLabel="150 simulation seconds · 100 enemies";
+        const string CampaignDurationLabel="five waves · forty across eight milestones";
         string DefenseDurationLabel=>CampaignActive?CampaignDurationLabel:"ten minutes";
         CampaignStageAdmissions campaignAdmissions;
         public string Status { get; private set; } = "The host can start a ten-minute shrine defense.";
         public int LocalBuildTokens => IsAuthority && peers.TryGetValue(rooms.LocalClientId, out var peer) ? peer.Tokens : localTokens;
         public int PlacedCount => buildings.Count;
         public int ActiveLaneCount=>CoopPartyCapacity.LaneCount(activeLaneMask);
-        public int ActiveTowerCapacity=>MaximumPlacedShrines;
+        public int ActiveTowerCapacity=>CampaignBalance015.TowerCapacity(Mathf.Clamp(WaveNumber,1,CampaignBalance015.WaveCount));
         public int WaveNumber { get; private set; }
         public int SpawnedThisWave { get; private set; }
         public int WaveQuota { get; private set; }
         public int AliveCount { get; private set; }
         public const int MaximumPlacedShrines = 4;
         public const int MaximumPerLane = 2;
-        public const int TowerProtocolVersion = 5;
+        public const int TowerProtocolVersion = 6;
         public const int NovaProtocolVersion = 5;
 
         // Original 003 candidate: finite per-lane admissions, soft two-alive gate.
-        readonly int[] laneAdmissions = new int[CoopPartyCapacity.MaximumPlayers];
-        readonly int[] laneAlive = new int[CoopPartyCapacity.MaximumPlayers];
+        readonly int[] laneAdmissions = new int[CoopPartyCapacity.MaximumLanes];
+        readonly int[] laneAlive = new int[CoopPartyCapacity.MaximumLanes];
         readonly Dictionary<int, int> enemyLanes = new Dictionary<int, int>(CampaignStagePacing.AdmissionsPerStage);
         int laneCursor,activeLaneMask,admissionLaneMask,correctionSerial,appliedCorrectionSerial;
         double nextPersonalSync;
@@ -72,6 +73,7 @@ namespace OdysseyOracle
             public bool shade, flying;
             public Vector3 position;
             public float hp, maximum;
+            public uint liveStatus;
             [SerializeField] int q, p, s,l;
             public int lane{get=>l;set=>l=value;}
             [SerializeField] float u, w, t, r;
@@ -94,6 +96,7 @@ namespace OdysseyOracle
         [Serializable] sealed class BuildingState
         {
             public int id, element;
+            public uint cell;public int lane,buildRevision;
             public int tier=1,tierRevision;
             public ulong owner;
             public Vector3 position;
@@ -109,7 +112,7 @@ namespace OdysseyOracle
             public PeerHealthState health;
             public int forgeVersion,forgeBank,forgeTiers,forgeRevision,forgeOutcome;
             public uint forgeLastRequest;
-            public int level, xp, points, mask;
+            public int level, xp, points, mask, progressRevision015;
             public int[] claimed;
             public float[] returnCooldowns;
             public float cooldown, comboSeconds;
@@ -134,6 +137,7 @@ namespace OdysseyOracle
             public Vector3 Origin;
             public double Expires;
             public bool Nova, HitConfirmed, ImpactConfirmed;
+            public int Element,Combo020;public uint ImpactBits;
         }
         [Serializable] sealed class Message
         {
@@ -151,7 +155,9 @@ namespace OdysseyOracle
             public uint forgeRequestId;
             [SerializeField] int tv;
             public int towerVersion {get=>tv;set=>tv=value;}
+            public uint buildSemantic;
             public float remaining, shrine;
+            public double elapsed;
             public Vector3 position, direction;
             public EnemyState[] enemies;
             public BuildingState[] buildings;
@@ -172,6 +178,8 @@ namespace OdysseyOracle
         sealed class Peer
         {
             public int Tokens = 3;
+            public uint LaneLastNonce015,LaneContext015,LaneSemantic015;public int LaneLocked015,LaneEpoch015,LaneTarget015,LaneTargetRevision015;
+            public ulong LaneRunA015,LaneRunB015;public OdysseyOracle.Foundation.World.LaneBuildFrame64 LaneResponse015,LaneRequest015;
             public readonly MatchTowerForgeAccount Forge=new MatchTowerForgeAccount();
             public double NextForgeRequest,NextPersonalSync;
             public int Element;
@@ -184,8 +192,9 @@ namespace OdysseyOracle
             public double NextAutoFireChange;
             public double NextCast;
             public AutoSelectionWait AutoSelectionWait;
+            public HeldFireIntent015 Held015;
             public readonly double[] ReturnReadyAt = new double[4];
-            public int Level = 1, Xp, Points, Mask;
+            public int Level = 1, Xp, Points, Mask, ProgressRevision015;
             public int CampaignProgressRevision;
             public readonly HashSet<int> Claimed = new HashSet<int>();
         }
@@ -229,6 +238,7 @@ namespace OdysseyOracle
         public void Initialize(GameSession session)
         {
             owner = session;
+            InitializeXp015();
             peerHealth=GetComponent<PeerCombatAuthority>();
             if(peerHealth==null){peerHealth=gameObject.AddComponent<PeerCombatAuthority>();ownsPeerHealth=true;}
             peerHealth.Initialize(owner,this);
@@ -242,9 +252,9 @@ namespace OdysseyOracle
             var current = owner != null ? owner.Combat : null;
             if (current != feedbackCombat)
             {
-                if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit -= OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact -= OnAuthoritativeNovaImpact; }
+                if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit -= OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact -= OnAuthoritativeNovaImpact; feedbackCombat.AuthoritativeSpellImpact -= OnAuthoritativeSpellImpact; }
                 feedbackCombat = current;
-                if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit += OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact += OnAuthoritativeNovaImpact; }
+                if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit += OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact += OnAuthoritativeNovaImpact; feedbackCombat.AuthoritativeSpellImpact += OnAuthoritativeSpellImpact; }
             }
             if (!towerFeedbackSubscribed)
             {
@@ -257,12 +267,12 @@ namespace OdysseyOracle
         {
             var current = owner != null ? owner.Rooms : RoomConnection.Instance;
             if (current == rooms) return;
-            if (rooms != null) rooms.ReliableMessageReceived -= OnMessage;
+            if (rooms != null) { rooms.ReliableMessageReceived -= OnMessage; rooms.ArenaImpactMessage -= OnArenaImpactFrame; rooms.XpMessage015 -= OnXpFrame015; rooms.LaneBuildMessage015 -= OnLaneBuildFrame015; }
             dangerRunGate.ResetConnection();
             owner?.Combat?.ClearRemoteDangerState();
             owner?.Combat?.ApplyRemoteNovaState(0,0f);
             rooms = current;
-            if (rooms != null) rooms.ReliableMessageReceived += OnMessage;
+            if (rooms != null) { rooms.ReliableMessageReceived += OnMessage; rooms.ArenaImpactMessage += OnArenaImpactFrame; rooms.XpMessage015 += OnXpFrame015; rooms.LaneBuildMessage015 += OnLaneBuildFrame015; }
         }
 
         public void StartDefense()
@@ -284,7 +294,9 @@ namespace OdysseyOracle
             {
                 runId = Guid.NewGuid().ToString("N");
                 if(!peerHealth.ResetRun(runId)){Running=hasRun=false;Status="Peer combat could not prepare this run.";return;}
+                EnsureImpactRun();
                 ReconcilePeers();
+                if(!CommitQueuedSoloRestartSeed()){Running=hasRun=false;Status="Accepted solo restart state could not be committed. No rewards or ranks were granted.";return;}
                 WaveQuota = CampaignActive?CampaignStagePacing.AdmissionsPerStage:ActiveLaneCount;
                 SendPersonal(rooms.LocalClientId, 0);
                 if (owner.Combat.Shrine != null) owner.Combat.Shrine.Activate();
@@ -315,11 +327,13 @@ namespace OdysseyOracle
             dangerRunGate.EndRun();
             owner?.Combat?.ClearRemoteDangerState();
             peerHealth?.ClearRun();owner?.Combat?.InvalidatePeerTargetCache();
+            foreach(var entry in peers)entry.Value.Held015.Clear();
+            localHeldSelection015=0;
             if(preserveCampaignPeers)ResetCampaignPeerTransients();else peers.Clear();
             enemyLanes.Clear();
             Array.Clear(laneAdmissions, 0, laneAdmissions.Length);
             Array.Clear(laneAlive, 0, laneAlive.Length);
-            laneCursor = 0;campaignAdmissions.Reset();
+            laneCursor = 0;ResetCampaignWaveContext015();ResetXpLedger015(preserveCampaignPeers);
             replicas.Clear();
             buildings.Clear();
             snapshotIds.Clear();
@@ -331,8 +345,9 @@ namespace OdysseyOracle
             activeLaneCount=activeLaneMask=admissionLaneMask=correctionSerial=appliedCorrectionSerial=0;nextPersonalSync=0d;
             enemySerial = buildingSerial = snapshotSerial = appliedSerial = result = 0;
             waveIndex = WaveNumber = SpawnedThisWave = WaveQuota = AliveCount = 0;
+            if(CampaignActive)SyncCampaignWaveMetrics015();
             localAutoFireSequence = localSelectionSequence = localCastSequence = 0;
-            runId = null;
+            runId = null;ResetArenaImpactRun();
             endingApplied = clockStarted = false;
             simulationClock = nextSnapshot = nextReadyMessage = 0d;
             ResetPresentationState();
@@ -400,11 +415,12 @@ namespace OdysseyOracle
                     if(CampaignActive)
                     {
                         if(shrineIntact)RunSpawns(simulationClock);
-                        var outcome=CampaignStagePacing.Outcome(simulationClock,campaignAdmissions.Count,shrineIntact);
+                        var outcome=campaignAdmissions.Tick(simulationClock,AliveCount,shrineIntact);
+                        SyncCampaignWaveMetrics015();
                         if(outcome!=CampaignStageOutcome.Running)EndDefense(outcome==CampaignStageOutcome.Succeeded);
                         else
                         {
-                            if(RemainingSeconds<=0f)Status="Finishing enemy admissions · "+campaignAdmissions.Count+"/100 · up to30 seconds grace";
+                            if(RemainingSeconds<=0f)Status="Finishing the current wave within its bounded clear window.";
                             AutoCastPlayers(simulationClock);
                         }
                     }
@@ -430,7 +446,7 @@ namespace OdysseyOracle
             {
                 if(!rooms.TryGetAdmissionSlot(id,out int slot))continue;
                 if(!peers.TryGetValue(id,out Peer peer))
-                {peer=new Peer{NextCast=simulationClock+1d,ArenaReady=id==rooms.LocalClientId&&owner.World!=null&&owner.World.IsCoopArena};peers[id]=peer;}
+                {peer=new Peer{NextCast=simulationClock+OracleCombat.PrimaryCadenceSeconds,ArenaReady=id==rooms.LocalClientId&&owner.World!=null&&owner.World.IsCoopArena};peers[id]=peer;}
                 peerHealth.ReconcilePeer(id,slot,peer.ArenaReady);
             }
             RefreshActiveLanes();
@@ -438,10 +454,11 @@ namespace OdysseyOracle
 
         void RefreshActiveLanes()
         {
+            if(CampaignActive){ConfigureLaneMask(CampaignStagePacing.ActiveLaneMask(campaign.StageNumber));return;}
             int mask=0;
             foreach(var item in peers)if(item.Value.ArenaReady&&rooms.TryGetAdmissionSlot(item.Key,out int slot))
-                mask|=1<<(CampaignActive?CampaignStagePacing.LaneForAdmissionSlot(slot,campaign.StageNumber):CoopPartyCapacity.LaneForAdmissionSlot(slot));
-            if(mask==0)mask=1<<(CampaignActive?CampaignStagePacing.StageRoadOffset(campaign.StageNumber):0);
+                mask|=1<<CoopPartyCapacity.LaneForAdmissionSlot(slot);
+            if(mask==0)mask=1;
             ConfigureLaneMask(mask);
         }
 
@@ -465,7 +482,7 @@ namespace OdysseyOracle
                 if(!occupied)owner.World.CompleteLaneDrain(lane);
             }
             activeLaneMask=owner.World.ActiveLaneMask;activeLaneCount=CoopPartyCapacity.LaneCount(activeLaneMask);
-            if(hasRun)WaveQuota=CampaignActive?CampaignStagePacing.AdmissionsPerStage:Mathf.Max(SpawnedThisWave,CurrentDefensePacing.GetPhase(waveIndex).PerLaneQuota*AdmissionLaneCount);
+            if(hasRun)WaveQuota=CampaignActive?campaignAdmissions.WaveQuota:Mathf.Max(SpawnedThisWave,CurrentDefensePacing.GetPhase(waveIndex).PerLaneQuota*AdmissionLaneCount);
             // Four shared bastions are independent of membership lanes. Departure
             // stops new admissions and drains actors/bolts; no teleport or refund.
         }
@@ -495,6 +512,7 @@ namespace OdysseyOracle
                 owner.Combat.ClearEnemies(); replicas.Clear(); snapshotIds.Clear(); ResetPresentationState();
                 string previousRun=runId;runId=preparedRun;
                 if(peerHealth==null||!peerHealth.ResetRun(runId)){runId=previousRun;Status="Peer combat is not prepared.";return;}
+                EnsureImpactRun();
                 if(CampaignActive)localForge.ReleasePendingAfterTimeout();else localForge.ResetForRun();nextPersonalSync=0d;
                 appliedSerial = 0;
                     nextReadyMessage = 0d;
@@ -529,8 +547,7 @@ namespace OdysseyOracle
         void RunCampaignSpawns(double now)
         {
             if(!IsAuthority||AdmissionLaneCount<1)return;
-            waveIndex=CampaignStagePacing.PhaseAt(now);WaveNumber=waveIndex+1;
-            WaveQuota=CampaignStagePacing.AdmissionsPerStage;
+            SyncCampaignWaveMetrics015();
             if(!campaignAdmissions.CanAccept(now,AliveCount))return;
             Array.Clear(laneAlive,0,laneAlive.Length);
             foreach(var enemy in owner.Combat.ActiveEnemies)
@@ -541,7 +558,7 @@ namespace OdysseyOracle
             // successful spawn. Bounded cap/pool failures consume nothing.
             if(!campaignAdmissions.CommitAccepted(now))throw new InvalidOperationException("Campaign admission context drifted.");
             laneCursor=(candidate+1)&7;laneAdmissions[candidate]++;
-            SpawnedThisWave=campaignAdmissions.Count;AliveCount++;
+            SyncCampaignWaveMetrics015();AliveCount++;
         }
 
         public static bool CanAdmitWaveEnemy(int alive, int admitted, int quota)
@@ -560,14 +577,28 @@ namespace OdysseyOracle
         bool SpawnFromLane(int lane, float elapsed)
         {
             if(!owner.World.TryGetActiveInvasionPortal(lane,out Vector3 portal))return false;
-            var profile = CampaignActive?CampaignStagePacing.EnemyAt(campaign.StageNumber,campaignAdmissions.Count):CurrentDefensePacing.EnemyAt(waveIndex,laneAdmissions[lane]);
+            CurrentDefensePacing.EnemyProfile profile;
+            if(CampaignActive)
+            {
+                Vector3 core=owner.World.ShrinePosition;
+                if(!TryGetXpWaveContext(out _,out int acceptedWave,out _)||acceptedWave!=campaignAdmissions.GlobalWave||
+                    !CampaignTravel015.TryCreateProfile(acceptedWave,campaignAdmissions.WaveAccepted,portal.x,portal.z,core.x,core.z,out profile))return false;
+            }
+            else profile=CurrentDefensePacing.EnemyAt(waveIndex,laneAdmissions[lane]);
+            if(!TryAcceptedPartyDifficulty(out float partyDifficulty))return false;
             var archetype = (OracleEnemy.MonsterArchetype)profile.Archetype;
             int id = enemySerial + 1;
+            XpSource64 reservation015=default;
+            if(CampaignActive&&!TryPrepareAdmissionXp015(id,out reservation015))return false;
             var enemy = owner.Combat.SpawnEnemy(portal, id, archetype, profile.Flying);
             if (enemy == null) return false;
+            if(CampaignActive&&!BindAdmissionXp015(enemy,reservation015))
+            {if(!owner.Combat.AbortUncommittedEnemy015(enemy,id,enemy.PoolGeneration015))xpFault015=true;return false;}
             enemySerial = id;
             enemyLanes[id] = lane;
-            enemy.ConfigureDefenseWave(1f, profile.SpeedScale, profile.DamageScale, profile.Health >= 45f);
+            float healthMultiplier=CampaignActive?profile.Health/100f*partyDifficulty:partyDifficulty;
+            bool heavy=CampaignActive?CampaignStagePacing.HeavyAdmission(campaignAdmissions.GlobalWave,campaignAdmissions.WaveAccepted):profile.Health>=45f;
+            enemy.ConfigureDefenseWave(healthMultiplier, profile.SpeedScale, profile.DamageScale*partyDifficulty, heavy);
             return true;
         }
 
@@ -578,7 +609,7 @@ namespace OdysseyOracle
             {
                 BuildingState building = buildings[i];
                 if (PlacedElementShrine.TryGetRegistered(building.id, out var tower) && !tower.IsDestroyed)
-                { building.health = tower.Health; continue; }
+                { tower.ApplyAcceptedTowerPolicy015(building.tier,Mathf.Clamp(WaveNumber,1,CampaignBalance015.WaveCount));building.health = tower.Health; continue; }
                 buildings.RemoveAt(i);
                 owner.Builder?.RemovePlacedShrine(building.id);
                 // Destruction opens the pad, but spent personal placements stay spent.
@@ -589,9 +620,12 @@ namespace OdysseyOracle
         void AutoCastPlayers(double now)
         {
             foreach (var item in peers)
+            {
+                if (item.Value.Held015.Active) { TickHeldPeer015(item.Key,item.Value,now); continue; }
                 if (item.Value.AutoFireEnabled && item.Value.Selection.HasConfirmedSelection && now >= item.Value.NextCast && item.Value.AutoSelectionWait.Ready(now))
                     TryCast(item.Key, item.Value.Selection.ConfirmedElement, item.Value.Selection.ConfirmedMask, now,
                         null, true, 0, item.Value.TapRequests.Last);
+            }
         }
 
         public void RequestAutoFire(bool enabled)
@@ -630,12 +664,13 @@ namespace OdysseyOracle
                 selectionMask = mask, selectionSequence = localSelectionSequence, castSequence = serial, direction = direction }));
         }
 
-        void TryCast(ulong id, int element, int usedMask, double now, Vector3? requestedAim, bool automatic, uint requestSequence, uint selectionSequence)
+        void TryCast(ulong id, int element, int usedMask, double now, Vector3? requestedAim, bool automatic, uint requestSequence, uint selectionSequence, bool heldIntent015 = false)
         {
             if (!Running || !clockStarted || !IsAuthority || !peers.TryGetValue(id, out var peer) || !peer.ArenaReady) return;
             // Consume a manual request nonce even when cooling down: replaying an
             // old rejected click later must never turn it into a delayed shot.
-            if (!automatic && !peer.CastRequests.Accept(requestSequence)) return;
+            if (!automatic && !heldIntent015)
+            { peer.Held015.Clear(); if (!peer.CastRequests.Accept(requestSequence)) return; }
             if (automatic && (!peer.AutoFireEnabled || !peer.AutoSelectionWait.Ready(now)) || !peer.Selection.HasConfirmedSelection ||
                 !ConfirmedSelection.ValidMask(usedMask) || usedMask != peer.Selection.ConfirmedMask ||
                 element != peer.Selection.ConfirmedElement || selectionSequence != peer.TapRequests.Last) return;
@@ -652,26 +687,32 @@ namespace OdysseyOracle
             // Origin comes from the sender's bounded network pose, never a request-supplied origin.
             float damage = 0f;
             for (int ingredient = 0; ingredient < 4; ingredient++)
-                if ((usedMask & (1 << ingredient)) != 0) damage += ElementProgression.GetDamageMultiplier(peer.Mask, ingredient);
+                if ((usedMask & (1 << ingredient)) != 0) damage += ElementProgression.GetDamageMultiplier(peer.Mask, ingredient, peer.Level);
             damage /= SpellIngredientRules.Count(usedMask);
             // Accepted launches use fixed normal4s/super5s ingredient recovery
             // and a separate global0.5s cadence; passive haste does not shorten either.
             if (owner.Builder != null) damage *= owner.Builder.SupportDamageMultiplierAt(position);
             int combo = peer.Selection.Combo;
             Vector3 origin = position + Vector3.up * 1.65f;
+            if(SpellIngredientRules.Count(usedMask)==3)
+            { if(TryCastThree015(id,peer,usedMask,now,origin,direction,heldIntent015,automatic))rooms.PresentAcceptedPlayerCast015(id); return; }
+            if(shotSerial==int.MaxValue)return;
             int shotId = ++shotSerial;
             PrunePendingShots();
             if (pendingShots.Count >= 128) return;
             bool nova = SpellIngredientRules.IsSuper(usedMask);
-            pendingShots[shotId] = new PendingShot { Caster = id, Origin = origin, Expires = simulationClock + 4d, Nova = nova };
+            pendingShots[shotId] = new PendingShot { Caster = id, Origin = origin, Expires = simulationClock + 4d, Nova = nova, Element=element, Combo020=combo };
             bool fired = owner.Combat.AutoCastFrom(origin, element, damage, direction, combo, shotId, nova, statusMask: peer.Mask, ingredientMask: usedMask);
             if (!fired) { pendingShots.Remove(shotId); return; }
             peer.Nova.Reset();
+            if (!automatic) rooms.RecordAcceptedPeerActivity(id);
             ChargeAcceptedShot(peer,usedMask,nova,now);
+            if(heldIntent015)peer.Selection.Clear();
             // The current wand has one primary stream, capped at two accepted shots per second.
             // ChargeAcceptedShot already advanced the single accepted-launch cadence.
             if (id == rooms.LocalClientId) owner.Combat.CooldownRemaining[element] = SpellIngredientRules.RecoverySeconds(usedMask);
-            owner.Combat.PlayNetworkShotFeedback(element, origin, direction, combo, id == rooms.LocalClientId, nova);
+            owner.Combat.PlayNetworkShotFeedback(element, origin, direction, combo, id == rooms.LocalClientId, nova,shotId);
+            rooms.PresentAcceptedPlayerCast015(id);
             if (fired) SendPresentation(new PresentationMessage
             {
                 kind = "oracle.shot.v1", shotId = shotId, casterId = id, element = element,
@@ -689,7 +730,7 @@ namespace OdysseyOracle
             int recoveryMask = cosmicNova ? 15 : usedMask;
             ConfirmedSelection.CommitRecovery(recoveryMask, now, SpellIngredientRules.RecoverySeconds(recoveryMask), peer.ReturnReadyAt);
             peer.NextCast = now + OracleCombat.PrimaryCadenceSeconds;
-            peer.Selection.MarkCastAccepted();
+            RapidCastRules015.Accepted(ref peer.Selection, usedMask, false);
         }
 
         void PrunePendingShots()
@@ -808,11 +849,12 @@ namespace OdysseyOracle
                     appliedShotSerial = message.shotId;
                     pendingShots[message.shotId] = new PendingShot
                     {
-                        Caster = message.casterId, Origin = message.origin, Expires = simulationClock + 4d, Nova=message.cosmicNova
+                        Caster = message.casterId, Origin = message.origin, Expires = simulationClock + 4d, Nova=message.cosmicNova,Element=message.element,Combo020=message.combo
                     };
                 }
                 owner.Combat.PlayNetworkShotFeedback(message.element, message.origin, message.direction.normalized,
-                    message.combo, message.casterId == rooms.LocalClientId,message.cosmicNova);
+                    message.combo, message.casterId == rooms.LocalClientId,message.cosmicNova,message.shotId);
+                rooms.PresentAcceptedPlayerCast015(message.casterId);
             }
             else if (message.kind == "oracle.hit.v1")
             {
@@ -865,9 +907,11 @@ namespace OdysseyOracle
             if (!Running || !IsAuthority || !peers.TryGetValue(id, out var peer) || !peer.ArenaReady || !peer.TapRequests.Accept(sequence)) return false;
             if (element < 0 || element > 3 || owner.Revival != null && owner.Revival.IsPeerDowned(id))
             { SendPersonal(id, 0); return false; }
+            peer.Held015.Clear();
             if (!peer.Selection.Tap(element)) return false;
             peer.AutoSelectionWait.NotifyInput(simulationClock);
             peer.Element = peer.Selection.PreviewElement;
+            rooms.RecordAcceptedPeerActivity(id);
             SendPersonal(id, 0); return true;
         }
 
@@ -875,47 +919,10 @@ namespace OdysseyOracle
         { return a < 0 || a > 3 || b < 0 || b > 3 ? 0 : ConfirmedSelection.ComboForMask((1 << a) | (1 << b)); }
 
         public void RequestBuild(int element, Vector3 position)
-        {
-            if (!Running || rooms == null || !rooms.Connected) { Status = "Start the connected defense before placing a tower."; return; }
-            if (IsAuthority) TryBuild(rooms.LocalClientId, element, position);
-            else rooms.SendReliable(JsonUtility.ToJson(new Message { kind = "oracle.build.v1", run = runId, element = element, position = position }));
-        }
+        {if(owner==null||owner.Builder==null||!owner.Builder.TrySubmitLaneBuild015(element,position))Status="Open the lane builder with your configured Interact key before placing.";}
 
         void TryBuild(ulong sender, int element, Vector3 position)
-        {
-            if (!Running || !IsAuthority || !peers.TryGetValue(sender, out var peer) || !peer.ArenaReady) return;
-            string reason = null;
-            Vector3 canonical=default;
-            if (!TowerForgeDefinitions.ValidType(element)) reason = "Choose a tower type.";
-            else if(CampaignActive&&!campaign.CanBuildTower(sender,element))reason="Complete the Smith and Runekeeper visits first.";
-            else if (!Finite(position.x) || !Finite(position.y) || !Finite(position.z)) reason = "Choose a valid tower pad.";
-            else if (owner.World == null || owner.World.TowerPlatforms==null || !owner.World.TowerPlatforms.TryGetCanonical(position,out canonical,out _) || !owner.World.IsBuildPadActive(canonical)) reason = "Choose a pad on an active invasion lane.";
-            else if(owner.Revival!=null&&owner.Revival.IsPeerDowned(sender)) reason="Recover before building.";
-            else if (peer.Tokens <= 0) reason = "You have used your three tower placements.";
-            else if (buildings.Count >= ActiveTowerCapacity) reason = "The active lanes have their " + ActiveTowerCapacity + " towers.";
-            else if (!rooms.TryGetPlayerPose(sender, out var playerPosition, out _) || (playerPosition - position).sqrMagnitude > 25f * 25f) reason = "Stand within 25 meters of the tower pad.";
-            //007 four shared bastions have no x-sign or admission-slot owner cap.
-            else if (owner.Builder == null) reason = "The tower builder is not ready.";
-            else if (!owner.Builder.ModelsReady) reason="Tower building is unavailable until its saved art is ready.";
-            else if (!rooms.TryGetPlayerPose(sender,out Vector3 feet,out _)) reason="Your position is not ready.";
-            else if (!owner.Builder.ValidatePlacementFrom(feet,canonical,out var placementReason)) reason=string.IsNullOrEmpty(placementReason)?"Choose a reachable tower pad.":placementReason;
-            if (!string.IsNullOrEmpty(reason)) { Notify(sender, reason); return; }
-            var building = new BuildingState { id=++buildingSerial,element=element,owner=sender,position=canonical,
-                tier=peer.Forge.GetTier(element),tierRevision=peer.Forge.Revision };
-            // Placement spends no token unless the validated saved model exists.
-            if(!owner.Builder.TryApplyPlacedShrine(building.id,element,canonical,building.tier,building.tierRevision))
-            {Notify(sender,"Tower building is unavailable.");return;}
-            buildings.Add(building);
-            peer.Tokens--;
-
-            if (PlacedElementShrine.TryGetRegistered(building.id, out var audibleTower) && !audibleTower.IsDestroyed)
-            {
-                owner.Audio?.PlayProductionCue(ProductionCue.TowerConstruct, building.position);
-                if (sender == rooms.LocalClientId) owner.Audio?.PlayProductionCue(ProductionCue.TowerConfirm);
-            }
-            Status = "Tower placed · " + buildings.Count + "/" + ActiveTowerCapacity + " shared pads";
-            SendState();
-        }
+        {Notify(sender,"This build request uses an incompatible pad protocol. Reopen the current lane builder.");}
 
         public int LaneCount(int lane)
         {
@@ -932,6 +939,8 @@ namespace OdysseyOracle
 
         public void RegisterXpDrop(int enemyId, Vector3 position, int amount = 1)
         {
+            if(CampaignActive)return; //015 requires the actual dead actor/generation ticket, never an arbitrary ID/amount.
+            if(SoloRestartSuppressesCurrentRewards)return;
             if(CampaignActive)enemyId=CampaignQuestState.ScopedDropId(campaign.StageNumber,enemyId);
             if (!Running || !IsAuthority || enemyId < 1 || drops.ContainsKey(enemyId) || !Finite(position.x) || !Finite(position.y) || !Finite(position.z)) return;
             while (drops.Count >= 128 && dropOrder.Count > 0)
@@ -950,6 +959,7 @@ namespace OdysseyOracle
 
         public void RequestXpClaim(int dropId)
         {
+            if(CampaignActive){RequestSourceXp015(dropId);return;}
             if (!Running || rooms == null || !rooms.Connected || dropId < 1) return;
             if (IsAuthority) TryClaim(rooms.LocalClientId, dropId);
             else rooms.SendReliable(JsonUtility.ToJson(new Message { kind = "oracle.xp.claim.v1", run = runId, dropId = dropId }));
@@ -957,6 +967,8 @@ namespace OdysseyOracle
 
         void TryClaim(ulong sender, int dropId)
         {
+            if(CampaignActive){TryClaimXp015(sender,dropId);return;}
+            if(SoloRestartSuppressesCurrentRewards)return;
             if (!Running || !IsAuthority || !peers.TryGetValue(sender, out var peer) || !peer.ArenaReady || !drops.TryGetValue(dropId, out var drop)) return;
             if (peer.Claimed.Contains(dropId)) { SendPersonal(sender, dropId); return; }
             if (owner.Revival != null && owner.Revival.IsPeerDowned(sender)) return;
@@ -969,9 +981,9 @@ namespace OdysseyOracle
             peer.Claimed.Add(dropId);
             peer.Forge.TryCreditAcceptedDrop(dropId); // Separate ephemeral +1; XP amount is unchanged.
             long total = (long)peer.Xp + drop.amount;
-            while (peer.Level < ElementProgression.MaximumLevel && total >= 2 + (peer.Level - 1) / 2)
+            while (peer.Level < ElementProgression.MaximumLevel && total >= CampaignBalance015.XpThreshold(peer.Level))
             {
-                total -= 2 + (peer.Level - 1) / 2;
+                total -= CampaignBalance015.XpThreshold(peer.Level);
                 peer.Level++;
                 peer.Points++;
             }
@@ -1045,7 +1057,10 @@ namespace OdysseyOracle
                     // Integer bank/ranks are committed before visual/UI callbacks.
                     foreach(var building in buildings)if(building.owner==sender&&building.element==request.BaseType&&
                         PlacedElementShrine.TryGetRegistered(building.id,out var tower))
+                    {
                         tower.ApplyAcceptedModelTier(building.tier,building.tierRevision,MatchTowerForgeRules.Interval(building.tier));
+                        if(owner.Builder!=null&&owner.Builder.PresentAcceptedWorkshop015(building.id,building.tierRevision,true))owner.Audio?.TryPlayWorkshopAssembly015(building.position,(uint)building.tierRevision);
+                    }
                 }
             }
             SendForgeResult(sender, receipt);
@@ -1057,6 +1072,10 @@ namespace OdysseyOracle
             var snapshot = new MatchForgeSnapshot(state.forgeVersion, state.forgeBank, state.forgeTiers, state.forgeRevision);
             if (state.forgeLastRequest == 0) localForge.ApplyHostState(snapshot);
             else localForge.ApplyHostReceipt(new MatchForgeReceipt(state.forgeLastRequest, (MatchForgeOutcome)state.forgeOutcome, snapshot, true));
+            // A local accepted campaign rank proves the real interstage commit.
+            // This records a profile milestone only; it grants no rank/charge/role.
+            if(CampaignActive&&localForge.HasState&&(localForge.GetTier(0)>1||localForge.GetTier(1)>1||
+                localForge.GetTier(2)>1||localForge.GetTier(3)>1))owner?.RefugeActivities?.RecordAcceptedIntroUpgrade(true);
         }
         void SendForgeResult(ulong sender, MatchForgeReceipt receipt)
         {
@@ -1103,14 +1122,14 @@ namespace OdysseyOracle
 
         PlayerState PersonalState(ulong id, Peer peer)
         {
-            if(peerHealth==null||!peerHealth.TryCaptureHealth(id,out PeerHealthState health))return null;
+            if(peer.ProgressRevision015==int.MaxValue||peerHealth==null||!peerHealth.TryCaptureHealth(id,out PeerHealthState health))return null;
             var claimed = new int[peer.Claimed.Count];
             peer.Claimed.CopyTo(claimed);
             var returning = new float[4];
             for (int i = 0; i < returning.Length; i++) returning[i] = Mathf.Max(0f, (float)(peer.ReturnReadyAt[i] - simulationClock));
             return new PlayerState
             {
-                id = id,health=health, tokens = peer.Tokens, element = peer.Element, autoFire = peer.AutoFireEnabled,
+                id = id,health=health, progressRevision015=++peer.ProgressRevision015, tokens = peer.Tokens, element = peer.Element, autoFire = peer.AutoFireEnabled,
                 forgeVersion=MatchTowerForgeRules.Version,forgeBank=peer.Forge.Balance,forgeTiers=peer.Forge.PackedTiers,
                 forgeRevision=peer.Forge.Revision,forgeLastRequest=peer.Forge.LastRequestId,forgeOutcome=(int)peer.Forge.LastOutcome,
                 combo = peer.Selection.Combo, comboSeconds = 0f,
@@ -1158,7 +1177,7 @@ namespace OdysseyOracle
                 for(int bit=0;bit<3;bit++)if((branch&(1<<bit))!=0)spent++;
             }
             if ((long)state.points+spent > state.level-1) return false;
-            return state.level == ElementProgression.MaximumLevel ? state.xp == 0 : state.xp < 2+(state.level-1)/2;
+            return state.level == ElementProgression.MaximumLevel ? state.xp == 0 : state.xp < CampaignBalance015.XpThreshold(state.level);
         }
 
         void ApplyPersonal(PlayerState state, int acknowledgedDrop)
@@ -1175,7 +1194,7 @@ namespace OdysseyOracle
             owner.Combat.ApplyRemoteNovaState(state.novaMask, state.novaSeconds);
             ApplyForgePersonal(state);
             localTokens = Mathf.Clamp(state.tokens, 0, 3);
-            owner.Progression.ApplyAuthoritativeState(state.level, state.xp, state.points, state.mask);
+            ApplyLegacyProgressRevision015(state);
             owner.Combat.ApplyRemoteElementState(state.element, state.returnCooldowns, state.combo, state.comboSeconds);
             owner.Combat.ApplyRemoteAutoFireState(state.autoFire);
             for (int i = 0; i < 4; i++)
@@ -1186,10 +1205,12 @@ namespace OdysseyOracle
             if (acknowledgedDrop > 0) owner.Progression.ConfirmNetworkXp(acknowledgedDrop);
             if (state.claimed != null)
                 foreach (int id in state.claimed) owner.Progression.ConfirmNetworkXp(id);
+            if(!CampaignActive)CacheAcceptedSoloRestartProgress(state.level,state.xp,state.points,state.mask);
         }
 
         void OnMessage(ulong sender, string payload)
         {
+            if(owner!=null&&owner.SoloRestartHoldsSimulation)return;
             if (owner == null || rooms == null || !rooms.Connected || string.IsNullOrEmpty(payload) ||
                 payload.Length > RemoteDangerPolicy.MaximumSnapshotCharacters ||
                 System.Text.Encoding.UTF8.GetByteCount(payload) > RoomConnection.MaximumReliablePayloadBytes) return;
@@ -1217,6 +1238,7 @@ namespace OdysseyOracle
                     RefreshActiveLanes();
                     SendState();
                 }
+                else if (message.kind == "oracle.held.v1") TryHeldFire015(sender,message.selectionMask,message.castSequence,message.selectionSequence);
                 else if (message.kind == "oracle.cast.v2") TryCast(sender, message.element, message.selectionMask, simulationClock, message.direction, false, message.castSequence, message.selectionSequence);
                 else if (message.kind == "oracle.autofire.v1") TrySetAutoFire(sender, message.enabled, message.controlSequence);
                 else if (message.kind == "oracle.element.v2") TrySelectElement(sender, message.element, message.selectionSequence);
@@ -1248,6 +1270,7 @@ namespace OdysseyOracle
         void SendState()
         {
             if (!IsAuthority || !hasRun) return;
+            RefreshTowerHealth(); // Publish current accepted wave/tier health, including immediate build/upgrade receipts.
             enemyBuffer.Clear();
             foreach (var enemy in owner.Combat.ActiveEnemies)
                 if (enemy != null && enemy.Alive && enemyBuffer.Count < OracleCombat.MaxActiveEnemies)
@@ -1257,7 +1280,7 @@ namespace OdysseyOracle
                         lockedDirection = enemy.LockedAttackDirection, attackStyle = enemy.AttackPresentationStyle,
                         windupSeconds = enemy.AttackWindupSeconds, strikeSeconds = enemy.AttackStrikeSeconds,
                         recoverySeconds = enemy.AttackRecoverySeconds, targetTowerId = enemy.AttackPresentationTargetId,
-                        targetPoint = enemy.LockedAttackEndpoint });
+                        targetPoint = enemy.LockedAttackEndpoint, liveStatus = enemy.LiveStatus009 });
             int hostileCount = owner.Combat.CopyHostileDangerState(hostileStateBuffer);
             publicHealthBuffer.Clear();
             foreach(var item in peers)if(item.Value.ArenaReady)
@@ -1265,16 +1288,16 @@ namespace OdysseyOracle
             // Own full progress is sent on ready, accepted changes and bounded
             // full resync. Other peers never receive128 private claim IDs each.
             var players=NoCommonPersonal;
-            var worldDrops = new DropState[drops.Count];
-            drops.Values.CopyTo(worldDrops, 0);
+            var worldDrops = CampaignActive?NoCampaignDrops015:new DropState[drops.Count];
+            if(!CampaignActive)drops.Values.CopyTo(worldDrops, 0);
             var state = new Message
             {
                 kind = "oracle.state.v1", run = runId, sequence = ++snapshotSerial,
-                running = Running, clockStarted = clockStarted, remaining = RemainingSeconds, result = result,
+                running = Running, clockStarted = clockStarted, remaining = RemainingSeconds, elapsed = simulationClock, result = result,
                 activeLanes = ActiveLaneCount,admissionMask=admissionLaneMask,geometryMask=activeLaneMask,health=publicHealthBuffer.ToArray(),partyVersion=PartyProtocolVersion,
                 wave = WaveNumber, spawned = SpawnedThisWave, quota = WaveQuota,
                 shrine = owner.Combat.Shrine != null ? owner.Combat.Shrine.Health : 0f,
-                enemies = enemyBuffer.ToArray(), buildings = buildings.ToArray(), players = players, drops = worldDrops,
+                enemies = enemyBuffer.ToArray(), buildings = buildings.ToArray(),buildSemantic=owner.World.LaneBuildSemantic015, players = players, drops = worldDrops,
                 dangerVersion = RemoteDangerPolicy.Version, novaVersion = NovaProtocolVersion, towerVersion = TowerProtocolVersion, hostileCount = hostileCount, hostileBolts = hostileStateBuffer
             };
             StampCampaign(state);
@@ -1297,27 +1320,20 @@ namespace OdysseyOracle
 
         bool ValidTowerPayload(Message state)
         {
-            if(owner==null||owner.World==null||owner.World.TowerPlatforms==null||
-                state.buildings==null||state.buildings.Length>4||state.players==null||state.players.Length!=0||
-                state.health==null||state.health.Length<1||state.health.Length>8||
-                !CoopPartyCapacity.ValidLaneMask(state.admissionMask)||!CoopPartyCapacity.ValidLaneMask(state.geometryMask)||
-                (state.admissionMask&~state.geometryMask)!=0||state.activeLanes!=CoopPartyCapacity.LaneCount(state.geometryMask))return false;
-            for(int i=0;i<4;i++)seenTowerPads[i]=false;
+            if(owner==null||owner.World==null||owner.World.LaneBuildSemantic015==0||state.buildSemantic!=owner.World.LaneBuildSemantic015||!CampaignBalance015.ValidWave(state.wave)||
+                state.buildings==null||state.buildings.Length>4||state.players==null||state.players.Length!=0||state.health==null||state.health.Length<1||state.health.Length>2||
+                !CoopPartyCapacity.ValidLaneMask(state.admissionMask)||!CoopPartyCapacity.ValidLaneMask(state.geometryMask)||(state.admissionMask&~state.geometryMask)!=0||state.activeLanes!=CoopPartyCapacity.LaneCount(state.geometryMask))return false;
             for(int i=0;i<state.buildings.Length;i++)
             {
                 var b=state.buildings[i];
-                if(b==null||b.id<1||b.id>65535||!TowerForgeDefinitions.ValidType(b.element)||!MatchTowerForgeRules.ValidTier(b.tier)||
-                    b.tierRevision<0||b.tierRevision>MatchTowerForgeRules.MaximumRevision||!ValidFeedbackPoint(b.position)||
-                    !Finite(b.health)||b.health<=0f||b.health>PlacedElementShrine.DefaultMaxHealth||
-                    !owner.World.TowerPlatforms.TryGetCanonical(b.position,out _,out int pad)||seenTowerPads[pad])return false;
-                seenTowerPads[pad]=true;for(int j=0;j<i;j++)if(state.buildings[j].id==b.id)return false;
+                if(b==null||b.id<1||b.id>65535||!TowerForgeDefinitions.ValidType(b.element)||!MatchTowerForgeRules.ValidTier(b.tier)||b.tierRevision<0||b.tierRevision>MatchTowerForgeRules.MaximumRevision||
+                    b.buildRevision<1||b.buildRevision>65535||b.lane<0||b.lane>7||(state.geometryMask&(1<<b.lane))==0||!Finite(b.health)||b.health<=0||b.health>CampaignBalance015.TowerMaximumHealth(b.tier,state.wave)||
+                    !OdysseyOracle.Foundation.World.LaneBuildMath015.Canonical(new Unity.Mathematics.float3(b.position.x,b.position.y,b.position.z),out uint cell)||cell!=b.cell||
+                    !OdysseyOracle.Foundation.World.LaneBuildMath015.InBand(new Unity.Mathematics.float3(b.position.x,b.position.y,b.position.z),b.lane))return false;
+                for(int j=0;j<i;j++)if(state.buildings[j].id==b.id||state.buildings[j].cell==b.cell)return false;
             }
             for(int i=0;i<state.health.Length;i++)
-            {
-                var health=state.health[i];
-                if(!health.present||!PeerCombatAuthority.ValidHealthState(health)||!ConnectedId(health.id))return false;
-                for(int j=0;j<i;j++)if(state.health[j].id==health.id)return false;
-            }
+            {var health=state.health[i];if(!health.present||!PeerCombatAuthority.ValidHealthState(health)||!ConnectedId(health.id))return false;for(int j=0;j<i;j++)if(state.health[j].id==health.id)return false;}
             return true;
         }
 
@@ -1333,11 +1349,12 @@ namespace OdysseyOracle
                 if (actor == null || actor.id < 1 || actor.id > RemoteDangerPolicy.MaximumActorId || dangerEnemyIds[actor.id] ||
                     !CoopPartyCapacity.LaneActive(state.geometryMask,actor.lane)||actor.archetype < 0 || actor.archetype > 2 || actor.shade != (actor.archetype == 1) ||
                     !RemoteDangerPolicy.Point(actor.position) || !Finite(actor.hp) || !Finite(actor.maximum) ||
-                    actor.hp <= 0f || actor.maximum <= 0f || actor.maximum > 100000f || actor.hp > actor.maximum ||
+                    actor.hp <= 0f || actor.maximum <= 0f || actor.maximum > 100000f || actor.hp > actor.maximum || !EnemyLiveStatusRules009.Valid(actor.liveStatus) ||
                     actor.attackPhase == (int)OracleEnemy.GuardianAttackPhase.Dead ||
                     !RemoteDangerPolicy.Phase(actor.attackPhase, actor.attackProgress, actor.attackSequence) ||
                     !RemoteDangerPolicy.Direction(actor.lockedDirection) ||
                     !RemoteDangerPolicy.Style(actor.attackStyle, actor.windupSeconds, actor.strikeSeconds, actor.recoverySeconds) ||
+                    !EnemyTowerAggressionPolicy011.PresentationAllowed(false, actor.attackStyle, actor.targetTowerId) ||
                     !RemoteDangerPolicy.Point(actor.targetPoint) || actor.targetTowerId < 0 || actor.targetTowerId > 65535 ||
                     (actor.attackStyle == 2 && (actor.targetTowerId == 0 || (actor.targetPoint - actor.position).sqrMagnitude > 81f)) ||
                     (actor.attackStyle != 2 && actor.targetTowerId != 0) ||
@@ -1363,17 +1380,23 @@ namespace OdysseyOracle
             // A state packet can arrive on a different NGO delivery pipeline before that event.
             if (!owner.CoopMode || owner.World == null || !owner.World.IsCoopArena || string.IsNullOrEmpty(state.run) || state.enemies == null || state.enemies.Length > OracleCombat.MaxActiveEnemies || state.buildings == null || state.buildings.Length > MaximumPlacedShrines) return;
             if (!ValidDangerState(state)) return;
-            int phaseLimit=CampaignActive?CampaignStagePacing.PhaseCount:CurrentDefensePacing.PhaseCount;
+            int phaseLimit=CampaignActive?CampaignStagePacing.TotalWaves:CurrentDefensePacing.PhaseCount;
+            int quotaLimit=CampaignActive?CampaignStagePacing.AdmissionsForWave(CampaignStagePacing.TotalWaves):200;
             if(!Finite(state.remaining)||state.remaining<0f||state.remaining>DefenseDurationSeconds||
-                state.wave<1||state.wave>phaseLimit||state.quota<1||state.quota>200||state.spawned<0||state.spawned>state.quota)return;
-            if(CampaignActive&&(state.quota!=CampaignStagePacing.AdmissionsPerStage||state.spawned>CampaignStagePacing.AdmissionsPerStage||
-                state.result==1&&(state.spawned!=CampaignStagePacing.AdmissionsPerStage||state.remaining!=0f)))return;
+                state.wave<1||state.wave>phaseLimit||state.quota<1||state.quota>quotaLimit||state.spawned<0||state.spawned>state.quota)return;
+            if(CampaignActive&&(state.wave<CampaignStagePacing.GlobalWave(campaign.StageNumber,0)||
+                state.wave>CampaignStagePacing.GlobalWave(campaign.StageNumber,CampaignStagePacing.WavesPerStage-1)||
+                state.quota!=CampaignStagePacing.AdmissionsForWave(state.wave)||
+                state.result==1&&(state.wave!=CampaignStagePacing.GlobalWave(campaign.StageNumber,CampaignStagePacing.WavesPerStage-1)||state.spawned!=state.quota||state.remaining!=0f)))return;
+            if(CampaignActive&&!CampaignStagePacing.ValidClock(state.elapsed,state.remaining,state.clockStarted))return;
             if (state.run == runId && state.sequence <= appliedSerial) return;
             if (!dangerRunGate.Accept(state.run, state.sequence)) return;
+            bool workshopRunContinues015=runId==state.run;
             if (runId != state.run)
             {
                 string previousRun=runId;runId=state.run;
                 if(peerHealth==null||!peerHealth.ResetRun(runId)){runId=previousRun;return;}
+                EnsureImpactRun();
                 if(CampaignActive)localForge.ReleasePendingAfterTimeout();else localForge.ResetForRun();
                 appliedSerial = 0;
                 endingApplied = false;
@@ -1396,9 +1419,10 @@ namespace OdysseyOracle
             SpawnedThisWave = state.spawned;
             WaveQuota = state.quota;
             AliveCount = state.enemies.Length;
-            simulationClock = DefenseDurationSeconds - RemainingSeconds;
+            simulationClock = CampaignActive ? state.elapsed : DefenseDurationSeconds - RemainingSeconds;
             admissionLaneMask=state.admissionMask;activeLaneMask=state.geometryMask;activeLaneCount=state.activeLanes;
             owner.World.ApplyRemoteLaneState(admissionLaneMask,activeLaneMask);
+            bool workshopDelta015=owner.Builder!=null&&owner.Builder.BeginWorkshopSnapshot015(workshopRunContinues015);
             for(int i=0;i<state.health.Length;i++)peerHealth.TryApplyHostHealth(runId,state.health[i]);
             owner.Combat.SetRemoteSimulation(true);
             if (owner.Combat.Shrine != null) owner.Combat.Shrine.ApplyRemoteHealth(state.shrine);
@@ -1415,6 +1439,7 @@ namespace OdysseyOracle
                     replicas[enemyState.id] = enemy;
                 }
                 enemy.ApplyRemoteState(enemyState.position, enemyState.hp, true, enemyState.maximum);
+                enemy.ApplyRemoteLiveStatus009(enemyState.liveStatus);
                 enemy.ApplyRemoteAttackPresentation(enemyState.attackPhase, enemyState.attackProgress, enemyState.aggro,
                     enemyState.attackSequence, state.sequence, enemyState.lockedDirection, enemyState.attackStyle,
                     enemyState.windupSeconds, enemyState.strikeSeconds, enemyState.recoverySeconds,
@@ -1444,7 +1469,11 @@ namespace OdysseyOracle
                 if (building == null || building.id < 1 || building.element < 0 || building.element >= ShrinePlacementBuilder.TowerTypeCount ||
                     !Finite(building.health) || building.health <= 0f || !ValidFeedbackPoint(building.position)) continue;
                 buildings.Add(building);
-                if (owner.Builder != null) owner.Builder.ApplyPlacedShrine(building.id, building.element, building.position,building.tier,building.tierRevision);
+                if (owner.Builder != null&&owner.Builder.TryApplyPlacedShrine(building.id, building.element, building.position,building.tier,building.tierRevision,building.lane))
+                {
+                    bool show=owner.Builder.PresentAcceptedWorkshop015(building.id,building.tierRevision,workshopDelta015);
+                    if(show)owner.Audio?.TryPlayWorkshopAssembly015(building.position,(uint)building.tierRevision);
+                }
                 if (PlacedElementShrine.TryGetRegistered(building.id, out var tower)) tower.ApplyRemoteHealth(building.health);
             }
             if (state.players != null)
@@ -1454,7 +1483,7 @@ namespace OdysseyOracle
                         localTokens = Mathf.Clamp(player.tokens, 0, 3);
                         ApplyPersonal(player, 0);
                     }
-            if (state.drops != null && state.drops.Length <= 128 && owner.Progression != null)
+            if (!CampaignActive && state.drops != null && state.drops.Length <= 128 && owner.Progression != null)
             {
                 liveDropIds.Clear();
                 foreach (var drop in state.drops) if (drop != null && drop.id > 0) liveDropIds.Add(drop.id);
@@ -1476,7 +1505,7 @@ namespace OdysseyOracle
         void EndDefense(bool victory)
         {
             if (!Running || !IsAuthority) return;
-            if(victory&&CampaignActive&&CampaignStagePacing.Outcome(simulationClock,campaignAdmissions.Count,
+            if(victory&&CampaignActive&&campaignAdmissions.Outcome(simulationClock,AliveCount,
                 owner.Combat.Shrine!=null&&!owner.Combat.Shrine.IsDestroyed)!=CampaignStageOutcome.Succeeded)return;
             Running = false;
             result = victory ? 1 : 2;
@@ -1506,11 +1535,12 @@ namespace OdysseyOracle
             direction.sqrMagnitude >= .9f && direction.sqrMagnitude <= 1.1f;
         void OnDestroy()
         {
+            DisposeXp015();
             dangerRunGate.ResetConnection();
             owner?.Combat?.ClearRemoteDangerState();
             if(peerHealth!=null){peerHealth.HealthChanged-=OnPeerHealthChanged;peerHealth.PoseCorrectionRequired-=OnPoseCorrection;peerHealth.ClearRun();if(ownsPeerHealth)Destroy(peerHealth);}
-            if (rooms != null) rooms.ReliableMessageReceived -= OnMessage;
-            if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit -= OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact -= OnAuthoritativeNovaImpact; }
+            if (rooms != null) { rooms.ReliableMessageReceived -= OnMessage; rooms.ArenaImpactMessage -= OnArenaImpactFrame; rooms.XpMessage015 -= OnXpFrame015; rooms.LaneBuildMessage015 -= OnLaneBuildFrame015; }
+            if (feedbackCombat != null) { feedbackCombat.AuthoritativeShotHit -= OnAuthoritativeShotHit; feedbackCombat.AuthoritativeNovaImpact -= OnAuthoritativeNovaImpact; feedbackCombat.AuthoritativeSpellImpact -= OnAuthoritativeSpellImpact; }
             if (towerFeedbackSubscribed) PlacedElementShrine.AuthoritativeShot -= OnAuthoritativeTowerShot;
         }
     }
@@ -1519,3 +1549,63 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Existing metre/Y-up/XZ actor space, host Forge ledger and sole combat owners remain.
 // Exact composed Refuge/interstage/balance adapter hunks; no new native/save authority.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing actor world healthbar anchor and authenticated host status snapshot.
+// Array Formats: Five live bits31 distinct from caster12bit passive mask; fixed status presentation slots,256B lab word224 dedicated.
+// Dependencies/Pointers: Existing HP/damage/timer owners unchanged; root composes protocol/version bumps and verifies native/two-peer visuals.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: host accepted World contacts and existing run/epoch/shot identity; no damage/HP/path permission changes.
+// Array Formats: existing bounded launch receipts add three-bit landing dedupe; fixed256B shared wire unchanged; new64B arena frame through existing NGO pipeline.
+// Dependencies/Pointers: sole host/network/audio owners retain authority, lifetime and gesture/focus policies; actual peer/audio acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Actual accepted host wave and canonical portal/core XZ anchors;1.9metre windup-reach travel reference.
+// Array Formats: One validated EnemyProfile value per admission, no additional runtime buffers or objects.
+// Dependencies/Pointers: Computed travel scale validated before actor/source reservation; existing pool/XP/elapsed-clock/ConfigureDefenseWave and live movement remain unchanged.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Original Oracle accepted world roots and camera/child-local poses only; no authority geometry changes.
+// Array Formats: Fixed31shared body slots/2prewarmed player graphs and original palette/pose/feedback buffers; no wire ABI growth.
+// Dependencies/Pointers: Player/Rooms/Combat remain sole owners; root integrates default-OFF original native player pilot and verifies real bindings/peer/clearance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up, input bits and owner simulation seconds.
+// Array Formats: Four ingredient deadlines, fixed48 projectile pool, at most three component shots; existing host frame ABIs.
+// Dependencies/Pointers: Work-only rapid-casting candidate. Existing host hit/damage/reward owners retained; root owns native/browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world metres/Y-up/XZ, exact1m terrain/.25m build roots and locked active-road context.
+// Array Formats: Bounded native semantic/preview/body stores, exact64B versioned command and existing2peer/4tower snapshots.
+// Dependencies/Pointers: Root integrates exact guarded slices; host economy/readiness/LOS and World geometry remain canonical, prepared/source compile is not native or browser acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Current authenticated run/epoch/context and monotonic real-time pending request ages; placement/world coordinates unchanged.
+// Array Formats: Immutable Frame64, fixed Pending96 scalar state and one cached Frame64 per existing peer; no per-frame heap container or ABI change.
+// Dependencies/Pointers: Bounded same-nonce delivery, exact host replay and response-controlled UI only. Root alone imports/native-tests; frozen original packet remains unchanged.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing authored world-metre lanes/shrine support; no teleport/root/collider rewrite.
+// Array Formats: Existing48actors/fourtowers and snapshot bounds; default-deny numeric tower permission, no frame allocations.
+// Dependencies/Pointers: Only exact intentionally toggled training owner permits tower combat; host shrine/player/world/HP/reward/replay owners preserved. Native/peer acceptance pending.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Accepted global waves1..40, tiers1..3 and existing Y-up/XZ tower roots; exact bound lesson/lab adapters remain separate.
+// Array Formats: Existing fixed4 towers and unchanged host snapshots plus cached scalar policy tier/wave/maximum; no ABI, save, cost, damage, enemy-aggression or hot allocation change.
+// Dependencies/Pointers: CampaignBalance015 owns target groups/capacity/additive4percent rate and durability math. Host alone accepts context; monotonic policy rebases preserve damaged fraction, repeated contexts are inert, and dead towers stay dead.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing accepted world contacts, projectile-local three-part visuals and cached shot identity; physical collision and gameplay semantics unchanged.
+// Array Formats: Existing48/12 bolt pools,20 three-part impact slots, fixed six numeric/cue recipes and one extra local combo integer per accepted-shot receipt;64B/256B wire formats unchanged.
+// Dependencies/Pointers: Existing host acceptance/dedupe/expiry and audio voice policies remain canonical. Presentation failures grant no damage, status, recovery or authority; root owns actual renderer/listening/browser/peer/performance acceptance.

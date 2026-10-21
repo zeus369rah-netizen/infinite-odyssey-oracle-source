@@ -28,16 +28,16 @@ namespace OdysseyOracle
         public const float Range = 9f, MaximumHealth = 80f;
         private static readonly TowerForgeDefinition[] Types =
         {
-            new TowerForgeDefinition(0, "Fire Tower", "Burns ground and flying enemies.", TowerForgeSymbol.Flame, 1f, .36f, .12f),
-            new TowerForgeDefinition(1, "Water Tower", "Slows ground and flying enemies.", TowerForgeSymbol.Drop, .18f, .68f, 1f),
+            new TowerForgeDefinition(0, "Fire Tower", "Burns ground enemies; cannot target flying enemies.", TowerForgeSymbol.Flame, 1f, .36f, .12f),
+            new TowerForgeDefinition(1, "Water Tower", "Slows flying enemies; cannot target ground enemies.", TowerForgeSymbol.Drop, .18f, .68f, 1f),
             new TowerForgeDefinition(2, "Earth Tower", "Staggers ground enemies; cannot target flying enemies.", TowerForgeSymbol.Mountain, .62f, .78f, .29f),
             new TowerForgeDefinition(3, "Air Spire", "Pushes flying enemies; cannot target ground enemies.", TowerForgeSymbol.FourRaySwirl, .66f, .91f, 1f)
         };
         private static readonly TowerForgeRankDefinition[] Ranks =
         {
             new TowerForgeRankDefinition(1, 8, Foundation.CombatConfig.Default.TowerDamage, Foundation.CombatConfig.Default.TowerCooldown),
-            new TowerForgeRankDefinition(2, 18, Foundation.CombatConfig.Default.TowerDamage * 1.25f, Foundation.CombatConfig.Default.TowerCooldown * (14f / 15f)),
-            new TowerForgeRankDefinition(3, 0, Foundation.CombatConfig.Default.TowerDamage * 1.5f, Foundation.CombatConfig.Default.TowerCooldown * (13f / 15f))
+            new TowerForgeRankDefinition(2, 18, Foundation.CombatConfig.Default.TowerDamage * CampaignBalance015.TierDamageMultiplier(2), Foundation.CombatConfig.Default.TowerCooldown * (14f / 15f)),
+            new TowerForgeRankDefinition(3, 0, Foundation.CombatConfig.Default.TowerDamage * CampaignBalance015.TierDamageMultiplier(3), Foundation.CombatConfig.Default.TowerCooldown * (13f / 15f))
         };
         private static readonly string[] Names =
         { "Ember Brazier", "Flame Crown", "Sunfire Crucible", "Tide Basin", "Cascade", "Deepwater Font",
@@ -61,3 +61,13 @@ namespace OdysseyOracle
 // # ARCHITECTURE SNAPSHOT
 // Existing metre/Y-up/XZ actor space, host Forge ledger and sole combat owners remain.
 // Exact composed Refuge/interstage/balance adapter hunks; no new native/save authority.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Accepted global waves1..40, tiers1..3 and existing Y-up/XZ tower roots; exact bound lesson/lab adapters remain separate.
+// Array Formats: Existing fixed4 towers and unchanged host snapshots plus cached scalar policy tier/wave/maximum; no ABI, save, cost, damage, enemy-aggression or hot allocation change.
+// Dependencies/Pointers: CampaignBalance015 owns target groups/capacity/additive4percent rate and durability math. Host alone accepts context; monotonic policy rebases preserve damaged fraction, repeated contexts are inert, and dead towers stay dead.

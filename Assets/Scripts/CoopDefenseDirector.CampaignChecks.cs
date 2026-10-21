@@ -25,15 +25,15 @@ namespace OdysseyOracle
             {
                 var before=BuildDangerWireProbe();
                 before.campaign="fedcba9876543210fedcba9876543210";
-                before.campaignStage=3;before.campaignEpoch=int.MaxValue;
+                before.campaignStage=CampaignStagePacing.StageCount;before.campaignEpoch=int.MaxValue;
                 before.campaignVersion=CoopCampaignDirector.ProtocolVersion;
                 before.personal.level=50;before.personal.xp=0;before.personal.points=37;before.personal.mask=4095;
                 for(int i=0;i<128;i++)
                 {
-                    before.drops[i].id=1408+i;
-                    before.personal.claimed[i]=1408+i;
+                    before.drops[i].id=CampaignStagePacing.LastRewardId(CampaignStagePacing.StageCount)-127+i;
+                    before.personal.claimed[i]=CampaignStagePacing.LastRewardId(CampaignStagePacing.StageCount)-127+i;
                 }
-                before.dropId=CampaignQuestState.ScopedDropId(3,511);
+                before.dropId=CampaignQuestState.ScopedDropId(CampaignStagePacing.StageCount,CampaignStagePacing.StageAdmissions(CampaignStagePacing.StageCount));
                 var progress=new CampaignProgressSnapshot{id=ulong.MaxValue,revision=int.MaxValue,level=50,xp=0,points=37,mask=4095,
                     forgeVersion=MatchTowerForgeRules.Version,forgeBank=MatchTowerForgeRules.MaximumBalance,forgeTiers=170,
                     forgeRevision=MatchTowerForgeRules.MaximumRevision,forgeLastRequest=uint.MaxValue,forgeOutcome=(int)MatchForgeOutcome.Applied};
@@ -44,12 +44,12 @@ namespace OdysseyOracle
                 var after=JsonUtility.FromJson<Message>(json);
                 CheckMessage(before,after,checks);
                 CheckCampaignFields(before,after,checks);
-                checks.Check(after!=null&&ValidPersonalPayload(after.personal),"Level50/37unusedpoints and stage3 claim IDs remain real valid arena personal");
-                checks.Check(result.unionUtf8Bytes<RoomConnection.MaximumReliablePayloadBytes,"max campaign metadata+128 stage3drops+48actors+48bolts+8health+fullpersonal+progress below64KiB UTF8");
+                checks.Check(after!=null&&ValidPersonalPayload(after.personal),"Level50/37unusedpoints and level8 claim IDs remain real valid arena personal");
+                checks.Check(result.unionUtf8Bytes<RoomConnection.MaximumReliablePayloadBytes,"max campaign metadata+128 level8drops+48actors+48bolts+8health+fullpersonal+progress below64KiB UTF8");
                 checks.Check(JsonUtility.ToJson(after)==json,"full010 private DTO byte-stable roundtrip");
                 foreach(var actor in before.enemies)checks.Check(actor.id>0&&actor.id<=RemoteDangerPolicy.MaximumActorId,"actor IDs remain stage-local<=511");
                 foreach(var bolt in before.hostileBolts)checks.Check(bolt.sourceEnemyId>0&&bolt.sourceEnemyId<=RemoteDangerPolicy.MaximumActorId,"bolt source remains stage-local<=511");
-                checks.Check(before.dropId==1535,"only reward identity uses stage3 maximum1535");
+                checks.Check(before.dropId==CampaignStagePacing.LastRewardId(CampaignStagePacing.StageCount)&&before.dropId==905,"prefix reward identity reaches all905 sources within existing4096 capacity");
                 result.maxRewardId=before.dropId;
                 before.hasPersonal=false;before.personal=null;before.campaignProgress=null;before.text=string.Empty;
                 json=JsonUtility.ToJson(before);result.actualStateUtf8Bytes=Encoding.UTF8.GetByteCount(json);
@@ -58,8 +58,8 @@ namespace OdysseyOracle
                 checks.Check(!HasPersonalPayload(after),"absent arena personal still guarded");
                 checks.Check(after.campaignProgress==null||!CampaignProgressSnapshot.Valid(after.campaignProgress),"default-materialized absent refuge progress cannot validate");
                 checks.Check(result.actualStateUtf8Bytes<RoomConnection.MaximumReliablePayloadBytes,"actual010 common state below64KiB");
-                var envelope=new Message{kind="oracle.campaign.progress.v1",run=before.campaign+".refuge.3",campaign=before.campaign,
-                    campaignStage=3,campaignEpoch=int.MaxValue,campaignVersion=CoopCampaignDirector.ProtocolVersion,campaignProgress=progress};
+                var envelope=new Message{kind="oracle.campaign.progress.v1",run=before.campaign+".refuge."+CampaignStagePacing.StageCount,campaign=before.campaign,
+                    campaignStage=CampaignStagePacing.StageCount,campaignEpoch=int.MaxValue,campaignVersion=CoopCampaignDirector.ProtocolVersion,campaignProgress=progress};
                 json=JsonUtility.ToJson(envelope);result.progressUtf8Bytes=Encoding.UTF8.GetByteCount(json);
                 var decoded=JsonUtility.FromJson<Message>(json);
                 CheckCampaignFields(envelope,decoded,checks);
@@ -92,3 +92,13 @@ namespace OdysseyOracle
     }
 }
 #endif
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Stable existing arena road IDs and host-owned eight-level campaign identity.
+// Array Formats: Existing two peers/eight lane arrays/four shared pads/48 actors/4096 reward tombstones; no ABI growth.
+// Dependencies/Pointers: Level-derived lane prefix, actual host ready/admission/recovery fences; root owns shared protocol and native acceptance.
+
+// # ARCHITECTURE SNAPSHOT
+// Coordinate Space: Existing world and accepted015 campaign/source identity, original arena positions retained.
+// Array Formats: Eight milestones/40waves/905logical rewards within4096native slots, fixed128B XP channel and existing bounded pools.
+// Dependencies/Pointers: Root composes actual current pool/audio owners with reviewed campaign/XP hunks; source/native/browser/performance/public acceptance remain separate.

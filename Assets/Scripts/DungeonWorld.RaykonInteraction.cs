@@ -4,6 +4,11 @@ namespace OdysseyOracle
 {
     public sealed partial class DungeonWorld
     {
+        public bool RaykonMouthSpeaking=>refugeRaykon!=null&&refugeRaykon.Speaking>0f;
+        public void SetRaykonSpeaking(bool speaking)
+        {
+            if(refugeRaykon!=null)refugeRaykon.Speaking=speaking?1f:0f;
+        }
         public bool TryGetRaykonInteractionTarget(out Transform root,out Vector3 feet,out Vector3 aim)
         {
             root=null;feet=aim=default;
@@ -16,5 +21,5 @@ namespace OdysseyOracle
 
 // # ARCHITECTURE SNAPSHOT
 // Coordinate Space: Actual floor-supported Raykon root in Unity world metres/Y-up; local+Z presentation faces yaw90/+X.
-// Array Formats: One borrowed cached Transform, two value vectors; no search, buffers or geometry changes.
+// Array Formats: One borrowed cached Transform, two value vectors and a bool -> cached MPB edge adapter; no search, buffers or collision geometry change.
 // Dependencies/Pointers: Existing World creates only after numeric support acceptance and clears this root before disposal; no gameplay authority here.
